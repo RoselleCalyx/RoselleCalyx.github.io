@@ -3,41 +3,638 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chen's Homepage</title>
+  <title>Chen | Academic Homepage</title>
+  <meta name="description" content="Chen's academic homepage" />
   <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1e2430;
+      --muted: #5f6b7a;
+      --line: #e3e8ef;
+      --accent: #2f6fed;
+      --accent-soft: #edf3ff;
+      --shadow: 0 10px 30px rgba(20, 33, 61, 0.08);
+      --radius: 20px;
+      --max-width: 1100px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 40px;
-      background: #f5f5f5;
-      color: #222;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #f8faff 0%, #f4f6fb 100%);
+      color: var(--text);
+      line-height: 1.65;
     }
-    .card {
-      max-width: 800px;
-      margin: 40px auto;
-      background: white;
-      padding: 32px;
-      border-radius: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-    h1 {
-      margin-top: 0;
-    }
+
     a {
-      color: #0366d6;
+      color: var(--accent);
       text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      width: min(var(--max-width), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+      background: rgba(245, 247, 251, 0.82);
+      border-bottom: 1px solid rgba(227, 232, 239, 0.8);
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 68px;
+      gap: 20px;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      font-size: 0.96rem;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+    }
+
+    .hero {
+      padding: 56px 0 26px;
+    }
+
+    .hero-card {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 34px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 34px;
+      box-shadow: var(--shadow);
+    }
+
+    .avatar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: #eef2f8;
+      box-shadow: 0 8px 24px rgba(22, 34, 66, 0.08);
+    }
+
+    .name {
+      margin: 0;
+      font-size: 2.25rem;
+      line-height: 1.15;
+    }
+
+    .title {
+      margin: 10px 0 14px;
+      color: var(--muted);
+      font-size: 1.02rem;
+    }
+
+    .hero p {
+      margin: 0 0 14px;
+      color: #2d3642;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+      transition: 0.2s ease;
+    }
+
+    .btn:hover {
+      text-decoration: none;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(47, 111, 237, 0.08);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .section {
+      padding: 24px 0;
+    }
+
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      margin: 0 0 18px;
+      font-size: 1.45rem;
+      line-height: 1.2;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .timeline {
+      position: relative;
+      margin-top: 10px;
+      padding-left: 22px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 6px;
+      width: 2px;
+      height: 100%;
+      background: var(--line);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding: 0 0 22px 22px;
+    }
+
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -1px;
+      top: 7px;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: white;
+      border: 3px solid var(--accent);
+    }
+
+    .timeline-date {
+      font-size: 0.92rem;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .timeline-title {
+      font-size: 1.02rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .timeline-subtitle {
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .pub-list {
+      display: grid;
+      gap: 22px;
+    }
+
+    .pub-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      background: #fff;
+    }
+
+    .pub-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .pub-thumb {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #eef2f8;
+    }
+
+    .pub-title {
+      margin: 0 0 8px;
+      font-size: 1.08rem;
+      line-height: 1.35;
+    }
+
+    .pub-authors {
+      color: #344054;
+      margin-bottom: 4px;
+    }
+
+    .pub-venue {
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-size: 0.96rem;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0 12px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .link-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .paper-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #f7f9fc;
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .paper-link:hover {
+      text-decoration: none;
+      background: #eef4ff;
+      border-color: #d7e5ff;
+    }
+
+    .abstract-toggle {
+      margin-top: 12px;
+      background: none;
+      border: none;
+      color: var(--accent);
+      padding: 0;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .abstract {
+      display: none;
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #f8fbff;
+      border: 1px solid #dce8ff;
+      color: #2d3a49;
+    }
+
+    .abstract.open {
+      display: block;
+    }
+
+    .footer {
+      padding: 30px 0 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-card {
+        grid-template-columns: 1fr;
+      }
+
+      .avatar-wrap {
+        align-items: flex-start;
+      }
+
+      .pub-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pub-thumb {
+        max-width: 320px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .name {
+        font-size: 1.8rem;
+      }
+
+      .hero-card,
+      .section-card {
+        padding: 22px;
+      }
+
+      .nav {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 0;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Chen</h1>
-    <p>Welcome to my personal homepage.</p>
-    <p>I am interested in AI, medical imaging, and research.</p>
-    <p>
-      GitHub:
-      <a href="https://github.com/RoselleCalyx" target="_blank">RoselleCalyx</a>
-    </p>
-  </div>
+  <header class="topbar">
+    <div class="container nav">
+      <div class="brand">Chen</div>
+      <nav class="nav-links">
+        <a href="#about">About</a>
+        <a href="#education">Education</a>
+        <a href="#publications">Publications</a>
+        <a href="#links">Links</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-card">
+          <div class="avatar-wrap">
+            <img src="assets/avatar.jpg" alt="Chen portrait" class="avatar" />
+          </div>
+
+          <div>
+            <h1 class="name">Chen Jia</h1>
+            <div class="title">
+              Incoming PhD Researcher in Medical AI
+            </div>
+
+            <p id="about">
+              I am interested in medical image analysis, trustworthy and reliable AI,
+              multi-view learning, and clinically meaningful AI systems.
+            </p>
+
+            <p>
+              My research focuses on building AI methods that are not only accurate,
+              but also robust, interpretable, and useful in real clinical workflows.
+            </p>
+
+            <p>
+              I previously worked on medical report generation, retrieval-augmented
+              methods, and multi-view anatomical correspondence learning for coronary
+              stenosis reporting.
+            </p>
+
+            <div class="button-row" id="links">
+              <a class="btn primary" href="assets/cv.pdf" target="_blank">Download CV</a>
+              <a class="btn" href="https://scholar.google.com/" target="_blank">Google Scholar</a>
+              <a class="btn" href="https://github.com/RoselleCalyx" target="_blank">GitHub</a>
+              <a class="btn" href="https://www.linkedin.com/" target="_blank">LinkedIn</a>
+              <a class="btn" href="mailto:chen.jia@tum.de">Email</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="education">
+      <div class="container">
+        <div class="section-card">
+          <h2 class="section-title">Education</h2>
+
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-date">2026 – Present</div>
+              <div class="timeline-title">PhD Researcher</div>
+              <div class="timeline-subtitle">Technical University of Munich / relAI</div>
+              <div class="muted">
+                Research in medical AI, reliable AI, and clinically grounded machine learning.
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="timeline-date">2023 – 2026</div>
+              <div class="timeline-title">M.Sc. in Data Engineering and Analytics</div>
+              <div class="timeline-subtitle">Technical University of Munich</div>
+              <div class="muted">
+                Focus on machine learning, medical image analysis, and report generation.
+              </div>
+            </div>
+
+            <div class="timeline-item">
+              <div class="timeline-date">2018 – 2022</div>
+              <div class="timeline-title">B.Sc. in Computer Science</div>
+              <div class="timeline-subtitle">Your University Name</div>
+              <div class="muted">
+                Add your undergraduate university, major, and any short note here.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="publications">
+      <div class="container">
+        <div class="section-card">
+          <h2 class="section-title">Selected Publications</h2>
+
+          <div class="pub-list">
+            <article class="pub-card">
+              <div class="pub-grid">
+                <img src="assets/paper1.jpg" alt="Paper 1 thumbnail" class="pub-thumb" />
+
+                <div>
+                  <h3 class="pub-title">
+                    MAC-XA: Multi-view Anatomy-Correspondence Fusion for Coronary Stenosis Reporting from X-ray Angiography
+                  </h3>
+                  <div class="pub-authors">
+                    <strong>Chen Jia</strong>, Co-author A, Co-author B
+                  </div>
+                  <div class="pub-venue">
+                    MICCAI 2026 submission
+                  </div>
+
+                  <div class="tag-row">
+                    <span class="tag">Medical Imaging</span>
+                    <span class="tag">Multi-view Learning</span>
+                    <span class="tag">Report Generation</span>
+                  </div>
+
+                  <div class="link-row">
+                    <a class="paper-link" href="#" target="_blank">Paper</a>
+                    <a class="paper-link" href="#" target="_blank">Code</a>
+                    <a class="paper-link" href="#" target="_blank">Project</a>
+                  </div>
+
+                  <button class="abstract-toggle" onclick="toggleAbstract(this)">
+                    Show abstract
+                  </button>
+
+                  <div class="abstract">
+                    We propose an explicit anatomy-correspondence learning framework for
+                    multi-view coronary X-ray angiography report generation. The method
+                    aligns anatomically corresponding regions across views and improves
+                    structured stenosis reporting by fusing clinically relevant evidence
+                    more reliably than implicit attention-based fusion.
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="pub-card">
+              <div class="pub-grid">
+                <img src="assets/paper2.jpg" alt="Paper 2 thumbnail" class="pub-thumb" />
+
+                <div>
+                  <h3 class="pub-title">
+                    Retrieval-Augmented Chest X-ray Report Generation with Clinically Guided Fusion
+                  </h3>
+                  <div class="pub-authors">
+                    First Author A, <strong>Chen Jia</strong>, Author C
+                  </div>
+                  <div class="pub-venue">
+                    MICCAI 2025
+                  </div>
+
+                  <div class="tag-row">
+                    <span class="tag">Chest X-ray</span>
+                    <span class="tag">Retrieval-Augmented</span>
+                    <span class="tag">Clinical AI</span>
+                  </div>
+
+                  <div class="link-row">
+                    <a class="paper-link" href="#" target="_blank">Paper</a>
+                    <a class="paper-link" href="#" target="_blank">Code</a>
+                    <a class="paper-link" href="#" target="_blank">Project</a>
+                  </div>
+
+                  <button class="abstract-toggle" onclick="toggleAbstract(this)">
+                    Show abstract
+                  </button>
+
+                  <div class="abstract">
+                    This work studies retrieval-augmented report generation for chest X-ray
+                    interpretation, with a focus on reducing semantic errors and improving
+                    clinical faithfulness in generated reports.
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="pub-card">
+              <div class="pub-grid">
+                <img src="assets/paper3.jpg" alt="Paper 3 thumbnail" class="pub-thumb" />
+
+                <div>
+                  <h3 class="pub-title">
+                    Legal Document Summarization with Domain-Aware Language Modeling
+                  </h3>
+                  <div class="pub-authors">
+                    Author A, <strong>Chen Jia</strong>, Author C
+                  </div>
+                  <div class="pub-venue">
+                    NAACL 2025
+                  </div>
+
+                  <div class="tag-row">
+                    <span class="tag">NLP</span>
+                    <span class="tag">Legal AI</span>
+                    <span class="tag">Summarization</span>
+                  </div>
+
+                  <div class="link-row">
+                    <a class="paper-link" href="#" target="_blank">Paper</a>
+                    <a class="paper-link" href="#" target="_blank">Project</a>
+                  </div>
+
+                  <button class="abstract-toggle" onclick="toggleAbstract(this)">
+                    Show abstract
+                  </button>
+
+                  <div class="abstract">
+                    We study domain-aware summarization for legal documents and investigate
+                    how task-specific modeling choices can improve summary quality and
+                    faithfulness in specialized domains.
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      © 2026 Chen Jia. Last updated: March 2026.
+    </div>
+  </footer>
+
+  <script>
+    function toggleAbstract(button) {
+      const abstract = button.nextElementSibling;
+      const isOpen = abstract.classList.contains("open");
+
+      if (isOpen) {
+        abstract.classList.remove("open");
+        button.textContent = "Show abstract";
+      } else {
+        abstract.classList.add("open");
+        button.textContent = "Hide abstract";
+      }
+    }
+  </script>
 </body>
 </html>
