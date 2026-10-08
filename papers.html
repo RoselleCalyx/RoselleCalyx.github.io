@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Papers · Chen Jia</title>
+  <meta name="description" content="Publications, preprints, code and data by Chen Jia." />
+  <meta name="theme-color" content="#04060d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="papers">
+  <header id="site-header"></header>
+
+  <!-- the lonely shore: a castle on the cliff, a figure on the rocks -->
+  <div class="scene shore" aria-hidden="true">
+    <svg viewBox="0 0 1600 360" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#101a3a" stop-opacity=".0" />
+          <stop offset=".25" stop-color="#0c1532" />
+          <stop offset="1" stop-color="#03050c" />
+        </linearGradient>
+        <linearGradient id="glint" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e9d8a8" stop-opacity=".55" />
+          <stop offset="1" stop-color="#e9d8a8" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <rect x="0" y="170" width="1600" height="190" fill="url(#sea)" />
+      <g fill="url(#glint)" opacity=".7">
+        <rect x="1180" y="214" width="70" height="1.5" /><rect x="1150" y="232" width="120" height="1.5" />
+        <rect x="1190" y="252" width="50" height="1.5" /><rect x="1130" y="272" width="150" height="1.5" />
+        <rect x="1170" y="296" width="90" height="1.5" />
+      </g>
+      <!-- far cliff & castle -->
+      <path fill="#070a16" d="M1240 210 C1290 150 1330 120 1360 92 L1372 70 L1390 60 L1420 64 L1460 86 L1520 110 L1600 118 L1600 214 Z" />
+      <g fill="#070a16">
+        <rect x="1372" y="22" width="14" height="50" /><path d="M1369 22 L1379 4 L1389 22Z" />
+        <rect x="1394" y="34" width="34" height="34" /><path d="M1392 34 L1411 14 L1430 34Z" />
+        <rect x="1436" y="44" width="12" height="40" /><path d="M1434 44 L1442 28 L1450 44Z" />
+        <rect x="1352" y="52" width="16" height="36" /><path d="M1350 52 L1360 38 L1370 52Z" />
+      </g>
+      <g fill="#f2c879">
+        <rect x="1377" y="34" width="3" height="5" /><rect x="1405" y="46" width="3" height="5" opacity=".8" />
+        <rect x="1416" y="52" width="3" height="5" /><rect x="1440" y="58" width="2.5" height="4" opacity=".7" />
+      </g>
+      <!-- foreground rocks and a lone figure -->
+      <path fill="#020308" d="M0 250 C60 236 110 226 160 232 C210 238 240 218 290 222 C340 228 380 250 430 262 C470 272 500 300 520 360 L0 360 Z" />
+      <path fill="#05070f" d="M180 236 C200 214 236 206 262 214 C280 220 286 232 280 240 Z" />
+      <g fill="#020308">
+        <circle cx="236" cy="190" r="7.5" />
+        <path d="M228 198 C222 210 222 222 226 232 L250 232 C254 222 252 208 244 198 Z" />
+        <path d="M244 214 C256 214 266 220 270 230 L250 232 Z" />
+      </g>
+    </svg>
+  </div>
+
+  <main class="page">
+    <div class="page-head">
+      <h1 class="page-title">Papers</h1>
+      <p class="page-sub">For a clearer universe.</p>
+    </div>
+
+    <div class="papers-layout">
+      <nav class="side-nav glass" id="kinds" aria-label="Paper types"></nav>
+      <div>
+        <div class="papers-tools">
+          <div class="chips" id="topics" aria-label="Topics"></div>
+          <label class="search">
+            <span class="sr-only">Search papers</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+            <input class="input" id="paperSearch" type="search" placeholder="Search papers…" autocomplete="off" />
+          </label>
+        </div>
+        <div class="paper-list" id="paperList"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script>window.SKY_OPTIONS = { moon: [0.62, 0.1], moonSize: 12 };</script>
+  <script src="js/config.js"></script>
+  <script src="js/sky.js"></script>
+  <script src="js/common.js"></script>
+  <script src="data/papers.js"></script>
+  <script src="js/papers.js"></script>
+</body>
+</html>

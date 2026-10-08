@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gallery · Chen Jia</title>
+  <meta name="description" content="Footprints on Earth, under the same sky." />
+  <meta name="theme-color" content="#04060d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="gallery">
+  <header id="site-header"></header>
+
+  <div class="scene mountains" aria-hidden="true">
+    <svg viewBox="0 0 1600 260" preserveAspectRatio="xMidYMax slice">
+      <path fill="#0b1124" d="M0 150 L120 96 L210 130 L330 52 L420 110 L520 70 L640 128 L760 60 L860 116 L980 40 L1090 112 L1210 74 L1320 120 L1440 66 L1600 118 L1600 260 L0 260Z" />
+      <path fill="#c9d4ea" opacity=".35" d="M330 52 L352 70 L340 68 L318 74Z M760 60 L784 80 L770 76 L748 84Z M980 40 L1008 64 L992 60 L966 70Z M1440 66 L1462 84 L1448 82 L1428 88Z" />
+      <path fill="#060914" d="M0 196 L160 150 L300 186 L460 140 L620 190 L800 150 L960 196 L1120 156 L1280 190 L1440 160 L1600 186 L1600 260 L0 260Z" />
+      <path fill="#03040a" d="M0 236 L200 210 L420 230 L640 214 L900 236 L1150 216 L1380 232 L1600 220 L1600 260 L0 260Z" />
+      <g fill="#03040a"><rect x="1210" y="204" width="26" height="16" /><path d="M1206 206 L1223 192 L1240 206Z" /></g>
+      <rect x="1219" y="210" width="5" height="5" fill="#ffcf7a" />
+    </svg>
+  </div>
+
+  <main class="page">
+    <div class="gallery-head">
+      <div class="page-head" style="margin:0">
+        <h1 class="page-title">Gallery</h1>
+        <p class="page-sub">Footprints on Earth,<br />under the same sky.</p>
+      </div>
+      <div class="view-switch" id="viewSwitch" role="tablist" aria-label="View">
+        <button type="button" class="active" data-view="wall">Photo wall</button>
+        <button type="button" data-view="map">World map</button>
+      </div>
+    </div>
+
+    <div class="gallery-layout">
+      <ol class="trail" id="trail" aria-label="Timeline"></ol>
+      <div>
+        <section id="wallView">
+          <div class="chips" id="tags" style="margin-bottom:18px" aria-label="Categories"></div>
+          <div class="album-story glass" id="albumStory"></div>
+          <div class="wall" id="wall"></div>
+        </section>
+        <section id="mapView" hidden>
+          <div class="map-wrap">
+            <div id="map"></div>
+            <div class="map-fallback" id="mapFallback">Unfolding the map…</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script>window.SKY_OPTIONS = { moon: [0.3, 0.08], moonSize: 12 };</script>
+  <script src="js/config.js"></script>
+  <script src="js/sky.js"></script>
+  <script src="js/common.js"></script>
+  <script src="data/gallery.js"></script>
+  <script src="js/gallery.js"></script>
+</body>
+</html>

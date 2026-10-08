@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Little Farm · Chen Jia</title>
+  <meta name="description" content="A small place for lovely lives: a snow leopard cat, an orchard through the seasons, and animals adopted by visitors." />
+  <meta name="theme-color" content="#04060d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="farm">
+  <header id="site-header"></header>
+
+  <main>
+    <div class="farm-viewport" id="farmViewport">
+      <div class="farm-world" id="world">
+        <div class="actors" id="actors"></div>
+      </div>
+    </div>
+
+    <div class="farm-head">
+      <h1 class="page-title">My Little Farm</h1>
+      <p class="page-sub">A small place for lovely lives.</p>
+      <div class="basket glass" id="basket" aria-live="polite"></div>
+    </div>
+
+    <div class="farm-actions" aria-label="Farm actions">
+      <button type="button" id="btnAdopt"><span data-icon="paw"></span>Adopt an Animal</button>
+      <button type="button" id="btnPlant"><span data-icon="sprout"></span>Plant a Tree</button>
+      <button type="button" id="btnHarvest"><span data-icon="basket"></span>Harvest</button>
+      <button type="button" id="btnAnimals"><span data-icon="heart"></span>My Animals</button>
+    </div>
+    <p class="farm-hint">Tap an animal to say hello · tap ripe fruit to pick it</p>
+  </main>
+
+  <script>window.SKY_OPTIONS = { moon: [0.7, 0.12], moonSize: 14, meteors: 0.8 };</script>
+  <script src="js/config.js"></script>
+  <script src="js/sky.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/backend.js"></script>
+  <script src="data/farm.js"></script>
+  <script src="js/farm-art.js"></script>
+  <script src="js/farm.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Starmap · Chen Jia</title>
+  <meta name="description" content="Click a star, meet a story. An interactive star map with constellations, planets and deep-sky objects." />
+  <meta name="theme-color" content="#04060d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="starmap">
+  <header id="site-header"></header>
+
+  <main class="page">
+    <div class="page-head">
+      <h1 class="page-title">Starmap</h1>
+      <p class="page-sub">Click a star, meet a story.</p>
+    </div>
+
+    <div class="starmap-layout">
+      <aside class="sm-side glass">
+        <div class="sm-modes" role="tablist" aria-label="What to show">
+          <button type="button" class="active" data-mode="const"><span data-icon="constel"></span>Constellations</button>
+          <button type="button" data-mode="planets"><span data-icon="planet"></span>Planets</button>
+          <button type="button" data-mode="deep"><span data-icon="galaxy"></span>Deep Sky</button>
+          <button type="button" data-mode="fav"><span data-icon="starO"></span>My Favorites</button>
+        </div>
+        <ul class="sm-list" id="smList"></ul>
+        <button class="btn sm-game" type="button" id="playQuiz"></button>
+      </aside>
+
+      <div class="chart-wrap">
+        <canvas id="chart" aria-label="Interactive star map. Use the list to choose constellations."></canvas>
+        <div class="quiz-bar glass" id="quizBar" aria-live="polite"></div>
+        <div class="chart-ctrl">
+          <button type="button" id="zoomIn" aria-label="Zoom in" data-icon="plus"></button>
+          <button type="button" id="zoomOut" aria-label="Zoom out" data-icon="minus"></button>
+          <button type="button" id="zoomReset" aria-label="Show whole sky" data-icon="reset"></button>
+        </div>
+        <div class="chart-note" id="chartNote"></div>
+      </div>
+
+      <aside class="sm-info glass" id="smInfo" aria-live="polite">
+        <div class="info-head"></div>
+        <canvas id="zoomChart" aria-hidden="true"></canvas>
+        <div>
+          <p class="story"></p>
+          <dl class="facts"></dl>
+          <button class="btn fav-btn" type="button" aria-pressed="false"></button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer id="site-footer"></footer>
+
+  <script>window.SKY_OPTIONS = { moon: false, milkyWay: false, meteors: 0.6 };</script>
+  <script src="js/config.js"></script>
+  <script src="js/sky.js"></script>
+  <script src="js/common.js"></script>
+  <script src="data/sky.js"></script>
+  <script src="js/starmap.js"></script>
+</body>
+</html>
