@@ -27,6 +27,7 @@ python -m http.server 8000
 - `data/papers.js`：论文。链接留空 `""` 就不显示对应按钮；`selected: true` 显示星标
 - `data/gallery.js`：足迹。**目前是示例数据，请换成你自己的。** 照片放进 `assets/gallery/`，填 `src`；`src` 为空时会自动画一幅油画风占位图
 - `data/bottles.js`：公开展示的漂流瓶（公开访客来信前请先征得对方同意）
+- 农场四季：所有访客共享同一个季节时钟，每季 8 分钟（一年 32 分钟）；樱桃和桃子夏天熟，苹果秋天熟，橙子冬天熟。`farm.html?season=winter` 可直接预览某个季节
 - `data/farm.js`：农场居民。也可以打开 `farm.html?keeper`，用“Adopt an Animal”直接生成一行代码，粘贴到 `residents` 里
 
 ## 主页说明

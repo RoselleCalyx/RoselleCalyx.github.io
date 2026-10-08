@@ -10,40 +10,64 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=20261008-farm" />
 </head>
 <body data-page="farm">
   <header id="site-header"></header>
 
-  <main>
-    <div class="farm-viewport" id="farmViewport">
-      <div class="farm-world" id="world">
-        <div class="actors" id="actors"></div>
+
+  <main class="farm-page">
+    <div class="farm-head">
+      <div class="farm-title-group">
+        <p class="kicker">A pocket of peace</p>
+        <h1 class="page-title">My Little Farm<span class="farm-title-star" aria-hidden="true">✧</span></h1>
+        <p class="page-sub">A small place for lovely lives.</p>
       </div>
+      <p class="farm-welcome">Stay a little. Watch the seasons turn.<br />Good things grow slowly here.</p>
     </div>
 
-    <div class="farm-head">
-      <h1 class="page-title">My Little Farm</h1>
-      <p class="page-sub">A small place for lovely lives.</p>
-      <div class="basket glass" id="basket" aria-live="polite"></div>
-    </div>
+    <section class="farm-frame" aria-label="An interactive woodland farm">
+      <div class="farm-scene-top">
+        <div class="farm-hud">
+          <div class="season-chip" id="seasonChip" aria-live="polite"></div>
+          <div class="basket" id="basket" aria-live="polite"></div>
+        </div>
+        <span class="farm-population"><span aria-hidden="true">♡</span><span id="residentCount">Little lives</span></span>
+      </div>
+      <div class="farm-viewport" id="farmViewport" tabindex="0" aria-label="Farm garden. On smaller screens, scroll sideways to explore.">
+        <div class="farm-world" id="world">
+          <div class="actors" id="actors"></div>
+        </div>
+      </div>
+      <div class="farm-scene-bottom">
+        <p class="farm-hint"><span aria-hidden="true">✧</span> Tap a little friend to say hello. Pick fruit when it is ripe.</p>
+        <span class="farm-pan-hint">← Explore the garden →</span>
+      </div>
+    </section>
 
     <div class="farm-actions" aria-label="Farm actions">
-      <button type="button" id="btnAdopt"><span data-icon="paw"></span>Adopt an Animal</button>
-      <button type="button" id="btnPlant"><span data-icon="sprout"></span>Plant a Tree</button>
-      <button type="button" id="btnHarvest"><span data-icon="basket"></span>Harvest</button>
-      <button type="button" id="btnAnimals"><span data-icon="heart"></span>My Animals</button>
+      <button type="button" id="btnAdopt"><span class="farm-action-icon" data-icon="paw"></span><span><b>Adopt an animal</b><small>A little friend, a new beginning</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnPlant"><span class="farm-action-icon" data-icon="sprout"></span><span><b>Plant a tree</b><small>Grow something lovely</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnHarvest"><span class="farm-action-icon" data-icon="basket"></span><span><b>Harvest</b><small>Gather the season’s little gifts</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnAnimals"><span class="farm-action-icon" data-icon="heart"></span><span><b>Meet the residents</b><small>Every little life has a story</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
     </div>
-    <p class="farm-hint">Tap an animal to say hello · tap ripe fruit to pick it</p>
+
+    <div class="farm-keeper-note">
+      <button class="farm-keeper" type="button" id="meetKeeper" aria-label="Meet Yuki, keeper of the farm">
+        <img src="assets/farm/snowcat.webp" alt="" width="320" height="320" />
+        <span><small>Keeper of the orchard</small><b>Yuki is keeping watch.</b><span>Usually from the warmest rock in the garden.</span></span>
+      </button>
+      <p>Somewhere between the stars and the trees,<br /><em>there is a place to simply be.</em></p>
+    </div>
   </main>
 
-  <script>window.SKY_OPTIONS = { moon: [0.7, 0.12], moonSize: 14, meteors: 0.8 };</script>
+  <script>window.SKY_OPTIONS = { moon: false, milkyWay: false, meteors: 0.12 };</script>
   <script src="js/config.js"></script>
   <script src="js/sky.js"></script>
   <script src="js/common.js"></script>
   <script src="js/backend.js"></script>
   <script src="data/farm.js"></script>
-  <script src="js/farm-art.js"></script>
-  <script src="js/farm.js"></script>
+  <script src="js/farm-art.js?v=20261008-farm"></script>
+  <script src="js/farm.js?v=20261008-farm"></script>
 </body>
 </html>
