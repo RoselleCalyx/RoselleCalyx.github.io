@@ -782,3 +782,10 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 @keyframes walk-frames { from { background-position-x: 0%; } to { background-position-x: 120%; } }
 .farm-calm .walk-sprite { animation: none !important; background-position-x: 0%; }
 @media (prefers-reduced-motion: reduce) { .walk-sprite { animation: none !important; background-position-x: 0%; } }
+
+/* ---------- Farm: living trees (painted base cross-fade + simulation canvas) ---------- */
+.tree-inner.living { position: relative; }
+.tree-inner.living .base-b { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 1.2s linear; }
+.tree-inner.living .base-a { transition: opacity 1.2s linear; }
+.tree-sim { position: absolute; left: -25%; top: -8%; width: 150%; height: 116%; pointer-events: none; }
+.tree-inner.living .fruit-layer { position: absolute; inset: 0; }

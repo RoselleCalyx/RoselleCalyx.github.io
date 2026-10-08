@@ -26,9 +26,13 @@
   const SEASON_MS = 8 * 60 * 1000;
   const ICONS = { spring: "✿", summer: "☀", autumn: "❦", winter: "❄" };
   const forced = SEASONS.includes(params.get("season")) ? params.get("season") : null;
+  const SPEED = Math.min(240, Math.max(1, parseFloat(params.get("speed")) || 1));   // ?speed=30 fast-forwards the year
+  const PIN = parseFloat(params.get("p"));                                            // ?p=0.5 freezes the season at halfway
+  const T0 = Date.now();
   function clock() {
-    const now = Date.now(), abs = Math.floor(now / SEASON_MS);
-    return { abs, name: forced || SEASONS[abs % 4], left: SEASON_MS - (now % SEASON_MS) };
+    const now = T0 + (Date.now() - T0) * SPEED, abs = Math.floor(now / SEASON_MS);
+    const left = PIN >= 0 && PIN <= 1 ? SEASON_MS * (1 - PIN) : SEASON_MS - (now % SEASON_MS);
+    return { abs, name: forced || SEASONS[abs % 4], left, p: 1 - left / SEASON_MS };
   }
   let season = clock();
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -299,7 +303,7 @@
     if (!t.picked || Array.isArray(t.picked)) t.picked = { abs: -1, list: [] };
     delete t.stage; delete t.since; delete t.cycle; delete t.fruitN;
   });
-  const saveTrees = () => store.set("farm-trees", trees.map(({ el, art, url, ...t }) => t));
+  const saveTrees = () => store.set("farm-trees", trees.map(({ el, art, url, sim, ...t }) => t));
   const isSapling = (t) => season.abs <= t.plantedAbs && (t.water || 0) < 3;
   const pickedNow = (t) => (t.picked.abs === season.abs ? t.picked.list : []);
   function renderTree(t) {
@@ -318,8 +322,12 @@
     t.el.style.top = slot.y + "%";
     t.el.style.width = 19.5 * s * wide + "%";
     t.el.style.zIndex = Math.round(slot.y * 10) - 1;
-    const out = treeSVG({ type: t.type, seed: t.seed, stage: isSapling(t) ? "sapling" : "mature", season: season.name, picked: pickedNow(t) });
-    if (t.art !== out.art) {                       // re-rasterise only when the tree itself changes
+    const out = treeSVG({ type: t.type, seed: t.seed, stage: isSapling(t) ? "sapling" : "mature", season: season.name, picked: pickedNow(t), live: !!window.OrchardSim });
+    if (!isSapling(t) && window.OrchardSim) {
+      // a living tree: painted base + simulated blossoms, fruit, leaves and snow
+      if (!t.sim) { t.el.innerHTML = OrchardSim.markup(); t.sim = OrchardSim.attach(t, t.el); t.art = "living"; t.url = null; }
+    } else if (t.art !== out.art) {
+      if (t.sim) { OrchardSim.detach(t); t.sim = null; }                       // re-rasterise only when the tree itself changes
       t.art = out.art;
       if (t.url && t.url.startsWith("blob:")) URL.revokeObjectURL(t.url);
       t.url = out.src || URL.createObjectURL(new Blob([out.art], { type: "image/svg+xml" }));
@@ -352,6 +360,7 @@
       if (!isSapling(t)) { renderTree(t); toast(`The ${T.label.toLowerCase()} tree has grown up!`); } else toast(`Watered (${t.water}/3).`);
     };
     el.querySelector("[data-dig]").onclick = () => {
+      if (window.OrchardSim) OrchardSim.detach(t);
       t.el.remove(); trees = trees.filter((x) => x !== t); saveTrees(); closeBubble();
       toast("The tree returns to the soil. Its place is free again.");
     };
@@ -616,6 +625,7 @@
     if (!calm) animals.forEach((a) => stepAnimal(a, dt, now));
     positionBubble();
     drawWeather(calm ? 0 : dt, calm ? 0 : time);
+    if (window.OrchardSim) OrchardSim.update(dt, time, season, clock().p, calm, Math.sin(time * 0.15) * 14 / 10);
     tick += dt;
     if (tick > 1) {
       tick = 0;

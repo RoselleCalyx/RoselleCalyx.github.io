@@ -92,11 +92,11 @@
     let ripe = 0;
     let fruits = ph.fruit ? slots.map(([x,y],i) => {
       x += Math.sin(tree.seed * 3 + i) * 6; y += Math.cos(tree.seed + i) * 5;
-      if (ph.fruit !== "ripe") return smallFruit(x,y,ph.fruit === "turning" ? "fr-turning" : "fr-unripe");
+      if (ph.fruit !== "ripe") return tree.live ? "" : smallFruit(x,y,ph.fruit === "turning" ? "fr-turning" : "fr-unripe");   // growing fruit is simulated
       if (picked.has(i)) return "";
       ripe++; return fruitSVG(tree.type,x,y,i);
     }).join("") : "";
-    if (ph.flowers) fruits += slots.slice(0,6).map(([x,y]) => '<use href="#fl-white" x="'+x+'" y="'+y+'" width="10" height="10"/>').join("");
+    if (ph.flowers && !tree.live) fruits += slots.slice(0,6).map(([x,y]) => '<use href="#fl-white" x="'+x+'" y="'+y+'" width="10" height="10"/>').join("");
     return {
       src, art: src,
       fruits: fruits ? '<svg class="fruits" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">' + fruits + '</svg>' : "",

@@ -1,0 +1,428 @@
+/* =====================================================================
+   Living orchard: a simulation layer over the painted fruit trees.
+
+   The watercolour sprites (assets/farm/tree-<season>.webp) stay as the
+   base and cross-fade between seasons. On top, one canvas per tree
+   grows what changes slowly through the season (progress p, 0 → 1):
+     spring  buds swell and open one by one; late spring the petals fall
+     summer  small green fruit sets and grows; cherries and peaches blush
+     autumn  leaves fall more and more and pile up under the tree
+     winter  snow builds up along the branches, sometimes slides off,
+             and drifts at the foot of the trunk; it melts as spring nears
+   Anchor points come from the painting itself: blossoms open where the
+   spring painting has blossom, snow settles on the top edge of branches,
+   falling leaves take the colour of the painted leaves.
+   Everything is drawn in the painting's 320 × 320 coordinates.
+   ===================================================================== */
+(function () {
+  const SRC = { spring: "assets/farm/tree-spring.webp", summer: "assets/farm/tree-summer.webp", autumn: "assets/farm/tree-autumn.webp", winter: "assets/farm/tree-winter.webp" };
+  const lowPower = (navigator.hardwareConcurrency || 4) <= 4 || matchMedia("(pointer: coarse)").matches;
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  const mixRGB = (a, b, t) => `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`;
+
+  /* ---------- read the paintings ---------- */
+  const A = { ground: 302, tops: { winter: [], summer: [] }, blossoms: [], leaves: { autumn: [], summer: [] } };
+  let ready = null;
+  function load(src) {
+    return new Promise((ok, bad) => { const i = new Image(); i.decoding = "async"; i.onload = () => ok(i); i.onerror = bad; i.src = src; });
+  }
+  function scan(img, fn) {
+    const N = 256, S = 320 / N;
+    const c = document.createElement("canvas"); c.width = c.height = N;
+    const x = c.getContext("2d", { willReadFrequently: true });
+    x.drawImage(img, 0, 0, N, N);
+    const d = x.getImageData(0, 0, N, N).data;
+    const alpha = (i, j) => (i < 0 || j < 0 || i >= N || j >= N ? 0 : d[(j * N + i) * 4 + 3]);
+    for (let j = 2; j < N - 2; j++) for (let i = 2; i < N - 2; i++) {
+      const k = (j * N + i) * 4;
+      if (d[k + 3] < 200) continue;
+      fn(i * S, j * S, d[k], d[k + 1], d[k + 2], alpha(i, j - 3) < 40, j / N, i, j, alpha);
+    }
+  }
+  // keep one point per grid cell so anchors spread evenly
+  function spread(list, cell) {
+    const seen = new Set(), out = [];
+    for (const p of list) { const key = Math.floor(p[0] / cell) + "," + Math.floor(p[1] / cell); if (!seen.has(key)) { seen.add(key); out.push(p); } }
+    return out;
+  }
+  function prepare() {
+    if (ready) return ready;
+    ready = Promise.all(Object.entries(SRC).map(([k, s]) => load(s).then((img) => [k, img]))).then((pairs) => {
+      const img = Object.fromEntries(pairs);
+      let base = 0;
+      const S = 320 / 256, tops = new Map();
+      scan(img.winter, (x, y, r, g, b, top, fy, i, j, alpha) => {
+        // a branch top thick enough to hold snow
+        if (top && fy < 0.8 && alpha(i, j + 2) > 200 && alpha(i, j + 3) > 200) {
+          A.tops.winter.push([x, y, i, j]);
+          (tops.get(i) || tops.set(i, []).get(i)).push(j);
+        }
+        if (y > base) base = y;
+      });
+      // the slope of the branch under each point, from neighbouring top edges
+      const near = (i, j) => { const col = tops.get(i); if (!col) return null; let best = null; for (const y of col) if (Math.abs(y - j) <= 3 && (best == null || Math.abs(y - j) < Math.abs(best - j))) best = y; return best; };
+      A.tops.winter = A.tops.winter.map(([x, y, i, j]) => {
+        const l = near(i - 3, j), r = near(i + 3, j);
+        const ang = l != null && r != null ? Math.atan2(r - l, 6) : l != null ? Math.atan2(j - l, 3) : r != null ? Math.atan2(r - j, 3) : 0;
+        return [x, y, ang];
+      });
+      A.ground = base - 4;
+      const ctops = new Map();
+      scan(img.summer, (x, y, r, g, b, top, fy, i, j, alpha) => {
+        // upward-facing, fairly level top of the crown (where snow can settle on an evergreen)
+        if (top && fy < 0.62 && alpha(i - 3, j) > 200 && alpha(i + 3, j) > 200 && alpha(i, j + 3) > 200) {
+          A.tops.summer.push([x, y, i, j]);
+          (ctops.get(i) || ctops.set(i, []).get(i)).push(j);
+        }
+        if (fy < 0.72 && g > r) A.leaves.summer.push([x, y, r, g, b]);
+      });
+      scan(img.spring, (x, y, r, g, b, top, fy) => { if (fy < 0.72 && r + g + b > 540 && r >= g) A.blossoms.push([x, y, r, g, b]); });
+      scan(img.autumn, (x, y, r, g, b, top, fy) => { if (fy < 0.72 && r > g + 18) A.leaves.autumn.push([x, y, r, g, b]); });
+      A.tops.winter = spread(A.tops.winter, 5);
+      const cnear = (i, j) => { const col = ctops.get(i); if (!col) return null; let best = null; for (const y of col) if (Math.abs(y - j) <= 3 && (best == null || Math.abs(y - j) < Math.abs(best - j))) best = y; return best; };
+      A.tops.summer = spread(A.tops.summer.map(([x, y, i, j]) => { const l = cnear(i - 3, j), r = cnear(i + 3, j); return [x, y, l != null && r != null ? Math.atan2(r - l, 6) : 0]; }), 6);
+      A.blossoms = spread(A.blossoms, 5);
+      A.leaves.autumn = spread(A.leaves.autumn, 4);
+      A.leaves.summer = spread(A.leaves.summer, 4);
+      return A;
+    });
+    return ready;
+  }
+  function pick(list, n, r) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
+    return a.slice(0, n);
+  }
+
+  /* ---------- small sprites ---------- */
+  const FLOWER = {
+    cherry: { petal: "#fbd0dc", edge: "#f2a3bb", eye: "#e0607f", bud: "#e57a98" },
+    peach: { petal: "#f8b2c6", edge: "#e6799a", eye: "#b8405f", bud: "#d9587c" },
+    apple: { petal: "#fff7f6", edge: "#f4c7cf", eye: "#e2b84a", bud: "#ef9fae" },
+    orange: { petal: "#fffdf6", edge: "#efe6cf", eye: "#f0c040", bud: "#f4ead2" }
+  };
+  const sprites = {};
+  function flowerSprite(type) {
+    if (sprites[type]) return sprites[type];
+    const f = FLOWER[type], S = 48, c = document.createElement("canvas"); c.width = c.height = S;
+    const g = c.getContext("2d"), m = S / 2;
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+      g.save(); g.translate(m + Math.cos(a) * 9.5, m + Math.sin(a) * 9.5); g.rotate(a + Math.PI / 2);
+      const gr = g.createRadialGradient(0, 4, 1, 0, 0, 11);
+      gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.55, f.petal); gr.addColorStop(1, f.edge);
+      g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, 7.2, 10.5, 0, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
+    g.fillStyle = f.eye; g.beginPath(); g.arc(m, m, 3.4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#f8e08a";
+    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; g.beginPath(); g.arc(m + Math.cos(a) * 5, m + Math.sin(a) * 5, 1, 0, Math.PI * 2); g.fill(); }
+    return (sprites[type] = c);
+  }
+  function butterflySprite(col) {
+    const key = "b" + col;
+    if (sprites[key]) return sprites[key];
+    const c = document.createElement("canvas"); c.width = 32; c.height = 24;
+    const g = c.getContext("2d");
+    g.fillStyle = col;
+    g.beginPath(); g.ellipse(9, 9, 8, 7, -0.4, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(10, 17, 6, 5, 0.4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "rgba(255,255,255,.55)"; g.beginPath(); g.arc(8, 8, 2.4, 0, Math.PI * 2); g.fill();
+    return (sprites[key] = c);
+  }
+
+  /* ---------- what each tree does through the year ---------- */
+  const RIPE = { apple: [214, 59, 51], peach: [244, 162, 124], orange: [243, 154, 31], cherry: [179, 20, 43] };
+  const GREEN = [190, 206, 96];
+  const EVERGREEN = { orange: true };
+  // the painted base: which two sprites to show and how far we are between them
+  function base(type, season, p) {
+    if (EVERGREEN[type]) return ["summer", "summer", 0];
+    if (season === "spring") return p < 0.6 ? ["winter", "spring", smooth(0.12, 0.42, p)] : ["spring", "summer", smooth(0.62, 0.96, p)];
+    if (season === "autumn") return ["summer", "autumn", smooth(0.04, 0.45, p)];
+    if (season === "winter") return ["autumn", "winter", smooth(0, 0.2, p)];
+    return ["summer", "summer", 0];
+  }
+  // growing (not yet ripe) fruit; ripe fruit is the clickable SVG layer
+  function growth(type, season, p) {
+    if (type === "cherry" || type === "peach") return season === "spring" ? { g: smooth(0.55, 1, p), ripe: 0.65 * smooth(0.82, 1, p), from: 0.55, to: 0.82 } : null;
+    if (type === "apple") return season === "summer" ? { g: 0.25 + 0.75 * p, ripe: 0.35 * smooth(0.72, 1, p), from: 0, to: 0.3 } : null;
+    if (type === "orange") {
+      if (season === "summer") return { g: 0.2 + 0.5 * p, ripe: 0, from: 0, to: 0.3 };
+      if (season === "autumn") return { g: 0.7 + 0.3 * p, ripe: 0.85 * p, from: 0, to: 0 };
+    }
+    return null;
+  }
+  const FRUIT_SLOTS = [[91, 86], [154, 73], [212, 104], [115, 135], [186, 151], [76, 161], [240, 173], [154, 181], [205, 199]];
+
+  /* ---------- one living tree ---------- */
+  const sims = new Set();
+  function markup() {
+    return `<div class="tree-inner living"><img class="tree-img base-a" alt="" draggable="false"><img class="tree-img base-b" alt="" draggable="false"><canvas class="tree-sim" aria-hidden="true"></canvas><div class="fruit-layer"></div></div>`;
+  }
+  function attach(tree, el) {
+    const sim = {
+      tree, el, a: el.querySelector(".base-a"), b: el.querySelector(".base-b"), cv: el.querySelector(".tree-sim"),
+      ctx: null, cw: 0, ch: 0, dpr: 1, flowers: [], caps: [], parts: [], resting: [], flyers: [],
+      abs: null, slideT: 0, leafT: 0, petalT: 0, built: false, lastDraw: 0
+    };
+    sim.ctx = sim.cv.getContext("2d");
+    sim.a.src = SRC.summer;
+    sims.add(sim);
+    prepare().then(() => build(sim)).catch(() => {});
+    return sim;
+  }
+  function detach(tree) { for (const s of sims) if (s.tree === tree) sims.delete(s); }
+  function build(sim) {
+    const t = sim.tree, r = rng(t.seed * 9973 + 17), k = lowPower ? 0.6 : 1;
+    const nFlowers = Math.round((t.type === "cherry" ? 130 : t.type === "orange" ? 50 : 95) * k);
+    const fsrc = EVERGREEN[t.type] ? A.tops.summer : A.blossoms;
+    sim.flowers = pick(fsrc, nFlowers, r).map((p, i) => {
+      const bud = 0.02 + r() * 0.22;
+      return { x: p[0] + (r() - 0.5) * 3, y: p[1] + (r() - 0.5) * 3, s: 6.5 + r() * 4.5, rot: r() * 6.28, bud, open: bud + 0.1 + r() * 0.2, drop: 0.6 + r() * 0.34, dropped: false, ph: r() * 6.28 };
+    });
+    const csrc = EVERGREEN[t.type] ? A.tops.summer : A.tops.winter;
+    sim.caps = pick(csrc, Math.round((EVERGREEN[t.type] ? 80 : 140) * k), r).map(([x, y, ang]) => ({ x, y, ang: ang || 0, start: r() * 0.45, w: 2.2 + r() * 2.2, k: 1 }));
+    sim.leafSrc = t.type === "orange" ? A.leaves.summer : A.leaves.autumn;
+    sim.flyers = Array.from({ length: t.type === "cherry" ? 2 : 1 }, (_, i) => ({ ph: r() * 6.28 + i * 2, col: ["#f6e49a", "#bcd6f4", "#fdf7f2", "#f7c6d8"][(r() * 4) | 0] }));
+    sim.built = true;
+  }
+  function fit(sim) {
+    const w = sim.cv.clientWidth, h = sim.cv.clientHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.25 : 1.75);
+    if (w && (w !== sim.cw || h !== sim.ch || dpr !== sim.dpr)) {
+      sim.cw = w; sim.ch = h; sim.dpr = dpr;
+      sim.cv.width = Math.round(w * dpr); sim.cv.height = Math.round(h * dpr);
+    }
+  }
+  function spawn(sim, kind, x, y, col, size) {
+    if (sim.parts.length > (lowPower ? 90 : 180)) return;
+    sim.parts.push({ kind, x, y, col, size, vx: (Math.random() - 0.5) * 8, vy: kind === "clump" ? 10 : 4, rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 3, ph: Math.random() * 6.28 });
+  }
+
+  function step(sim, dt, time, season, p, calm, wind) {
+    if (!sim.built) return;
+    const t = sim.tree, type = t.type;
+    // a new season: buds reset, snow comes back
+    if (sim.abs !== season.abs) {
+      if (sim.abs != null && season.name !== "autumn") sim.resting = sim.resting.filter((q) => q.kind !== "leaf" || Math.random() < 0.3);
+      sim.abs = season.abs;
+      sim.flowers.forEach((f) => { f.dropped = season.name === "spring" ? p >= f.drop : true; });
+      sim.caps.forEach((c) => { c.k = 1; });
+    }
+    // painted base, cross-faded
+    const [ka, kb, mix] = base(type, season.name, p);
+    if (sim.ka !== ka) { sim.a.src = SRC[ka]; sim.ka = ka; }
+    if (sim.kb !== kb) { sim.b.src = SRC[kb]; sim.kb = kb; }
+    // both sprites have transparent backgrounds: hold both opaque through the middle, then let the old one go,
+    // so the trunk never turns see-through and old leaves never show through the new picture
+    sim.b.style.opacity = Math.min(1, mix * 2).toFixed(3);
+    sim.a.style.opacity = Math.min(1, (1 - mix) * 2).toFixed(3);
+
+    if (!calm) {
+      // spring: flowers drop their petals one by one
+      if (season.name === "spring") for (const f of sim.flowers) {
+        if (!f.dropped && p >= f.drop) {
+          f.dropped = true;
+          const c = FLOWER[type].petal;
+          for (let i = 0; i < 3; i++) spawn(sim, "petal", f.x + (Math.random() - 0.5) * 5, f.y, c, 2.6 + Math.random() * 1.4);
+        }
+      }
+      // autumn (and the first days of winter): leaves let go
+      if ((season.name === "autumn" || (season.name === "winter" && p < 0.18)) && !EVERGREEN[type] && sim.leafSrc.length) {
+        const rate = season.name === "autumn" ? 0.4 + 5 * p * p : 2.5 * (1 - p / 0.18);
+        sim.leafT += dt * rate;
+        while (sim.leafT > 1) {
+          sim.leafT -= 1;
+          const q = sim.leafSrc[(Math.random() * sim.leafSrc.length) | 0];
+          spawn(sim, "leaf", q[0], q[1], `rgb(${q[2]},${q[3]},${q[4]})`, 3.2 + Math.random() * 2.2);
+        }
+      }
+      if (season.name === "summer" && Math.random() < dt * 0.12 && sim.leafSrc.length) {
+        const q = A.leaves.summer[(Math.random() * A.leaves.summer.length) | 0];
+        if (q) spawn(sim, "leaf", q[0], q[1], `rgb(${q[2]},${q[3]},${q[4]})`, 3.4);
+      }
+      // winter: now and then a clump of snow slides off a branch
+      if (season.name === "winter" && p > 0.25 && p < 0.85) {
+        sim.slideT += dt * 0.22;
+        if (sim.slideT > 1) {
+          sim.slideT = 0;
+          const c = sim.caps[(Math.random() * sim.caps.length) | 0];
+          if (c && c.k > 0.8) { c.k = 0.1; spawn(sim, "clump", c.x, c.y, "#f4f7fc", 2 + c.w * 0.6); }
+        }
+      }
+      sim.caps.forEach((c) => { if (c.k < 1) c.k = Math.min(1, c.k + dt * 0.015); });
+      // falling things
+      const ground = A.ground;
+      for (let i = sim.parts.length - 1; i >= 0; i--) {
+        const q = sim.parts[i];
+        const fall = q.kind === "clump" ? 120 : q.kind === "leaf" ? 26 : 18;
+        q.vy += (fall - q.vy) * Math.min(1, dt * (q.kind === "clump" ? 3 : 1.4));
+        q.y += q.vy * dt;
+        q.x += (q.vx + wind * 6 + (q.kind === "clump" ? 0 : Math.sin(time * 2.2 + q.ph) * 16)) * dt;
+        q.rot += q.vr * dt * (q.kind === "clump" ? 0 : 1);
+        if (q.y >= ground - Math.random() * 6) {
+          sim.parts.splice(i, 1);
+          if (q.kind !== "clump") { q.life = 14 + Math.random() * 16; q.y = Math.min(q.y, ground); sim.resting.push(q); }
+        }
+      }
+      for (let i = sim.resting.length - 1; i >= 0; i--) {
+        const q = sim.resting[i];
+        q.life -= dt * (season.name === "autumn" ? 0.35 : 1);
+        if (q.life <= 0) sim.resting.splice(i, 1);
+      }
+      if (sim.resting.length > 160) sim.resting.splice(0, sim.resting.length - 160);
+    }
+    // draw at most ~30 fps (a few times a second when calm)
+    const minGap = calm ? 1 : 1 / 30;
+    if (time - sim.lastDraw < minGap) return;
+    sim.lastDraw = time;
+    draw(sim, time, season, p, calm);
+  }
+
+  function draw(sim, time, season, p, calm) {
+    fit(sim);
+    const { ctx, cw, dpr } = sim, t = sim.tree, type = t.type;
+    if (!cw) return;
+    // the canvas overhangs the tree box: 25% each side, 8% above, 8% below
+    const k = (cw / 1.5) / 320;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, sim.cv.width, sim.cv.height);
+    ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * cw * (0.25 / 1.5), dpr * (cw / 1.5) * 0.08);
+    const ground = A.ground;
+
+    // snow drift at the foot of the tree
+    let drift = 0;
+    if (season.name === "winter") drift = smooth(0.05, 0.65, p) * (1 - smooth(0.86, 1, p));
+    if (drift > 0.01) {
+      ctx.fillStyle = "rgba(198,212,234,.9)";
+      ctx.beginPath(); ctx.ellipse(160, ground + 3, 30 + 82 * drift, 3 + 6 * drift, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(246,249,253,.95)";
+      ctx.beginPath(); ctx.ellipse(158, ground + 1.5, 26 + 76 * drift, 2.4 + 5 * drift, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // leaves and petals resting on the ground
+    for (const q of sim.resting) {
+      ctx.globalAlpha = clamp(q.life / 4, 0, 1) * 0.95;
+      ctx.fillStyle = q.col;
+      ctx.beginPath(); ctx.ellipse(q.x, q.y, q.size, q.size * 0.45, q.rot, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // snow building up on the branches
+    if (season.name === "winter") {
+      const melt = 1 - smooth(0.84, 1, p);
+      for (const c of sim.caps) {
+        const th = 3.6 * smooth(c.start, c.start + 0.35, p) * melt * c.k;
+        if (th < 0.25) continue;
+        // a soft ridge of snow lying along the branch
+        ctx.save(); ctx.translate(c.x, c.y + 0.6); ctx.rotate(c.ang);
+        ctx.fillStyle = "rgba(170,188,218,.8)";
+        ctx.beginPath(); ctx.ellipse(0.3, -th * 0.2, c.w + th * 1.1, th * 0.42, 0, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#f7faff";
+        ctx.beginPath(); ctx.ellipse(0, -th * 0.28, c.w + th * 1.05, th * 0.55, 0, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // blossoms: buds swell, open, then drop
+    if (season.name === "spring" || (season.name === "winter" && p > 0.9 && !EVERGREEN[type])) {
+      const spr = flowerSprite(type), bud = FLOWER[type].bud;
+      for (const f of sim.flowers) {
+        if (season.name === "winter") {           // the very first buds, late in winter
+          const s = smooth(0.9, 1, p) * (f.bud < 0.1 ? 1 : 0);
+          if (s > 0) { ctx.fillStyle = bud; ctx.beginPath(); ctx.arc(f.x, f.y, 0.8 * s, 0, Math.PI * 2); ctx.fill(); }
+          continue;
+        }
+        if (p < f.bud || f.dropped) continue;
+        const o = smooth(f.bud + 0.04, f.open, p);
+        const sway = 1 + 0.04 * Math.sin(time * 1.6 + f.ph);
+        if (o < 0.98) {
+          ctx.globalAlpha = 1 - o * 0.8;
+          ctx.fillStyle = bud;
+          ctx.beginPath(); ctx.ellipse(f.x, f.y, 1 + smooth(f.bud, f.bud + 0.05, p) * 1.6, 1.4 + smooth(f.bud, f.bud + 0.05, p) * 2, f.rot, 0, Math.PI * 2); ctx.fill();
+        }
+        if (o > 0.02) {
+          const fade = 1 - smooth(f.drop - 0.04, f.drop, p);
+          const s = f.s * (0.35 + 0.65 * o) * sway;
+          ctx.globalAlpha = Math.min(1, o * 1.4) * fade;
+          ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.rot + Math.sin(time * 0.9 + f.ph) * 0.05);
+          ctx.drawImage(spr, -s / 2, -s / 2, s, s);
+          ctx.restore();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // fruit setting and growing (ripe fruit is the clickable layer above)
+    const gr = growth(type, season.name, p);
+    if (gr) {
+      FRUIT_SLOTS.forEach(([x, y], i) => {
+        x += Math.sin(t.seed * 3 + i) * 6; y += Math.cos(t.seed + i) * 5;
+        const appear = gr.from + hash(t.seed * 31 + i) * (gr.to - gr.from);
+        const size = gr.g * smooth(appear, appear + 0.15, p);
+        if (size < 0.04) return;
+        const col = mixRGB(GREEN, RIPE[type], gr.ripe * (0.7 + 0.3 * hash(i + t.seed)));
+        const drawOne = (cx, cy, R) => {
+          ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+          ctx.lineWidth = Math.max(0.6, R * 0.16); ctx.strokeStyle = "rgba(58,70,22,.7)"; ctx.stroke();
+          ctx.fillStyle = "rgba(0,0,0,.16)"; ctx.beginPath(); ctx.arc(cx + R * 0.25, cy + R * 0.3, R * 0.75, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.beginPath(); ctx.arc(cx - R * 0.35, cy - R * 0.35, R * 0.3, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "#5a3b1e"; ctx.lineWidth = 1.1;
+        };
+        ctx.strokeStyle = "#5a3b1e"; ctx.lineWidth = 1.1;
+        if (type === "cherry") {
+          const R = 4.8 * size;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x - 5, y + 6, x - 6.5, y + 15 - R); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 4, y + 6, x + 5, y + 15 - R); ctx.stroke();
+          drawOne(x - 6.5, y + 15, R); drawOne(x + 5, y + 15, R);
+        } else {
+          const R = 7.4 * size;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 11 - R); ctx.stroke();
+          drawOne(x, y + 11, R);
+        }
+      });
+    }
+
+    // butterflies in spring and summer
+    if (!calm && (season.name === "spring" || season.name === "summer")) {
+      for (const b of sim.flyers) {
+        const bx = 160 + Math.sin(time * 0.31 + b.ph) * 95 + Math.sin(time * 0.9 + b.ph) * 18;
+        const by = 120 + Math.sin(time * 0.47 + b.ph * 2) * 55;
+        const flap = Math.abs(Math.sin(time * 13 + b.ph)) * 0.85 + 0.15;
+        const dir = Math.cos(time * 0.31 + b.ph) > 0 ? 1 : -1;
+        const spr = butterflySprite(b.col);
+        ctx.save(); ctx.translate(bx, by); ctx.scale(dir, 1);
+        ctx.globalAlpha = 0.95;
+        ctx.save(); ctx.scale(flap, 1); ctx.drawImage(spr, -16, -12, 16, 12); ctx.restore();
+        ctx.save(); ctx.scale(-flap, 1); ctx.drawImage(spr, -16, -12, 16, 12); ctx.restore();
+        ctx.fillStyle = "#4a3a2c"; ctx.fillRect(-0.6, -6, 1.2, 8);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // things falling right now
+    for (const q of sim.parts) {
+      ctx.fillStyle = q.col;
+      if (q.kind === "clump") { ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, Math.PI * 2); ctx.fill(); continue; }
+      const flip = Math.abs(Math.cos(time * 3 + q.ph));
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.scale(1, 0.3 + flip * 0.7);
+      ctx.beginPath();
+      if (q.kind === "leaf") { ctx.moveTo(-q.size, 0); ctx.quadraticCurveTo(0, -q.size * 0.8, q.size, 0); ctx.quadraticCurveTo(0, q.size * 0.8, -q.size, 0); }
+      else ctx.ellipse(0, 0, q.size, q.size * 0.62, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function update(dt, time, season, p, calm, wind) {
+    for (const s of sims) {
+      if (!s.el.isConnected) { sims.delete(s); continue; }
+      step(s, dt, time, season, p, calm, wind || 0);
+    }
+  }
+
+  window.OrchardSim = { prepare, markup, attach, detach, update };
+})();
