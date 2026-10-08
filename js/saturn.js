@@ -22,6 +22,7 @@
   if (!story || !cS || !cF) return;
   const land = document.getElementById("heroLand");
   const ui = document.getElementById("heroUI");
+  const cosmos = document.getElementById("heroCosmos");
   const dim = document.getElementById("heroDim");
   const finale = document.getElementById("finale");
   const logEl = document.getElementById("missionLog");
@@ -35,8 +36,8 @@
   const B = 0.33;                                        // ring opening angle (~19°)
   const MOONS = [{ x: 1550, y: 222, r: 30 }, { x: 1455, y: 437, r: 11 }];
   const SUN = { x: 960, y: 602 };                        // the glow on the horizon
-  const CASSINI = { x: 920, y: 368, ang: -2.74, size: 380 };   // start pose (boom tip → dish ≈ 380 px)
-  const ENTRY = { x: 742, y: 292 };                      // where it meets the clouds of Saturn
+  const CASSINI = { x: 1080, y: 195, size: 164 };   // projected foreground scale
+  const ENTRY = { x: 805, y: 370 };                      // where it meets the clouds of Saturn
 
   const LOG = [
     [0.1, "1997 · Cape Canaveral", "Cassini leaves Earth — a small light on a long road."],
@@ -117,6 +118,7 @@
     const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
     const c2 = cv.getContext("2d");
     const img = c2.createImageData(w, h), D = img.data;
+    const front = c2.createImageData(w, h), FD = front.data;
     const ox = w / 2, oy = h / 2, edge = 1 + 3 / Rp;
     const rc = [0, 0, 0];
     function ring(x, y) {
@@ -190,30 +192,79 @@
           if (aa > 0) {
             const k = (py * w + px) * 4;
             D[k] = ar / aa; D[k + 1] = ag / aa; D[k + 2] = ab / aa; D[k + 3] = aa * 255;
+            if (zr > 0 && d2 > 1.015 && ro > 0) {
+              FD[k] = rr0; FD[k + 1] = rg0; FD[k + 2] = rb0; FD[k + 3] = ro * 255;
+              D[k + 3] = 0;
+            }
           }
         }
       }
       if (row < h) yieldThen(chunk);
-      else { c2.putImageData(img, 0, 0); done(cv); }
+      else {
+        c2.putImageData(img, 0, 0);
+        const rings = document.createElement("canvas"); rings.width = w; rings.height = h;
+        rings.getContext("2d").putImageData(front, 0, 0);
+        cv.frontRings = rings; done(cv);
+      }
     }
     chunk();
   }
 
+
+  // Cache a lit sphere with surface relief; no texture work runs during animation.
   function moonSprite(r, seed) {
-    const S = Math.ceil(r * 2 + 4), c = document.createElement("canvas"); c.width = c.height = S;
-    const g = c.getContext("2d"), m = S / 2;
-    g.fillStyle = "#23232a"; g.beginPath(); g.arc(m, m, r, 0, 7); g.fill();
-    g.save(); g.beginPath(); g.arc(m, m, r, 0, 7); g.clip();
-    const lg = g.createRadialGradient(m - r * 0.55, m + r * 0.3, r * 0.1, m - r * 0.3, m + r * 0.15, r * 1.25);
-    lg.addColorStop(0, "#f1e2c8"); lg.addColorStop(0.45, "#a99a88"); lg.addColorStop(1, "rgba(60,58,62,0)");
-    g.fillStyle = lg; g.fillRect(0, 0, S, S);
-    for (let i = 0; i < 9; i++) {
-      const a = h1(seed + i) * 6.28, d = h1(seed + i + 50) * r * 0.8, cr = r * (0.06 + h1(seed + i + 9) * 0.14);
-      g.fillStyle = "rgba(40,36,40,.28)"; g.beginPath(); g.arc(m + Math.cos(a) * d, m + Math.sin(a) * d, cr, 0, 7); g.fill();
+    const size = Math.ceil(r * 2 + 6), cv = document.createElement("canvas");
+    cv.width = cv.height = size;
+    const c = cv.getContext("2d"), im = c.createImageData(size, size), mid = size / 2;
+    const craters = Array.from({length: 45}, (_, i) => ({
+      x: (h1(seed + i * 3) * 2 - 1) * .87,
+      y: (h1(seed + i * 3 + 1) * 2 - 1) * .87,
+      r: .024 + h1(seed + i * 3 + 2) * .13
+    }));
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const nx = (x + .5 - mid) / r, ny = (y + .5 - mid) / r, dd = nx * nx + ny * ny;
+      if (dd >= 1) continue;
+      const nz = Math.sqrt(1 - dd);
+      let relief = .86 + .09 * n1(nx * 25 + ny * 38 + seed) + .05 * n1(ny * 85 - nx * 44);
+      for (const q of craters) {
+        const d = Math.hypot(nx - q.x, ny - q.y) / q.r;
+        if (d < 1.25) relief += d < .85 ? -.19 * (1 - d * .4) : .12 * (1 - Math.abs(d - 1) * 4);
+      }
+      const light = .07 + .93 * Math.pow(Math.max(0, nx * -.66 + ny * .35 + nz * .66), .8);
+      const k = (y * size + x) * 4;
+      im.data[k] = 226 * relief * light; im.data[k + 1] = 217 * relief * light;
+      im.data[k + 2] = 203 * relief * light; im.data[k + 3] = clamp((1 - Math.sqrt(dd)) * r, 0, 1) * 255;
     }
-    g.restore();
-    return c;
+    c.putImageData(im, 0, 0); return cv;
   }
+
+  // Feather the original cutout in canvas while keeping the traveller and cat opaque.
+  const landscape = new Image();
+  landscape.onload = () => {
+    land.width = landscape.naturalWidth; land.height = landscape.naturalHeight;
+    const c = land.getContext("2d"); c.drawImage(landscape, 0, 0);
+    const im = c.getImageData(0, 0, land.width, land.height), d = im.data;
+    for (let x = 0; x < land.width; x++) {
+      let edge = -1;
+      for (let y = 0; y < land.height; y++) {
+        const k = (y * land.width + x) * 4;
+        if (edge < 0 && d[k + 3] > 48) edge = y;
+        if (edge < 0) { d[k + 3] = 0; continue; }
+        const subjectDistance = Math.hypot((x - 580) / 220, (y + LAND_Y0 - 650) / 240);
+        const protection = 1 - smooth(.65, 1, subjectDistance);
+        const edgeFade = smooth(0, 100, y - edge);
+        const feather = edgeFade + protection * (1 - edgeFade);
+        const bottom = 1 - smooth(land.height - 155, land.height, y);
+        d[k + 3] *= feather * bottom;
+      }
+    }
+    c.putImageData(im, 0, 0);
+  };
+  landscape.src = "assets/home-landscape.webp";
+  function skyStyle() {
+    document.body.dataset.homeSky = window.Sky ? Sky.style : "realist";
+  }
+  addEventListener("skystyle", skyStyle); skyStyle();
 
   /* ---------- layout ---------- */
   let vw = 0, vh = 0, dpr = 1, F = null, planet = null, planetAt = 0, Rpx = 0, moons = [];
@@ -335,19 +386,126 @@
     c.globalCompositeOperation = "source-over";
   }
 
-  /* ---------- particles ---------- */
-  let sparks = [], frags = [], broke = false;
-  const SPARK_MAX = lowPower ? 360 : 900;
-  function emit(x, y, dirx, diry, n, speed, heat) {
-    for (let i = 0; i < n; i++) {
-      const spread = (Math.random() - 0.5) * 0.22;
-      const vx = dirx * Math.cos(spread) - diry * Math.sin(spread), vy = diry * Math.cos(spread) + dirx * Math.sin(spread);
-      const v = speed * (0.35 + Math.random());
-      const life = 1 + Math.random() * 2.2;
-      sparks.push({ x, y, vx: vx * v, vy: vy * v, l: life, m: life, s: (1.2 + Math.random() * 2.6) * dpr * (0.6 + heat) });
-    }
-    if (sparks.length > SPARK_MAX) sparks.splice(0, sparks.length - SPARK_MAX);
+
+  // One continuous flyby: broad curved coast, then an accelerating atmospheric descent.
+  // This is an artistic projection, not mission ephemeris.
+  function flight(progress) {
+    const t = clamp((progress - .035) / .575, 0, 1);
+    const u = .16 * t + .84 * Math.pow(t, 1.65), v = 1 - u;
+    const mobile = vw < 760;
+    const a = mobile ? {x: 820, y: 430} : CASSINI;
+    const b = mobile ? {x: 865, y: 485} : {x: 1210, y: 390};
+    const c = mobile ? {x: 865, y: 410} : {x: 945, y: 500}, d = ENTRY;
+    let x = v*v*v*a.x + 3*v*v*u*b.x + 3*v*u*u*c.x + u*u*u*d.x;
+    let y = v*v*v*a.y + 3*v*v*u*b.y + 3*v*u*u*c.y + u*u*u*d.y;
+    const dx = 3*v*v*(b.x-a.x) + 6*v*u*(c.x-b.x) + 3*u*u*(d.x-c.x);
+    const dy = 3*v*v*(b.y-a.y) + 6*v*u*(c.y-b.y) + 3*u*u*(d.y-c.y);
+    const angle = Math.atan2(dy, dx), sink = smooth(.61, .8, progress);
+    const elapsed = clamp(progress - .61, 0, .21);
+    const entrySpeed = Math.hypot(dx, dy) * (1.546 / .575);
+    const descent = entrySpeed * elapsed * (1 + 1.8 * elapsed);
+    x += Math.cos(angle) * descent; y += Math.sin(angle) * descent;
+    return {x,y,angle,u,scale: ((mobile ? 95 : CASSINI.size) / 152) * (1 - .82 * u) * (1 - .4 * sink)};
   }
+
+  // Always render the same state at the same scroll position, including when scrolling back.
+  function drawArrival(c, progress, S, motionTime) {
+    const f = flight(progress), [x,y] = P(f.x,f.y), s = f.scale*S;
+    const heat = smooth(.55,.68,progress), gone = smooth(.71,.79,progress);
+    if (progress > .03 && progress < .61) {
+      c.lineWidth = .7*dpr; c.strokeStyle = "rgba(204,218,241,.11)";
+      c.beginPath();
+      for (let i=0;i<=45;i++) {
+        const q=flight(.035+(.61-.035)*i/45), v=P(q.x,q.y);
+        if(i===0)c.moveTo(...v); else c.lineTo(...v);
+      }
+      c.stroke();
+    }
+    if (heat > 0 && gone < 1) {
+      c.save(); c.globalAlpha = heat * (1-gone);
+      const backX = -Math.cos(f.angle), backY = -Math.sin(f.angle);
+      drawJet(c,x,y,backX,backY,(75+150*heat)*S,(2+7*heat)*S,heat);
+      c.globalCompositeOperation = "lighter";
+      for(let i=0;i<(lowPower?36:85);i++) {
+        const phase=(h1(i+9)+motionTime*.22)%1, distance=phase*(70+170*heat);
+        const side=(h1(i+80)-.5)*22*phase;
+        const px=x+(backX*distance-backY*side)*S, py=y+(backY*distance+backX*side)*S;
+        spr(c,px,py,(1+h1(i+56)*4)*S,(1-phase)*heat*(1-gone)*.7);
+      }
+      c.restore();
+    }
+    if (gone < 1) {
+      c.save(); c.globalAlpha=1-gone;
+      drawCassini(c,x,y,s,f.angle,heat*.75);
+      c.restore();
+    }
+    const breakup = smooth(.70,.84,progress), fade = 1-smooth(.79,.91,progress);
+    if(breakup>0 && fade>0) {
+      const at=flight(.715), [bx,by]=P(at.x,at.y);
+      c.save(); c.globalCompositeOperation="lighter";
+      for(let i=0;i<(lowPower?22:52);i++) {
+        const angle=at.angle+(h1(i+140)-.5)*.65;
+        const distance=(14+h1(i+210)*105)*breakup*S;
+        const px=bx+Math.cos(angle)*distance, py=by+Math.sin(angle)*distance;
+        const length=(5+h1(i+170)*28)*S*breakup;
+        const tailX=px-Math.cos(angle)*length, tailY=py-Math.sin(angle)*length;
+        const trail=c.createLinearGradient(px,py,tailX,tailY);
+        trail.addColorStop(0,"rgba(255,233,183,"+fade*.75+")"); trail.addColorStop(1,"rgba(255,115,46,0)");
+        c.strokeStyle=trail; c.lineWidth=(.5+h1(i+88))*S;
+        c.beginPath(); c.moveTo(px,py); c.lineTo(tailX,tailY); c.stroke();
+        spr(c,px,py,(2+h1(i+310)*6)*S,fade*(.3+h1(i+45)*.5));
+      }
+      const flash = smooth(.70,.735,progress)*(1-smooth(.745,.82,progress));
+      spr(c,bx,by,(28+90*breakup)*S,flash*.75);
+      // Localized warm cloud illumination, dissipating along the limb.
+      c.globalAlpha=1;
+      const glow=c.createRadialGradient(bx,by,0,bx,by,125*S);
+      glow.addColorStop(0,"rgba(255,188,102,"+flash*.18+")");
+      glow.addColorStop(1,"rgba(255,115,62,0)");
+      c.fillStyle=glow; c.fillRect(bx-125*S,by-125*S,250*S,250*S);
+      c.restore();
+    }
+    c.globalAlpha=1; c.globalCompositeOperation="source-over";
+  }
+
+  const ringLayer = document.createElement("canvas");
+  function drawRingDust(target, S, motionTime) {
+    if (ringLayer.width !== cvF.width || ringLayer.height !== cvF.height) {
+      ringLayer.width = cvF.width; ringLayer.height = cvF.height;
+    }
+    const c = ringLayer.getContext("2d"); c.clearRect(0, 0, ringLayer.width, ringLayer.height);
+    c.save();
+    const [px,py]=P(SAT.x,SAT.y);
+    if(planet && planet.frontRings) {
+      const k=SAT.R*S/Rpx;
+      c.save(); c.translate(px,py); c.rotate(TILT); c.scale(k,k);
+      c.drawImage(planet.frontRings,-planet.width/2,-planet.height/2); c.restore();
+    }
+    const ct=Math.cos(TILT), st=Math.sin(TILT);
+    for(let i=0;i<(lowPower?100:240);i++) {
+      const radius=SAT.R*(1.55+h1(i+50)*.75), a=h1(i+110)*Math.PI+motionTime*.009/(radius/SAT.R);
+      const dx=Math.cos(a)*radius, dy=Math.sin(a)*radius*Math.sin(B);
+      const x=px+(dx*ct-dy*st)*S, y=py+(dx*st+dy*ct)*S;
+      const dist=Math.hypot(dx,dy);
+      if(dist<SAT.R*1.035) continue;
+      c.fillStyle="rgba(235,218,190,"+(.16+h1(i+310)*.36)+")";
+      const size=(.35+h1(i+410)*1.15)*S;
+      c.beginPath();c.ellipse(x,y,size,size*.58,TILT,0,Math.PI*2);c.fill();
+    }
+
+    // A soft occlusion envelope keeps every ring and particle behind the entire subject.
+    c.globalCompositeOperation="destination-out";
+    const [hx,hy]=P(580,650);
+    c.translate(hx,hy); c.scale(220*S,240*S);
+    const mask=c.createRadialGradient(0,0,0,0,0,1);
+    mask.addColorStop(0,"rgba(0,0,0,1)"); mask.addColorStop(.65,"rgba(0,0,0,1)");
+    mask.addColorStop(1,"rgba(0,0,0,0)");
+    c.fillStyle=mask; c.fillRect(-1,-1,2,2);
+    c.restore();
+    target.drawImage(ringLayer,0,0);
+  }
+
+
 
   /* ---------- scroll progress ---------- */
   let pTarget = 0, p = 0;
@@ -383,12 +541,34 @@
     time += dt;
     const calm = reduce || (window.Sky && Sky.calm);
     if (pinned >= 0) pTarget = pinned;
-    p += (pTarget - p) * (1 - Math.exp(-real * 3.2));
+    p += (pTarget - p) * (calm ? 1 : 1 - Math.exp(-real * 5));
     if (Math.abs(pTarget - p) < 0.0005) p = pTarget;
     const S = F.S * dpr;
 
     // ---- back layer: horizon glow, Saturn, moons ----
     cS.clearRect(0, 0, cvS.width, cvS.height);
+
+    // Sparse live stars sit above the photographic sky, behind Saturn and the landscape.
+    cS.save();
+    for (let i = 0; i < (lowPower ? 38 : 75); i++) {
+      const x = h1(i + 580) * cvS.width, y = h1(i + 780) * cvS.height * .62;
+      const twinkle = calm ? .5 : .5 + .5 * Math.sin(time * (.25 + h1(i + 840) * .4) + i);
+      cS.fillStyle = "rgba(226,235,255," + (.12 + twinkle * .33) + ")";
+      cS.beginPath(); cS.arc(x, y, (.4 + h1(i + 960) * .5) * dpr, 0, Math.PI * 2); cS.fill();
+    }
+    if (!calm) {
+      const phase = (time + 5) % 19, duration = 1.4;
+      if (phase < duration) {
+        const u = phase / duration, a = Math.sin(u * Math.PI) * .6;
+        const mx = cvS.width * (.91 - .22 * u), my = cvS.height * (.06 + .2 * u);
+        const tailX = mx + 95 * S, tailY = my - 55 * S;
+        const mg = cS.createLinearGradient(mx, my, tailX, tailY);
+        mg.addColorStop(0, "rgba(255,245,222," + a + ")"); mg.addColorStop(1, "rgba(210,223,255,0)");
+        cS.strokeStyle = mg; cS.lineWidth = .85 * dpr;
+        cS.beginPath(); cS.moveTo(mx, my); cS.lineTo(tailX, tailY); cS.stroke();
+      }
+    }
+    cS.restore();
     const [sx, sy] = P(SUN.x, SUN.y);
     const g = cS.createRadialGradient(sx, sy, 0, sx, sy, 760 * S);
     g.addColorStop(0, "rgba(255,196,120,.85)"); g.addColorStop(0.12, "rgba(255,150,80,.42)");
@@ -410,82 +590,24 @@
     }
     MOONS.forEach((m, i) => {
       if (!moons[i]) return;
-      const [x, y] = P(m.x, m.y);
+      const drift = calm ? 0 : Math.sin(time * .035 + i) * 4;
+      const [x, y] = P(m.x + drift, m.y + drift * .25);
       cS.drawImage(moons[i], x - moons[i].width / 2, y - moons[i].height / 2);
     });
 
-    // ---- front layer: Cassini and fire ----
+
+    // Front ring arc, ice particles, then the spacecraft.
     cF.clearRect(0, 0, cvF.width, cvF.height);
-    const A0 = 0.06, A1 = 0.62, B1 = 0.8;
-    const t = smooth(A0, A1, p);
-    const bob = calm ? 0 : Math.sin(time * 0.7) * 4;
-    const c1 = { x: 860, y: 330 }, c2 = { x: 795, y: 300 }, u = 1 - t;
-    const ix = u * u * u * CASSINI.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * ENTRY.x;
-    const iy = u * u * u * CASSINI.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * ENTRY.y;
-    let [cx, cy] = P(ix, iy + bob * (1 - t));
-    let scale = (CASSINI.size / 152) * S * (1 - 0.93 * Math.pow(t, 1.5));
-    const ang = CASSINI.ang + (calm ? 0 : Math.sin(time * 0.4) * 0.012) + t * 0.12;
-    const back = { x: -Math.cos(ang), y: -Math.sin(ang) };          // direction of the trail
-    const burn = smooth(A1, B1, p);
-    const heat = 0.35 + 0.65 * burn;
-    if (burn > 0) {                                                   // keep sinking in as it burns
-      const d = 34 * S * burn;
-      cx -= back.x * d; cy -= back.y * d;
-      scale *= 1 - 0.5 * burn;
-    }
-    const dishX = cx + back.x * 30 * scale, dishY = cy + back.y * 30 * scale;
-    if (burn < 0.62) {
-      broke = false; frags.length = 0;
-      const jetLen = 330 * S * (1 - 0.85 * Math.pow(t, 1.5)) * (1 + burn * 0.8);
-      drawJet(cF, dishX, dishY, back.x, back.y, jetLen, 9 * scale * (1 + burn), heat);
-      const rate = (lowPower ? 70 : 170) * (calm ? 0.25 : 1) * (1 + burn * 3);
-      emit(dishX, dishY, back.x, back.y, Math.round(rate * dt + Math.random() * 0.8), 270 * S * (0.25 + 0.75 * (1 - t)) + burn * 60 * dpr, heat);
-      drawCassini(cF, cx, cy, scale, ang, heat);
-    } else if (!broke) {
-      broke = true;
-      for (let k = 0; k < 12; k++) {
-        const a = ang + (Math.random() - 0.5) * 1.2;
-        const v = (20 + Math.random() * 60) * dpr;
-        frags.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, l: 1.6 + Math.random() * 1.6 });
-      }
-    }
-    // the flash of the breakup and the afterglow on Saturn's face
-    const fl = smooth(0.56, 0.66, burn) * (1 - smooth(0.7, 1, burn));
-    const glow = smooth(0.6, 1, burn) * (1 - smooth(0.82, 1, p) * 0.6);
-    if (fl > 0 || glow > 0) {
-      cF.globalCompositeOperation = "lighter";
-      const r = SAT.R * S * (0.25 + 0.5 * fl);
-      const gr = cF.createRadialGradient(cx, cy, 0, cx, cy, r);
-      gr.addColorStop(0, `rgba(255,252,236,${0.95 * fl + 0.25 * glow})`);
-      gr.addColorStop(0.3, `rgba(255,180,90,${0.5 * fl + 0.18 * glow})`);
-      gr.addColorStop(1, "rgba(255,90,20,0)");
-      cF.fillStyle = gr; cF.fillRect(cx - r, cy - r, r * 2, r * 2);
-      cF.globalCompositeOperation = "source-over";
-    }
-    cF.globalCompositeOperation = "lighter";
-    const drag = Math.pow(0.55, dt);
-    for (let i = sparks.length - 1; i >= 0; i--) {
-      const q = sparks[i];
-      q.l -= dt; if (q.l <= 0) { sparks.splice(i, 1); continue; }
-      q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= drag; q.vy *= drag;
-      const k = q.l / q.m;
-      spr(cF, q.x, q.y, q.s * (0.5 + k), k * 0.9);
-    }
-    for (let i = frags.length - 1; i >= 0; i--) {
-      const f = frags[i];
-      f.l -= dt; if (f.l <= 0) { frags.splice(i, 1); continue; }
-      f.x += f.vx * dt; f.y += f.vy * dt;
-      spr(cF, f.x, f.y, 10 * dpr * Math.min(1, f.l), Math.min(1, f.l));
-      if (Math.random() < 0.6) sparks.push({ x: f.x, y: f.y, vx: (Math.random() - 0.5) * 10 * dpr, vy: (Math.random() - 0.5) * 10 * dpr, l: 0.6, m: 0.6, s: 6 * dpr });
-    }
-    cF.globalAlpha = 1;
-    cF.globalCompositeOperation = "source-over";
+    const motionTime = calm ? 0 : time;
+    drawRingDust(cF, S, motionTime);
+    drawArrival(cF, p, S, motionTime);
+    if (cosmos) cosmos.style.transform = calm ? "none" : `translate3d(${Math.sin(time*.025)*.35}%, ${-p*1.5}%, 0) scale(1.02)`;
 
     // ---- the page around the story ----
     const uiA = 1 - smooth(0.02, 0.1, p);
     ui.style.opacity = uiA.toFixed(3);
     ui.style.visibility = uiA < 0.01 ? "hidden" : "";
-    dim.style.opacity = (smooth(0.8, 0.97, p) * 0.62).toFixed(3);
+    dim.style.opacity = (smooth(0.8, 1, p) * 0.46).toFixed(3);
     const fA = smooth(0.84, 0.92, p);
     finale.style.opacity = fA.toFixed(3);
     finale.style.transform = `translate(-50%, ${-40 - fA * 10}%)`;

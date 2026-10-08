@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=20261008-home" />
 </head>
 <body data-page="home">
   <header id="site-header"></header>
@@ -19,11 +19,14 @@
     <!-- The story: scroll to follow Cassini into Saturn -->
     <section class="story" id="top">
       <div class="hero" id="hero">
+        <div class="hero-cosmos" id="heroCosmos" aria-hidden="true"></div>
         <canvas id="saturn" aria-hidden="true"></canvas>
-        <img class="hero-land" id="heroLand" src="assets/home-landscape.webp" alt="" aria-hidden="true" decoding="async" />
+        <canvas class="hero-land" id="heroLand" aria-hidden="true"></canvas>
+        <noscript><img class="hero-fallback" src="assets/home-landscape.webp" alt="A traveller and a cat watching a golden horizon." /></noscript>
         <canvas id="fx" aria-hidden="true"></canvas>
         <div class="hero-shade"></div>
         <div class="hero-dim" id="heroDim"></div>
+        <div class="hero-horizon" aria-hidden="true"></div>
 
         <div class="hero-ui" id="heroUI">
           <div class="hero-text">
@@ -167,7 +170,8 @@
       const F = HOME_FRAME(innerWidth, innerHeight), m = Math.min(innerWidth, innerHeight);
       const fx = (x) => (F.left + x * F.S) / innerWidth, fy = (y) => (F.top + y * F.S) / innerHeight;
       window.SKY_OPTIONS = {
-        moon: false, meteors: 1.5, angle: 0.55,
+        moon: false, meteors: 0.35, angle: 0.55,
+        milkyWay: false,
         mw: { a: [fx(1350), fy(-60)], b: [fx(1000), fy(640)], width: (250 * F.S) / m, rich: true, core: 0.3 }
       };
     })();
@@ -175,6 +179,6 @@
   <script src="js/config.js"></script>
   <script src="js/sky.js"></script>
   <script src="js/common.js"></script>
-  <script src="js/saturn.js"></script>
+  <script src="js/saturn.js?v=20261008-home"></script>
 </body>
 </html>
