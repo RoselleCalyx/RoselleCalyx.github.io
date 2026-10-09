@@ -10,6 +10,18 @@ async function main() {
   const browser = await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
   try {
     const page = await browser.newPage({viewport:{width:1440,height:960}}), errors=[];
+    await page.addInitScript(()=>{
+      const draw=CanvasRenderingContext2D.prototype.drawImage;
+      window.__foregroundDraws=[];
+      CanvasRenderingContext2D.prototype.drawImage=function(source,...args){
+        const target=this.canvas.id;
+        if(target==='rings'||target==='fx'){
+          __foregroundDraws.push({target,source:source.src||source.tagName});
+          if(__foregroundDraws.length>100)__foregroundDraws.shift();
+        }
+        return draw.call(this,source,...args);
+      };
+    });
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(base+'/index.html?p=0');
     await page.waitForTimeout(2800); // ray-traced Saturn and its opening fade
@@ -23,6 +35,12 @@ async function main() {
     if (!baseline) {
       assert.ok(style.filter.includes('saturate(1.12)'),'galactic colour treatment must be active');
       assert.ok(await page.locator('.hero-text-shade').count()===1,'text needs its own shade above the ring layer');
+      const layers=await page.evaluate(()=>__foregroundDraws);
+      const craft=layers.findLastIndex(x=>x.source.includes('cassini-flight'));
+      assert.ok(craft>0,'the spacecraft texture must be drawn');
+      assert.equal(layers[craft].target,'rings','Cassini must use the foreground canvas');
+      assert.equal(layers[craft-1].target,'rings');
+      assert.equal(layers[craft-1].source,'CANVAS','the near-side ring surface must be drawn before Cassini');
     }
     await page.setViewportSize({width:390,height:844});
     await page.goto(base+'/index.html?p=0');await page.waitForTimeout(2800);

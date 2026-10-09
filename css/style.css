@@ -466,18 +466,18 @@ body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,3
    ===================================================================== */
 .papers-layout > *, .gallery-layout > *, .starmap-layout > * { min-width: 0; }
 .starmap-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
-.sm-side { padding: 10px; position: sticky; top: calc(var(--header-h) + 20px); }
+.sm-side { padding: 10px; position: sticky; top: calc(var(--header-h) + 20px); max-height: calc(100svh - var(--header-h) - 40px); overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; }
 .sm-modes { display: flex; flex-direction: column; gap: 4px; }
 .sm-modes button { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; cursor: pointer; font-family: var(--serif); font-size: 1.1rem; color: var(--ink-2); text-align: left; }
 .sm-modes button svg { width: 18px; height: 18px; flex: none; }
 .sm-modes button:hover { color: #fff; background: rgba(255, 255, 255, .04); }
 .sm-modes button.active { color: #fff; background: rgba(236, 230, 214, .1); border-color: var(--line); }
-.sm-list { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); max-height: calc(100vh - 470px); min-height: 140px; overflow: auto; }
+.sm-list { list-style: none; margin: 10px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); }
 .sm-list button { width: 100%; background: none; border: 0; text-align: left; padding: 6px 12px; cursor: pointer; color: var(--muted); font-size: 1rem; display: flex; justify-content: space-between; gap: 8px; border-radius: 8px; }
 .sm-list button:hover, .sm-list button.active { color: #fff; background: rgba(255, 255, 255, .05); }
 .sm-list .zh { font-family: var(--serif); color: var(--faint); }
 .sm-game { margin-top: 12px; width: 100%; }
-.chart-wrap { position: relative; aspect-ratio: 1; width: 100%; max-width: 820px; margin: 0 auto; touch-action: none; }
+.chart-wrap { position: sticky; top: calc(var(--header-h) + 20px); aspect-ratio: 1; width: 100%; max-width: 820px; margin: 0 auto; touch-action: none; }
 #chart { width: 100%; height: 100%; display: block; cursor: grab; }
 #chart.dragging { cursor: grabbing; }
 #chart.hovering { cursor: pointer; }
@@ -511,11 +511,11 @@ body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,3
 }
 @media (max-width: 760px) {
   .starmap-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .sm-side { position: static; padding: 8px; }
+  .sm-side { position: static; padding: 8px; max-height: 46svh; }
   .sm-modes { flex-direction: row; overflow-x: auto; scrollbar-width: none; }
   .sm-list { min-height: 0; margin-top: 6px; padding-top: 6px; }
   .sm-game { margin-top: 8px; }
-  .chart-wrap { order: -1; }
+  .chart-wrap { order: -1; position: relative; top: auto; }
   .chart-note { font-size: .6rem; max-width: 72%; bottom: 2px; }
   .chart-ctrl { right: 0; bottom: 0; }
   .chart-ctrl button { width: 32px; height: 32px; }
