@@ -86,7 +86,7 @@ body { font-family: var(--text); font-size: 15px; line-height: 1.75; }
 .shore-tabs button { font-family: var(--ui); font-size: .85rem; }
 .delivery-choice span { font-size: .84rem; }
 .delivery-choice small { font-size: .65rem; }
-#bText { font-size: .94rem; background: transparent; line-height: 1.85; }
+#bText { font-size: .94rem; line-height: 1.85; }
 .shore-writing-foot { justify-content: flex-end; font-size: .68rem; }
 .shore-writing-foot #bCount { font: 400 .68rem/1.5 var(--ui); }
 .shore-fields label { font-size: .72rem; }
