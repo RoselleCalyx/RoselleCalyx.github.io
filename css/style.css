@@ -237,7 +237,8 @@ body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
   .mission-log { bottom: 20vh; }
 }
 
-.home-sections { position: relative; max-width: 1180px; margin: 0 auto; padding: 92px var(--gutter) 40px; display: grid; gap: 28px; }
+/* Keep the falling ember behind the biography's glass and its contents. */
+.home-sections { position: relative; z-index: 4; max-width: 1180px; margin: 0 auto; padding: 92px var(--gutter) 40px; display: grid; gap: 28px; }
 .home-sections::before { content: ""; position: absolute; left: 50%; top: -60px; width: 100vw; height: 640px; transform: translateX(-50%); background: radial-gradient(ellipse 60% 55% at 50% 42%, rgba(170, 121, 88, .08), transparent 70%); pointer-events: none; z-index: -1; }
 .home-sections { padding-top: 40px; }
 /* the coda: Cassini looked outward; the page turns to the person still looking up */
