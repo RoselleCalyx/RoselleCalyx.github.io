@@ -74,9 +74,17 @@
   const painting=window.SceneTextures?.create("woods",()=>{if(W){paintBackground();paintForeground();}});
   const objects=window.WoodsObjects;
   objects?.ready.then(()=>{stage.dataset.objects=objects.loaded()===45?'natural':'partial';if(W){paintForeground();renderBasket();}});
+  // The lantern is shared with the pond; its woodland support is blunt timber.
+  const lampMaterials={};
+  for(const [name,file] of Object.entries({lantern:'lantern.webp',post:'woods-lamp-post-v1.webp'})){
+    const img=new Image();img.decoding='async';
+    img.onload=async()=>{try{await img.decode();lampMaterials[name]=img;if(lampMaterials.lantern&&lampMaterials.post)stage.dataset.lantern='material';}catch{}};
+    img.src=`assets/wild/equipment/${file}`;
+  }
   let items = [], berries = [], hips = [], parts = [], weather = [], flies = [], motes = [];
   let hover = null, nextSpawn = 0, rain = { on: false, until: 0, next: 60 + Math.random() * 60, drops: [] };
   const P = (u, v) => [u * W, v * H];
+  const LANTERN = { u: .415, v: .70 };
 
   const PAL = {
     spring: { sky: ["#141a3d", "#3e3a6e", "#c48797"], glow: "255,190,190", far: "#3a4766", mid: "#2d5446", midHi: "#5f8f6e", leaf: "#4f8a46", ground: "#34502f", groundLo: "#1c2c1c", moss: ["#5d8a47", "#7aa65a", "#3e6533"], dec: ["#5f9a4e", "#86bd68", "#3d6e38"] },
@@ -466,11 +474,6 @@
     g.fillStyle = "#b08a62"; g.beginPath(); g.ellipse(len, 0, lr * 0.45, lr, 0, 0, TAU); g.fill();
     g.strokeStyle = "rgba(90,60,30,.6)"; for (let i = 1; i < 4; i++) { g.beginPath(); g.ellipse(len, 0, lr * 0.45 * i / 4, lr * i / 4, 0, 0, TAU); g.stroke(); }
     g.restore();
-    // stones, the lantern post
-    const lp = P(0.585, 0.755);
-    g.fillStyle = "#2a1e16"; g.fillRect(lp[0] - 2 * k, lp[1] - 62 * k, 4 * k, 62 * k);
-    g.fillRect(lp[0] - 2 * k, lp[1] - 62 * k, 14 * k, 3 * k);
-    g.fillStyle = "#3a2a1c"; g.fillRect(lp[0] + 7 * k, lp[1] - 59 * k, 10 * k, 3 * k);
   }
 
   const rays = document.createElement("canvas");
@@ -722,6 +725,47 @@
     winter: ["Matcha: “The sweetest shoots sleep under the snow.”", "Matcha leaves tiny footprints all the way here.", "Matcha fluffs up against the cold."]
   };
 
+  function drawLantern(now) {
+    // A clear patch behind the fallen log, left of the path. Anchor the foot
+    // directly to the ground so small views cannot drift onto the log.
+    const [px,y]=P(LANTERN.u,LANTERN.v),x=px+17*k,lx=x+18*k,top=y-78*k,ly=top+30*k;
+    const fl=.91+.06*Math.sin(now*7)*Math.sin(now*3.1);
+    ctx.save();ctx.globalCompositeOperation='source-over';
+    ctx.fillStyle='rgba(10,14,10,.28)';ctx.beginPath();ctx.ellipse(x-17*k,y+1*k,13*k,3*k,0,0,TAU);ctx.fill();
+    ctx.globalCompositeOperation='lighter';
+    glow(ctx,lx,ly,65*k*fl,'255,193,113',.2);
+    ctx.save();ctx.translate(lx,y);ctx.scale(1,.22);glow(ctx,0,0,55*k,'255,186,99',.14);ctx.restore();
+    ctx.globalCompositeOperation='source-over';ctx.filter='brightness(.8) saturate(.85)';
+    if(lampMaterials.post)ctx.drawImage(lampMaterials.post,px-9*k,y-93*k,18*k,93*k);
+    else{
+      ctx.fillStyle='#473629';ctx.beginPath();ctx.moveTo(px-7*k,y);ctx.lineTo(px-8*k,y-91*k);ctx.lineTo(px+7*k,y-93*k);ctx.lineTo(px+8*k,y);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#77604a';ctx.lineWidth=1*k;ctx.beginPath();ctx.moveTo(px+3*k,y-2*k);ctx.lineTo(px+2*k,y-89*k);ctx.stroke();
+    }
+    // A rough branch arm, lashed to the post, with a short hanging cord.
+    ctx.lineCap='round';ctx.strokeStyle='#493425';ctx.lineWidth=5*k;
+    ctx.beginPath();ctx.moveTo(x-20*k,y-81*k);ctx.bezierCurveTo(x-6*k,y-88*k,lx-6*k,top-10*k,lx+1*k,top-7*k);ctx.stroke();
+    ctx.strokeStyle='#9b7851';ctx.lineWidth=1.1*k;
+    ctx.beginPath();ctx.moveTo(x-20*k,y-82*k);ctx.bezierCurveTo(x-6*k,y-89*k,lx-6*k,top-11*k,lx+1*k,top-8*k);ctx.stroke();
+    ctx.strokeStyle='#b5a17e';ctx.lineWidth=1*k;
+    for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(x-24*k,y-(83-i*1.5)*k);ctx.lineTo(x-11*k,y-(79-i*1.5)*k);ctx.stroke();}
+    ctx.beginPath();ctx.moveTo(lx+1*k,top-7*k);ctx.quadraticCurveTo(lx-2*k,top-1*k,lx,top+3*k);ctx.stroke();
+    ctx.filter='none';
+    if(lampMaterials.lantern)ctx.drawImage(lampMaterials.lantern,lx-15*k,top,30*k,30*k*553/342);
+    else{
+      ctx.fillStyle='#493425';ctx.beginPath();ctx.moveTo(lx-14*k,top+13*k);ctx.lineTo(lx,top+7*k);ctx.lineTo(lx+14*k,top+13*k);ctx.closePath();ctx.fill();
+      ctx.strokeStyle='#71553b';ctx.lineWidth=2*k;ctx.strokeRect(lx-10*k,top+14*k,20*k,29*k);
+      ctx.fillStyle='rgba(255,210,134,.6)';ctx.fillRect(lx-6*k,top+18*k,12*k,20*k);
+    }
+    if(season.name==='winter'){
+      ctx.strokeStyle='rgba(226,238,250,.7)';ctx.lineWidth=2*k;ctx.beginPath();ctx.moveTo(lx-11*k,top+12*k);ctx.quadraticCurveTo(lx,top+7*k,lx+11*k,top+12*k);ctx.stroke();
+    }
+    // A few blades overlap the broad foot to seat the timber in the soil.
+    ctx.strokeStyle=season.name==='winter'?'#d6dfec':season.name==='autumn'?'#77714a':'#596b3c';ctx.lineWidth=.9*k;
+    for(let i=0;i<7;i++){const gx=px+(i-3)*2.3*k;ctx.beginPath();ctx.moveTo(gx,y+1*k);ctx.quadraticCurveTo(gx+(i%2?2:-2)*k,y-3*k,gx+(i%2?3:-3)*k,y-(4+i%3)*k);ctx.stroke();}
+    ctx.globalCompositeOperation='lighter';glow(ctx,lx,ly,12*k*fl,'255,219,157',.22);
+    ctx.restore();
+  }
+
   /* ================= frame ================= */
   function draw(dt) {
     const now = time;
@@ -736,12 +780,7 @@
     ctx.drawImage(rays, 0, 0, W, H);
     ctx.globalAlpha = 1;
     motes.forEach((m) => { m.y -= dt * 4; m.x += Math.sin(now * 0.5 + m.ph) * dt * 6; if (m.y < H * 0.3) m.y = H * 0.75; ctx.fillStyle = `rgba(255,240,200,${0.25 + 0.25 * Math.sin(now * 2 + m.ph)})`; ctx.fillRect(m.x, m.y, 1.4, 1.4); });
-    // lantern
-    const lp = P(0.585, 0.755), lx = lp[0] + 12 * k, ly = lp[1] - 50 * k, fl = 0.85 + 0.15 * Math.sin(now * 7) * Math.sin(now * 3.1);
-    glow(ctx, lx, ly, 70 * k * fl, "255,190,110", 0.35); glow(ctx, lx, ly, 16 * k, "255,230,170", 0.9);
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "#3a2a1c"; ctx.fillRect(lx - 5 * k, ly - 8 * k, 10 * k, 2.5 * k); ctx.fillRect(lx - 5 * k, ly + 7 * k, 10 * k, 2.5 * k);
-    ctx.strokeStyle = "rgba(40,28,18,.8)"; ctx.lineWidth = 1; ctx.strokeRect(lx - 4.5 * k, ly - 6 * k, 9 * k, 13 * k);
     // drifting mist
     for (let i = 0; i < 2; i++) {
       const y = H * (0.6 + i * 0.07), off = ((now * (6 + i * 4)) % (W * 0.5));
@@ -764,12 +803,11 @@
       naturalFind(ctx,'rosehip',h.x+Math.sin(now+h.ph)*k,h.y,h.s*1.3,h.s,h.variant,smooth(.55,.8,h.ripe),()=>ART.rosehip(ctx,h.x+Math.sin(now+h.ph)*k,h.y,h.s,h.ripe));
       if (hover === h) { ctx.globalCompositeOperation = "lighter"; glow(ctx, h.x, h.y - h.s * 0.3, h.s * 1.3, "255,170,120", 0.45); ctx.globalCompositeOperation = "source-over"; }
     });
-    // ground finds, back to front, with Matcha among them
+    // Sort by feet on the ground, never by the top of a growing sprite.
     items.forEach((it) => { if (!it.gone && it.g < 1) it.g = Math.min(1, it.g + (dt / (GROW[it.id] || 30)) * (rain.on ? 2 : 1)); });
-    const list = [...items.filter((it) => !it.gone), ...covers.map((c) => ({ cover: true, c, v: c.v }))].sort((a, b) => a.v - b.v);
-    let yukiDrawn = false;
+    const list = [...items.filter((it) => !it.gone), ...covers.map((c) => ({ cover: true, c, v: c.v })),
+      { actor: 'lantern', v: LANTERN.v }, { actor: 'matcha', v: YUKI.v }].sort((a, b) => a.v - b.v);
     const drawMatcha = () => {
-      yukiDrawn = true;
       if (!yuki.complete || !yuki.naturalWidth) return;
       const b = yukiBox(), br = 1 + Math.sin(now * 1.6) * 0.012;
       ctx.fillStyle = "rgba(10,14,10,.35)"; ctx.beginPath(); ctx.ellipse(b.cx, b.y + b.h * 0.95, b.w * 0.34, b.h * 0.05, 0, 0, TAU); ctx.fill();
@@ -779,7 +817,8 @@
       if (hover === "yuki") { ctx.globalCompositeOperation = "lighter"; glow(ctx, b.cx, b.cy, b.w * 0.6, "220,230,255", 0.18); ctx.globalCompositeOperation = "source-over"; }
     };
     list.forEach((it) => {
-      if (!yukiDrawn && it.v > YUKI.v) drawMatcha();
+      if (it.actor === 'lantern') { drawLantern(now); return; }
+      if (it.actor === 'matcha') { drawMatcha(); return; }
       if (it.cover === true) { drawCover(it.c, now); return; }
       const [x, y] = P(it.u, it.v), age = now - it.born;
       if (age < 0) return;
@@ -799,7 +838,6 @@
       if (BY[it.id].rarity >= 3 && ready(it) && it.picking == null) { ctx.globalCompositeOperation = "lighter"; const tw = 0.5 + 0.5 * Math.sin(now * 3 + it.u * 20); glow(ctx, x + it.s * 0.3, y - it.s * 0.9, it.s * 0.35, "255,240,190", 0.5 * tw); ctx.globalCompositeOperation = "source-over"; }
       if (hover === it) { ctx.globalCompositeOperation = "lighter"; glow(ctx, x, y - it.s * 0.5, it.s * 1.1, it.id === "amanita" ? "255,120,110" : "255,236,170", 0.3); ctx.globalCompositeOperation = "source-over"; }
     });
-    if (!yukiDrawn) drawMatcha();
     // the foreground frame
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(fg, 0, 0);
