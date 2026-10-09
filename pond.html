@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>By the Pond · Chen Jia</title>
+  <meta name="description" content="Fishing below the farm: a rod and float, a cast net, and crab traps that soak while you wander." />
+  <meta name="theme-color" content="#04060d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&family=Noto+Serif+SC:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=20261009-feed3" />
+</head>
+<body data-page="farm" class="wild-body" data-wild="pond">
+  <header id="site-header"></header>
+
+  <main class="farm-page wild-page">
+    <div class="farm-head">
+      <div class="farm-title-group">
+        <p class="kicker">Below the orchard</p>
+        <h1 class="page-title">By the Pond<span class="farm-title-star" aria-hidden="true">✧</span></h1>
+        <p class="page-sub">A float on still water, a net, and traps that soak while you wander.</p>
+      </div>
+      <p class="farm-welcome">The lanterns are lit.<br />The fish are listening.</p>
+    </div>
+
+    <section class="farm-frame wild-frame" aria-label="The pond below the farm">
+      <div class="farm-scene-top">
+        <div class="farm-hud">
+          <button class="wild-back" type="button" id="btnBack"><span aria-hidden="true">←</span> The farm</button>
+          <div class="season-chip" id="seasonChip" aria-live="polite"></div>
+          <div class="basket" id="basket" aria-live="polite"></div>
+        </div>
+        <span class="farm-population"><span aria-hidden="true">≋</span>池畔 · The pond</span>
+      </div>
+      <div class="wild-stage" id="stage">
+        <canvas id="scene" aria-label="The pond at dusk. Choose a tool below, then tap the water."></canvas>
+        <div class="wild-tip" id="tip" aria-hidden="true"></div>
+        <div class="reel" id="reel" hidden aria-hidden="true">
+          <div class="reel-track"><span class="reel-safe"></span><span class="reel-needle"></span></div>
+          <div class="reel-progress"><span></span></div>
+          <p class="reel-label">Hold to reel · keep the needle in the gold</p>
+        </div>
+        <div class="catch-card" id="card" role="dialog" aria-live="polite" hidden></div>
+      </div>
+      <div class="farm-scene-bottom wild-tools">
+        <div class="tool-row" role="group" aria-label="Fishing tools">
+          <button type="button" class="tool active" data-tool="rod" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 21 19 3"/><path d="M19 3c1 5 1 9-1 13"/><circle cx="18" cy="17.5" r="1.6"/><path d="M6.5 18.5h2"/></svg><span>Rod<small>钓竿</small></span></button>
+          <button type="button" class="tool" data-tool="net" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3 4 19M12 3l8 16M12 3v17"/><ellipse cx="12" cy="19" rx="8.5" ry="2.5"/><path d="M7.5 12.5h9M6 15.8h12"/></svg><span>Cast net<small>撒网</small></span></button>
+          <button type="button" class="tool" data-tool="trap" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><ellipse cx="5" cy="13" rx="1.6" ry="4"/><ellipse cx="11" cy="13" rx="1.6" ry="4"/><ellipse cx="17" cy="13" rx="1.6" ry="4"/><path d="M5 9h14M5 17h14"/><path d="M20.5 10.5 22 13l-1.5 2.5"/></svg><span>Crab trap<small>地笼</small></span></button>
+        </div>
+        <p class="farm-hint"><span aria-hidden="true">✧</span><b class="wild-hint" id="hint" aria-live="polite"></b></p>
+      </div>
+    </section>
+
+    <div class="farm-actions wild-actions" aria-label="At the pond">
+      <button type="button" id="btnLog"><span class="farm-action-icon" data-icon="book"></span><span><b>Catch log</b><small>Every fish you have met</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnBait"><span class="farm-action-icon" data-icon="drop"></span><span><b>Scatter bait</b><small>Call the fish closer</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnTips"><span class="farm-action-icon" data-icon="star4"></span><span><b>Angler’s tips</b><small>How the rod works</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnBack2"><span class="farm-action-icon" data-icon="left"></span><span><b>Back to the farm</b><small>Yuki will carry the creel</small></span><span class="farm-action-arrow" aria-hidden="true">↙</span></button>
+    </div>
+  </main>
+
+  <script>window.SKY_OPTIONS = { moon: false, milkyWay: false, meteors: 0.12 };</script>
+  <script src="js/config.js"></script>
+  <script src="js/sky.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/wild.js?v=20261009-grow"></script>
+  <script src="js/pond.js?v=20261009-grow"></script>
+</body>
+</html>

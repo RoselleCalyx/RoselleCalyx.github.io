@@ -574,9 +574,137 @@
     });
   }
 
+  /* ================= ways out: the woods and the pond ================= */
+  // the forest belt behind the fence, traced over the painting (percent of the world)
+  const WOODS = [
+    [[0, 12], [10, 10], [19, 15], [22, 28], [21, 46], [0, 47]],
+    [[36, 31], [40, 22], [46, 23], [50, 31], [57, 36], [57, 47], [37, 48]],
+    [[57, 45], [66, 41], [76, 44], [88, 43], [90, 53], [57, 52]],
+    [[87, 14], [100, 9], [100, 52], [90, 53], [86, 40]]
+  ];
+  const WATER = { cx: 64.5, cy: 79, rx: 21.5, ry: 7.2 };
+  const WAYS = {
+    woods: { url: "woods.html", label: "Into the woods", zh: "林间采集", at: [12, 32], c: "#040a07" },
+    pond: { url: "pond.html", label: "Go fishing", zh: "池畔垂钓", at: [64.5, 79], c: "#030812" }
+  };
+  const inPoly = (x, y, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
+  const zoneAt = (x, y) => (((x - WATER.cx) / WATER.rx) ** 2 + ((y - WATER.cy) / WATER.ry) ** 2 < 1 ? "pond" : WOODS.some((p) => inPoly(x, y, p)) ? "woods" : null);
+  const zoneTip = document.createElement("div");
+  zoneTip.className = "farm-zone-tip"; zoneTip.setAttribute("aria-hidden", "true");
+  const pct = (e) => { const r = world.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 100, ((e.clientY - r.top) / r.height) * 100]; };
+  const busyTarget = (e) => e.target.closest(".actor, .tree, .bubble, .farm-sign");
+  world.addEventListener("mousemove", (e) => {
+    const z = busyTarget(e) ? null : zoneAt(...pct(e));
+    viewport.classList.toggle("zone-hover", !!z);
+    if (!z) { zoneTip.classList.remove("on"); return; }
+    const [x, y] = pct(e);
+    zoneTip.innerHTML = `${WAYS[z].label} →<span class="zh">${WAYS[z].zh}</span>`;
+    zoneTip.style.left = x + "%"; zoneTip.style.top = y + "%";
+    zoneTip.classList.add("on");
+  });
+  world.addEventListener("mouseleave", () => { zoneTip.classList.remove("on"); viewport.classList.remove("zone-hover"); });
+  world.addEventListener("click", (e) => { if (busyTarget(e)) return; const [x, y] = pct(e), z = zoneAt(x, y); if (z) goWild(z, x, y); });
+
+  // two wooden signposts, so the ways out are easy to find
+  function signpost(kind) {
+    const left = kind === "woods", g = "sg-" + kind;
+    const plank = left ? "M130 26 H34 L10 52 L34 78 H130 Z" : "M10 26 H106 L130 52 L106 78 H10 Z", tx = left ? 80 : 60;
+    return `<svg viewBox="0 0 140 172" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfa06a"/><stop offset="1" stop-color="#8a5c32"/></linearGradient></defs>
+      <rect x="63" y="46" width="14" height="124" rx="3" fill="#5a3e26"/><rect x="63" y="46" width="5" height="124" fill="#7a5636" opacity=".6"/>
+      <path d="${plank}" fill="url(#${g})" stroke="#5a3a1e" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M${left ? 40 : 18} 36 H${left ? 122 : 100}" stroke="#a87a48" stroke-width="1.5" opacity=".7"/><path d="M${left ? 40 : 18} 70 H${left ? 122 : 100}" stroke="#7a4e28" stroke-width="1.5" opacity=".5"/>
+      <circle cx="70" cy="52" r="3" fill="#4a3018"/>
+      <text x="${tx}" y="51" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="22" font-style="italic" font-weight="600" fill="#3a2410">${left ? "The woods" : "Fishing"}</text>
+      <text x="${tx}" y="70" text-anchor="middle" font-family="Noto Serif SC, serif" font-size="13" fill="#4a3018">${left ? "林间采集" : "池畔垂钓"}</text>
+      <path class="snowcap" d="M${left ? 34 : 10} 27 Q70 14 ${left ? 130 : 106} 27 L${left ? 130 : 106} 31 Q70 22 ${left ? 34 : 10} 31 Z" fill="#f2f6fc"/></svg>`;
+  }
+  const SIGNS = { woods: [24, 57.5], pond: [44.5, 91.5] };
+  function placeSigns() {
+    Object.entries(SIGNS).forEach(([kind, [x, y]]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "farm-sign " + (kind === "pond" ? "pondway" : "woodsway");
+      b.style.left = x + "%"; b.style.top = y + "%"; b.style.zIndex = Math.round(y * 10);
+      b.setAttribute("aria-label", WAYS[kind].label);
+      b.innerHTML = signpost(kind);
+      b.addEventListener("click", (e) => { e.stopPropagation(); goWild(kind, x, y - 4); });
+      actorsEl.appendChild(b);
+    });
+  }
+
+  let leaving = false;
+  function portal(kind, cx, cy, dir) {
+    const ov = document.createElement("div");
+    ov.className = "farm-portal"; ov.style.setProperty("--c", WAYS[kind].c);
+    document.body.appendChild(ov);
+    const far = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) + 120, feather = 90;
+    const dur = dir === "in" ? 1000 : 1250, t0 = performance.now(), c = WAYS[kind].c;
+    const ease = dir === "in" ? (t) => t * t * t : (t) => 1 - Math.pow(1 - t, 3);
+    (function iris(now) {
+      const t = Math.min(1, (now - t0) / dur), e = ease(t), r = Math.max(0, (dir === "in" ? 1 - e : e) * far);
+      ov.style.background = `radial-gradient(circle at ${cx}px ${cy}px, transparent ${Math.max(0, r - feather)}px, ${c} ${r}px)`;
+      if (t < 1 && ov.isConnected) requestAnimationFrame(iris);
+    })(t0);
+    const M = Math.max(innerWidth, innerHeight);
+    if (kind === "woods") {
+      const cols = { spring: ["#7aa65a", "#f2b8c8", "#a8c87a"], summer: ["#3f7a3a", "#5c9a4a", "#2c5a2c"], autumn: ["#d98a2a", "#b5482a", "#e6b23a"], winter: ["#e8eef6", "#cfd9ea", "#ffffff"] }[season.name];
+      for (let i = 0; i < 30; i++) {
+        const l = document.createElement("i"); l.className = "leaf"; l.style.setProperty("--leaf", cols[i % 3]); ov.appendChild(l);
+        const a = Math.random() * Math.PI * 2, d = M * (0.6 + Math.random() * 0.6), spin = (Math.random() - 0.5) * 900;
+        const near = `translate(${cx}px, ${cy}px) rotate(0deg) scale(.15)`, far = `translate(${cx + Math.cos(a) * d}px, ${cy + Math.sin(a) * d}px) rotate(${spin}deg) scale(${2 + Math.random() * 3})`;
+        l.animate(dir === "in" ? [{ transform: near, opacity: 0 }, { opacity: 1, offset: 0.25 }, { transform: far, opacity: 0.9 }] : [{ transform: far, opacity: 0.9 }, { opacity: 1, offset: 0.75 }, { transform: near, opacity: 0 }],
+          { duration: 850 + Math.random() * 450, delay: Math.random() * 280, easing: dir === "in" ? "cubic-bezier(.5,0,.75,.4)" : "cubic-bezier(.2,.6,.4,1)", fill: "both" });
+      }
+    } else {
+      for (let i = 0; i < 5; i++) {
+        const r = document.createElement("i"); r.className = "ring"; ov.appendChild(r);
+        const sz = M * 1.4; r.style.width = r.style.height = sz + "px"; r.style.left = cx - sz / 2 + "px"; r.style.top = cy - sz / 2 + "px";
+        r.animate([{ transform: "scale(.02, .007)", opacity: 0.95 }, { transform: "scale(1, .36)", opacity: 0 }], { duration: 1300, delay: i * 170, easing: "cubic-bezier(.2,.6,.4,1)", fill: "both" });
+      }
+    }
+    if (dir === "out") setTimeout(() => ov.remove(), 1500);
+  }
+  function goWild(kind, xp, yp) {
+    if (leaving) return;
+    leaving = true;
+    closeBubble(); zoneTip.classList.remove("on");
+    sessionStorage.setItem("wild-arrive", kind);
+    sessionStorage.setItem("farm-zone", JSON.stringify({ kind, x: xp, y: yp }));
+    const url = WAYS[kind].url + (forced ? "?season=" + forced : "");
+    if (reduce) { location.href = url; return; }
+    let r = world.getBoundingClientRect();
+    const px = (xp / 100) * r.width;
+    if (px < viewport.scrollLeft || px > viewport.scrollLeft + viewport.clientWidth) { viewport.scrollLeft = px - viewport.clientWidth / 2; r = world.getBoundingClientRect(); }
+    const wx = r.left + px, wy = r.top + (yp / 100) * r.height;
+    world.style.transformOrigin = `${xp}% ${yp}%`;
+    world.classList.add("portal-in");
+    portal(kind, Math.max(0, Math.min(innerWidth, wx)), Math.max(0, Math.min(innerHeight, wy)), "in");
+    setTimeout(() => { location.href = url; }, 1050);
+  }
+  function comeBack() {
+    const kind = sessionStorage.getItem("farm-return");
+    sessionStorage.removeItem("farm-return");
+    document.querySelectorAll(".farm-portal").forEach((o) => o.remove());
+    world.classList.remove("portal-in", "portal-from", "portal-back");
+    leaving = false;
+    if (!WAYS[kind] || reduce) return;
+    let z = {}; try { z = JSON.parse(sessionStorage.getItem("farm-zone") || "{}"); } catch (e) {}
+    const [xp, yp] = z.kind === kind ? [z.x, z.y] : WAYS[kind].at;
+    viewport.scrollLeft = Math.max(0, (world.offsetWidth * xp) / 100 - viewport.clientWidth / 2);
+    const r = world.getBoundingClientRect(), wx = r.left + (xp / 100) * r.width, wy = r.top + (yp / 100) * r.height;
+    world.style.transformOrigin = `${xp}% ${yp}%`;
+    world.classList.add("portal-from");
+    void world.offsetWidth;
+    world.classList.add("portal-back"); world.classList.remove("portal-from");
+    setTimeout(() => world.classList.remove("portal-back"), 1600);
+    portal(kind, Math.max(0, Math.min(innerWidth, wx)), Math.max(0, Math.min(innerHeight, wy)), "out");
+  }
+  addEventListener("pageshow", (e) => { if (e.persisted) comeBack(); });
+
   /* ================= start ================= */
   document.body.insertAdjacentHTML("afterbegin", defs());
   world.insertAdjacentHTML("afterbegin", background());
+  world.appendChild(zoneTip);
+  placeSigns();
   for (let i = 0; i < 40; i++) {
     const f = document.createElement("div");
     f.className = "firefly" + (i >= 12 ? " extra" : "");
@@ -623,11 +751,13 @@
   act("btnPlant", plantModal);
   act("btnHarvest", harvestAll);
   act("btnAnimals", rosterModal);
+  act("btnWoods", () => goWild("woods", ...WAYS.woods.at));
+  act("btnPond", () => goWild("pond", ...WAYS.pond.at));
   if (keeperMode) toast("Keeper mode: “Adopt an Animal” now creates lines for data/farm.js.", 4200);
   addEventListener("skycalm", () => setWeather(season.name));
 
   // start the view where the keeper and the orchard are
-  requestAnimationFrame(() => { viewport.scrollLeft = Math.max(0, world.offsetWidth * ROCK.x / 100 - viewport.clientWidth * .32); });
+  requestAnimationFrame(() => { viewport.scrollLeft = Math.max(0, world.offsetWidth * ROCK.x / 100 - viewport.clientWidth * .32); comeBack(); });
 
   let last = performance.now(), tick = 0, time = 0;
   function frame(now) {

@@ -10,6 +10,8 @@ Chen Jia 的个人主页。纯静态网站：没有构建步骤，推送到 GitH
 | Message | `message.html` | 漂流瓶：写信给我、捡起别人的瓶子 |
 | Starmap | `starmap.html` | 按今晚慕尼黑星空旋转的星图、行星、深空天体、“找星座”小游戏；太阳系俯视图、可点开的行星球体、Cassini 的旅程 |
 | Farm | `farm.html` | 雪山豹猫 Yuki、动物领养、四季循环的果园 |
+| ↳ Woods | `woods.html` | 农场后的森林：采野杨梅、蘑菇、春笋（点农场里的森林或“The woods”路牌进入） |
+| ↳ Pond | `pond.html` | 池畔垂钓：钓竿、撒网、地笼（点农场里的池塘或“Fishing”路牌进入） |
 
 右上角 ✦ 切换天空画风（写实 / 印象派），☾ 切换“安静星空”（减少动效）。
 
@@ -29,6 +31,14 @@ python -m http.server 8000
 - `data/bottles.js`：公开展示的漂流瓶（公开访客来信前请先征得对方同意）
 - 农场四季：所有访客共享同一个季节时钟，每季 8 分钟（一年 32 分钟）；樱桃和桃子夏天熟，苹果秋天熟，橙子冬天熟。`farm.html?season=winter` 可直接预览某个季节。果树是“活的”（`js/orchard-sim.js`）：花苞逐朵开放、花瓣飘落、青果慢慢长大变色、秋叶飘落堆积、枝头积雪渐厚又融化；加 `&speed=60` 可快进观看一整年，加 `&p=0.5` 可定格在季节的某个进度。场景动画在 `js/farm-fx.js`：星星闪烁、流星、冬夜极光、雁群、炊烟、窗灯与灯笼、远湖波光、瀑布、池塘涟漪与跃出水面的锦鲤、阵风、雨后彩虹、雪地脚印，以及点击时的小特效；加 `?fx=demo` 可在几秒内看到所有事件
 - `data/farm.js`：农场居民。也可以打开 `farm.html?keeper`，用“Adopt an Animal”直接生成一行代码，粘贴到 `residents` 里
+
+## 农场之外：林间与池塘
+
+- 在农场里点森林（篱笆后的树林）或池塘，画面会向那里推近、光圈收拢（森林有落叶飞过，池塘有涟漪散开），然后进入新页面；点“← The farm”会反向退回农场的同一位置。两处也有木路牌和下方的两张卡片
+- 两个页面和农场共用同一个季节时钟，`?season=winter` 同样可用（会在页面间传递）
+- **林间**（`js/woods.js`）：春天野草莓、春笋、羊肚菌、香菇；夏天杨梅树结果、鸡油菌、牛肝菌（毒蝇伞只能看不能摘）；秋天松茸、牛肝菌、香菇、松果、野蔷薇果；冬天雪下的冬笋、松果、蔷薇果。所有东西都会慢慢长大：蘑菇从小圆钮长成开伞，草莓先开花再由白转红，杨梅从花到青果再到深红，蔷薇果由绿变橙变红；鼠标悬停能看到生长进度。每种只长在自己的地方（牛肝菌、松茸在松树下，鸡油菌在苔藓里，香菇、羊肚菌在倒木上，竹笋在竹林，草莓在小路边）。有些藏在草丛里、石头后、雪堆下（冬）或松针堆下（秋）——点击或拖动把它们挪开才能发现，藏着东西的地方偶尔会轻轻动一下。春夏偶尔下雨，雨后长得更快。Yuki 坐在竹林前陪你
+- **池塘**（`js/pond.js`）：钓竿——点水面抛竿，看浮漂，沉下去再提竿，然后按住收线、让指针保持在金色区（空格键也可以）；撒网——网住阴影里的鱼和小虾；地笼——在木桩处下笼，约一分钟后收（离开页面也在计时）。冬天结冰只能冰钓。还能撒饵引鱼，偶尔会钓到漂流瓶
+- 篮子、鱼篓和图鉴保存在访客自己的浏览器里（`wild-woods`、`wild-pond`）
 
 ## 主页说明
 
@@ -111,7 +121,7 @@ grant execute on function add_harvest(text, int) to anon;
 ## 文件结构
 
 ```
-index.html  papers.html  gallery.html  message.html  starmap.html  farm.html
+index.html  papers.html  gallery.html  message.html  starmap.html  farm.html  woods.html  pond.html
 css/style.css          全站样式
 js/config.js           站点设置
 js/sky.js              星空、银河、流星、印象派画风
@@ -121,6 +131,7 @@ js/saturn.js           主页：土星、Cassini、滚动叙事
 js/planet-globe.js     星图：WebGL 行星球体
 js/orrery.js           星图：太阳系与 Cassini 的旅程
 js/orchard-sim.js  js/farm-fx.js   农场：活的果树与场景动画
+js/wild.js  js/woods.js  js/pond.js   林间采集与池塘垂钓
 js/papers.js  js/gallery.js  js/message.js  js/starmap.js  js/farm.js  js/farm-art.js
 data/                  所有可编辑内容
 assets/                图片、CV；assets/planets/ 星球贴图
