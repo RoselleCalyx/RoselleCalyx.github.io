@@ -802,3 +802,39 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
   72% { transform: rotate(calc(var(--gust-dir, 1) * .6deg)); }
   100% { transform: rotate(0); }
 }
+
+/* ---------- Starmap: worlds up close, the solar system, Cassini's journey ---------- */
+#orrery { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border-radius: var(--r); }
+#orrery[hidden], .orrery-bar[hidden], .planet-stage[hidden], #oExit[hidden], .orrery-bar [hidden] { display: none !important; }
+.orrery-bar { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 4; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-family: var(--ui); font-size: .74rem; color: var(--ink-2); white-space: nowrap; }
+.orrery-bar button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-2); background: rgba(255, 255, 255, .04); color: var(--ink); cursor: pointer; font-size: .8rem; display: grid; place-items: center; }
+.orrery-bar button:hover { background: rgba(255, 255, 255, .12); }
+.orrery-bar #oExit { width: auto; padding: 0 12px; border-radius: 999px; font-family: var(--ui); font-size: .72rem; }
+.orrery-bar .o-date { min-width: 96px; color: var(--gold-2); font-variant-numeric: tabular-nums; }
+.orrery-bar .o-speed { min-width: 64px; color: var(--muted); }
+.journey-caption { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 4; width: min(92%, 540px); text-align: center; pointer-events: none; opacity: 0; transition: opacity .6s ease; text-shadow: 0 1px 12px rgba(0, 0, 0, .9); }
+.journey-caption.on { opacity: 1; }
+.journey-caption small { display: block; font-family: var(--ui); font-size: .64rem; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+.journey-caption b { display: block; font-family: var(--serif); font-weight: 500; font-size: 1.4rem; color: var(--gold-2); line-height: 1.2; }
+.journey-caption span { font-family: var(--serif); font-style: italic; font-size: 1.02rem; color: var(--ink-2); }
+.cassini-btn { margin-top: 8px; border-color: rgba(226, 192, 124, .5); color: var(--gold-2); }
+.cassini-btn.active { background: rgba(226, 192, 124, .14); }
+.planet-stage { position: absolute; inset: 0; z-index: 6; border-radius: var(--r); overflow: hidden; background: #03050c; box-shadow: 0 0 0 1px var(--line), var(--shadow); animation: stage-in .55s cubic-bezier(.2, .8, .2, 1); }
+@keyframes stage-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+#globe { width: 100%; height: 100%; display: block; }
+.ps-head { position: absolute; left: 20px; top: 16px; pointer-events: none; text-shadow: 0 1px 12px rgba(0, 0, 0, .9); }
+.ps-head h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1; }
+.ps-head h3 .zh { font-size: .62em; color: var(--ink-2); margin-left: 8px; }
+.ps-head p { margin: 6px 0 0; font-family: var(--serif); font-style: italic; color: var(--ink-2); font-size: 1.02rem; }
+.ps-close { position: absolute; right: 10px; top: 10px; background: rgba(0, 0, 0, .35); }
+.ps-moons { position: absolute; left: 20px; bottom: 14px; margin: 0; font-family: var(--ui); font-size: .7rem; letter-spacing: .08em; color: var(--muted); pointer-events: none; }
+.ps-credit { position: absolute; right: 14px; bottom: 12px; margin: 0; font-family: var(--ui); font-size: .6rem; letter-spacing: .04em; color: var(--muted); opacity: .7; }
+.ps-credit a { color: inherit; }
+.ps-credit a:hover { color: var(--gold-2); }
+@media (max-width: 640px) { .ps-moons { bottom: 30px; left: 14px; right: 14px; } .ps-credit { right: auto; left: 14px; bottom: 10px; } }
+@media (max-width: 760px) {
+  .orrery-bar { bottom: 4px; padding: 4px 8px; gap: 4px; }
+  .orrery-bar .o-speed { display: none; }
+  .journey-caption b { font-size: 1.1rem; }
+  .journey-caption span { font-size: .88rem; }
+}

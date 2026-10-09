@@ -71,6 +71,19 @@
     const phase = age < 0.03 || age > 0.97 ? "new" : age < 0.22 ? "waxing crescent" : age < 0.28 ? "first quarter" : age < 0.47 ? "waxing gibbous" : age < 0.53 ? "full" : age < 0.72 ? "waning gibbous" : age < 0.78 ? "last quarter" : "waning crescent";
     PLANETS.splice(1, 0, Object.assign({ id: "moon", name: "Moon", zh: "月亮", color: "#f3efe2", text: `Today the Moon is ${phase}. It drifts eastward against the stars by about its own width every hour.` }, eclToEq(ml, mb)));
   })();
+  // what you see when you open a world
+  const WORLDS = {
+    sun: { name: "Sun", zh: "太阳", rows: [["Diameter", "1,392,700 km"], ["Turns once in", "about 25 days"], ["Surface", "about 5,500 °C"], ["Age", "4.6 billion years"]] },
+    mercury: { name: "Mercury", zh: "水星", rows: [["Diameter", "4,879 km"], ["Day", "59 Earth days"], ["Year", "88 days"], ["Moons", "0"]] },
+    venus: { name: "Venus", zh: "金星", rows: [["Diameter", "12,104 km"], ["Day", "243 days, spinning backwards"], ["Year", "225 days"], ["Moons", "0"]] },
+    earth: { name: "Earth", zh: "地球", text: "Home: the only world we know with oceans under an open sky — and someone looking up.", rows: [["Diameter", "12,742 km"], ["Day", "24 hours"], ["Year", "365.25 days"], ["Moons", "1"]] },
+    moon: { name: "Moon", zh: "月亮", rows: [["Diameter", "3,474 km"], ["Day", "27.3 days"], ["Distance", "384,400 km"], ["Always shows", "the same face"]] },
+    mars: { name: "Mars", zh: "火星", rows: [["Diameter", "6,779 km"], ["Day", "24.6 hours"], ["Year", "687 days"], ["Moons", "2"]] },
+    jupiter: { name: "Jupiter", zh: "木星", rows: [["Diameter", "139,820 km"], ["Day", "9.9 hours"], ["Year", "11.9 years"], ["Moons", "95+"]] },
+    saturn: { name: "Saturn", zh: "土星", rows: [["Diameter", "116,460 km"], ["Day", "10.7 hours"], ["Year", "29.4 years"], ["Moons", "270+"]] },
+    uranus: { name: "Uranus", zh: "天王星", rows: [["Diameter", "50,724 km"], ["Day", "17.2 hours, on its side"], ["Year", "84 years"], ["Moons", "28+"]] },
+    neptune: { name: "Neptune", zh: "海王星", rows: [["Diameter", "49,244 km"], ["Day", "16.1 hours"], ["Year", "165 years"], ["Moons", "16"]] }
+  };
   function nearestConstellation(ra, dec) {
     const p = proj(ra, dec);
     let best = null, bd = 1e9;
@@ -368,10 +381,11 @@
     if (!h) return;
     select(h, true);
   }
-  function select(sel, fly) {
+  function select(sel, fly, visit = true) {
     selected = sel;
-    if (fly) focus(sel);
+    if (fly && mode !== "orrery" && sel.id !== "earth") focus(sel);
     renderInfo(); renderList();
+    if (visit && sel.type === "planet") openStage(sel.id);
   }
 
   /* ---------- side list & modes ---------- */
@@ -380,12 +394,15 @@
     if (quiz.on) stopQuiz();
     mode = b.dataset.mode;
     document.querySelectorAll(".sm-modes button").forEach((x) => x.classList.toggle("active", x === b));
-    if (mode === "planets") select({ type: "planet", id: "saturn" }, false);
+    closeStage();
+    showOrrery(mode === "orrery");
+    if (mode === "planets" || mode === "orrery") select({ type: "planet", id: "saturn" }, false, false);
     else if (mode === "deep") select({ type: "dso", id: "m42" }, false);
     resetView(); renderList();
   }));
   function listItems() {
     if (mode === "planets") return PLANETS.map((p) => ({ key: { type: "planet", id: p.id }, name: p.name, zh: p.zh }));
+    if (mode === "orrery") return ["sun", "mercury", "venus", "earth", "moon", "mars", "jupiter", "saturn", "uranus", "neptune"].map((k) => ({ key: { type: "planet", id: k }, name: WORLDS[k].name, zh: WORLDS[k].zh }));
     if (mode === "deep") return DSO.map((o) => ({ key: { type: "dso", id: o.id }, name: o.name, zh: o.code }));
     const cons = CONS.slice().sort((a, b) => a.name.localeCompare(b.name)).map((c) => ({ key: { type: "const", id: c.id }, name: c.name, zh: c.zh }));
     if (mode === "fav") {
@@ -419,11 +436,11 @@
       const nc = nearestConstellation(o.ra, o.dec);
       facts = [["Type", o.kind], ["Distance", o.dist], ["In", nc ? nc.name : "—"]];
     } else {
-      const p = PLANETS.find((x) => x.id === selected.id);
-      const nc = nearestConstellation(p.ra, p.dec);
-      head = `<h2>${esc(p.name)} <span class="zh">${esc(p.zh)}</span></h2><p class="tagline">Where it is today, ${now.toLocaleDateString("en", { day: "numeric", month: "long" })}.</p>`;
-      body = p.text;
-      facts = [["Direction of", nc ? `${nc.name} ${nc.zh}` : "—"], ["RA / Dec", `${(p.ra / 15).toFixed(1)}h / ${p.dec.toFixed(0)}°`], ["Accuracy", "about 1–2°"]];
+      const p = PLANETS.find((x) => x.id === selected.id), w = WORLDS[selected.id] || {};
+      const nc = p ? nearestConstellation(p.ra, p.dec) : null;
+      head = `<h2>${esc(w.name || p.name)} <span class="zh">${esc(w.zh || p.zh)}</span></h2><p class="tagline">${p ? `Where it is today, ${now.toLocaleDateString("en", { day: "numeric", month: "long" })}.` : "Under your feet."}</p>`;
+      body = (p && p.text) || w.text || "";
+      facts = (w.rows || []).concat(p ? [["In the direction of", nc ? `${nc.name} ${nc.zh}` : "—"]] : []);
     }
     info.querySelector(".info-head").innerHTML = head;
     info.querySelector(".story").textContent = body;
@@ -495,7 +512,7 @@
         }
       }
     } else {
-      const p = PLANETS.find((x) => x.id === selected.id);
+      const p = PLANETS.find((x) => x.id === selected.id) || { id: selected.id, color: "#5f9fd8" };
       const R = H * 0.28, X = W / 2, Y = H / 2;
       z.globalCompositeOperation = "source-over";
       const g = z.createRadialGradient(X - R * 0.35, Y - R * 0.35, R * 0.1, X, Y, R);
@@ -559,7 +576,7 @@
   function frame(t) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (t - last) / 1000); last = t; time += dt;
-    if (document.hidden || !bg) return;
+    if (document.hidden || !bg || mode === "orrery") return;
     if (target) {
       const f = 1 - Math.pow(0.002, dt);
       view.k += (target.k - view.k) * f; view.x += (target.x - view.x) * f; view.y += (target.y - view.y) * f;
@@ -567,6 +584,65 @@
     }
     draw();
   }
+
+  /* ---------- a world up close ---------- */
+  const stage = $("planetStage");
+  const globe = window.PlanetGlobe ? PlanetGlobe.create($("globe")) : null;
+  function openStage(id) {
+    if (!globe || !PlanetGlobe.has(id) || quiz.on) return;
+    const w = WORLDS[id] || {};
+    $("psName").innerHTML = `${esc(w.name || id)} <span class="zh">${esc(w.zh || "")}</span>`;
+    $("psSub").textContent = (w.rows || []).slice(0, 3).map((r) => r[1]).join(" · ");
+    const moons = globe.moons(id);
+    $("psMoons").textContent = moons.length ? "Orbiting: " + moons.join(" · ") : id === "sun" ? "Granulation, sunspots and the corona" : "";
+    globe.show(id);
+    stage.hidden = false;
+    globe.start();
+  }
+  function closeStage() { if (stage.hidden) return; stage.hidden = true; if (globe) globe.stop(); }
+  $("psClose").addEventListener("click", closeStage);
+  addEventListener("keydown", (e) => { if (e.key === "Escape") closeStage(); });
+
+  /* ---------- the solar system and Cassini's journey ---------- */
+  const oc = $("orrery"), bar = $("orreryBar"), cap = $("journeyCaption");
+  let lastDate = "";
+  const orrery = window.Orrery ? Orrery.create(oc, {
+    onPick: (k) => select({ type: "planet", id: k }, false),
+    onDate: (txt) => { if (txt !== lastDate) { lastDate = txt; $("oDate").textContent = txt; } },
+    onCaption: (c) => {
+      cap.classList.toggle("on", !!c);
+      if (c) cap.innerHTML = `<small>${esc(c.date)}</small><b>${esc(c.title)}</b><span>${esc(c.text)}</span>`;
+    },
+    onJourney: (on) => {
+      $("oExit").hidden = !on;
+      ["oSlower", "oFaster", "oSpeed"].forEach((id) => ($(id).hidden = on));
+      $("cassiniBtn").classList.toggle("active", on);
+    }
+  }) : null;
+  const speedLabel = () => { const v = orrery.speed; $("oSpeed").textContent = v >= 365 ? (v / 365).toFixed(v >= 730 ? 0 : 1) + " yr/s" : Math.round(v) + " days/s"; };
+  function showOrrery(on) {
+    if (!orrery) return;
+    oc.hidden = !on; bar.hidden = !on;
+    canvas.style.visibility = on ? "hidden" : "";
+    document.querySelector(".chart-ctrl").style.display = on ? "none" : "";
+    $("chartNote").style.display = on ? "none" : "";
+    $("playQuiz").style.display = on ? "none" : "";
+    if (on) { orrery.start(); speedLabel(); } else { if (orrery.inJourney) orrery.endJourney(); orrery.stop(); cap.classList.remove("on"); }
+  }
+  if (orrery) {
+    $("oPlay").addEventListener("click", () => { const p = orrery.play(); $("oPlay").textContent = p ? "❚❚" : "▶"; $("oPlay").setAttribute("aria-label", p ? "Pause" : "Play"); });
+    $("oFaster").addEventListener("click", () => { orrery.faster(); speedLabel(); });
+    $("oSlower").addEventListener("click", () => { orrery.slower(); speedLabel(); });
+    $("oExit").addEventListener("click", () => orrery.endJourney());
+    $("cassiniBtn").addEventListener("click", () => {
+      if (quiz.on) stopQuiz();
+      closeStage();
+      if (mode !== "orrery") document.querySelector('.sm-modes button[data-mode="orrery"]').click();
+      orrery.journey();
+      orrery.play(true);
+      $("oPlay").textContent = "❚❚";
+    });
+  } else $("cassiniBtn").hidden = true;
 
   $("chartNote").textContent = `Oriented to tonight's sky over ${OBS.place} · dashed gold line: horizon`;
   $("playQuiz").innerHTML = ICON.target + "Find the constellation";

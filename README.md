@@ -8,7 +8,7 @@ Chen Jia 的个人主页。纯静态网站：没有构建步骤，推送到 GitH
 | Papers | `papers.html` | 论文卡片、图片、PDF / Code / Project / Data 链接、BibTeX |
 | Gallery | `gallery.html` | 足迹时间线、照片墙、世界地图 |
 | Message | `message.html` | 漂流瓶：写信给我、捡起别人的瓶子 |
-| Starmap | `starmap.html` | 按今晚慕尼黑星空旋转的星图、行星、深空天体、“找星座”小游戏 |
+| Starmap | `starmap.html` | 按今晚慕尼黑星空旋转的星图、行星、深空天体、“找星座”小游戏；太阳系俯视图、可点开的行星球体、Cassini 的旅程 |
 | Farm | `farm.html` | 雪山豹猫 Yuki、动物领养、四季循环的果园 |
 
 右上角 ✦ 切换天空画风（写实 / 印象派），☾ 切换“安静星空”（减少动效）。
@@ -36,6 +36,16 @@ python -m http.server 8000
 - 土星（逐像素光线追踪：云带、环、卡西尼缝、环影）、卫星、银河、流星和 Cassini 都是实时绘制的，并按参考画的坐标对齐，任何屏幕比例下都能和前景吻合
 - 向下滚动推进故事；不滚动就不会强制播放。`index.html?p=0.7` 可以直接停在某一时刻（预览用）
 - 自适应画质：低性能设备 / 触屏会降低土星分辨率和粒子数量；系统“减少动态效果”和 ☾ 安静模式都会生效
+
+## 星图说明
+
+- **Planets / Solar System**：点任意行星（或太阳、月球）会打开一个实时渲染的球体（`js/planet-globe.js`，WebGL）：按真实倾角缓缓自转（自西向东），卫星绕行——木星的伽利略卫星、土星的土卫六和土卫二、海卫一逆行。表面用的是真实的全球贴图（`assets/planets/`，只在第一次点开某个星球时加载）：地球有日景、夜面城市灯光、会投下阴影的云层、地形起伏、只在海面出现的太阳反光，以及白天偏蓝、晨昏偏橙的大气（参考 three.js 官方 TSL Earth 示例）；月球和水星用 Lommel–Seeliger 光照（满月那种一直亮到边缘的效果）；气态巨行星有临边昏暗；土星环用真实的环结构（卡西尼缝、恩克缝）
+- **Solar System**（`js/orrery.js`）：按今天的真实位置俯视太阳系，可以暂停、加速或减速；点行星同样会打开它的球体
+- **Cassini’s journey**：从 1997 年发射开始，经过两次金星、一次地球、一次木星引力弹弓，2004 年进入土星轨道；随后是环绕土星的 13 年（惠更斯号降落土卫六、春分、至日、擦环轨道、大结局），最后坠入土星大气。全程一分多钟；☾ 安静模式下速度减半
+
+### 星球贴图的来源与署名
+
+`assets/planets/` 里的贴图来自 [Solar System Scope](https://www.solarsystemscope.com/textures/)（基于 NASA 数据），按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 使用；地球的海洋高光图和法线图取自 [three.js](https://github.com/mrdoob/three.js/tree/dev/examples/textures/planets) 示例仓库。改动：缩放、转成 WebP，部分转为灰度。星球面板右下角有署名，请保留。
 
 ## 漂流瓶和领养申请怎么送到我这里
 
@@ -108,8 +118,10 @@ js/sky.js              星空、银河、流星、印象派画风
 js/common.js           导航、页脚、弹窗、灯箱、投递
 js/backend.js          可选的 Supabase 接口与防垃圾
 js/saturn.js           主页：土星、Cassini、滚动叙事
+js/planet-globe.js     星图：WebGL 行星球体
+js/orrery.js           星图：太阳系与 Cassini 的旅程
 js/orchard-sim.js  js/farm-fx.js   农场：活的果树与场景动画
 js/papers.js  js/gallery.js  js/message.js  js/starmap.js  js/farm.js  js/farm-art.js
 data/                  所有可编辑内容
-assets/                图片、CV
+assets/                图片、CV；assets/planets/ 星球贴图
 ```
