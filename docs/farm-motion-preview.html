@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>农场动作预览</title>
+<base href="../">
+<link rel="stylesheet" href="css/style.css?v=20261009-motion">
+<style>
+  body { background:#eee9dc; color:#354536; font-family:system-ui,sans-serif; padding:32px; }
+  main { max-width:1100px; margin:auto; }
+  h1 { font:500 28px Georgia,serif; } p { color:#63715e; line-height:1.6; }
+  .controls { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin:24px 0; }
+  button, select { font:inherit; background:#fff9eb; color:#354536; border:1px solid #c2c6ac; border-radius:8px; padding:9px 13px; }
+  .motion-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+  article { overflow:hidden; padding:16px; background:#f8f4e9; border:1px solid #d5d5bf; border-radius:16px; }
+  .stage { position:relative; height:230px; background:linear-gradient(transparent 91%,#b9c4a2 91%,#d9ddc5 92%); }
+  .actor { width:170px; left:50%; top:92%; cursor:default; }
+  .caption { display:flex; justify-content:space-between; gap:8px; margin-top:12px; font-size:14px; }
+  small { color:#74816c; }
+  .frame-readout { font-variant-numeric:tabular-nums; }
+  a { color:#587055; } @media(max-width:600px) { body { padding:18px; } }
+</style>
+<main>
+  <h1>农场动作预览</h1>
+  <p>比较八种动物的步态与休息姿势。豹猫新增站立、蜷睡、伸懒腰和嗅闻。<br>拖慢速度检查落脚和循环衔接，也可以暂停后逐帧观察。</p>
+  <div class="controls">
+    <button id="pause">暂停</button><button id="step">下一帧</button><button id="flip">转向</button>
+    <label>速度 <input id="speed" type="range" min="0.3" max="1.8" step="0.1" value="1"><output id="speedValue">1×</output></label>
+    <label>动作 <select id="pose"><option value="walk">行走 / 跳跃</option><option value="sit">坐着</option><option value="sleep">休息 / 睡觉</option><option value="stand">站立（豹猫）</option><option value="stretch">伸懒腰（豹猫）</option><option value="sniff">嗅闻（豹猫）</option></select></label>
+  </div>
+  <div class="motion-grid" id="grid"></div>
+  <p><a href="farm.html">回到农场</a> · <a href="docs/farm-motion-contact-sheet.webp">查看姿势总览</a></p>
+</main>
+<script src="js/farm-motion.js"></script><script src="js/farm-art.js"></script>
+<script>
+  const grid = document.getElementById('grid'), pose = document.getElementById('pose');
+  const pause = document.getElementById('pause'), step = document.getElementById('step'), flip = document.getElementById('flip');
+  const speed = document.getElementById('speed'), speedValue = document.getElementById('speedValue');
+  const entries = Object.entries(FarmArt.SPECIES).map(([sp, s]) => {
+    const article = document.createElement('article');
+    article.innerHTML = `<div class="stage"><div class="actor walk-ready" data-species="${sp}" data-pose="walk"><div class="flip"><div class="bob">${FarmArt.ART[sp]()}${FarmArt.walkSprite(sp)}${FarmArt.poseSprite(sp)}</div></div></div></div><div class="caption"><span>${s.zh}</span><small class="frame-readout"></small></div>`;
+    grid.append(article);
+    return { sp, s, actor:article.querySelector('.actor'), sprite:article.querySelector('.walk-sprite'), readout:article.querySelector('.frame-readout'), phase:0 };
+  });
+  let running = !matchMedia('(prefers-reduced-motion:reduce)').matches, last = performance.now();
+  function paint(e) {
+    const p = pose.value, actual = p === 'walk' || p === 'sit' || FarmArt.POSES[e.sp][p] ? p : 'sit';
+    e.actor.dataset.pose = actual;
+    e.actor.classList.toggle('walking', actual === 'walk' && e.s.gait !== 'hop');
+    e.actor.classList.toggle('hopping', actual === 'walk' && e.s.gait === 'hop');
+    e.actor.classList.toggle('sleeping', actual === 'sleep');
+    e.sprite.style.backgroundPositionX = FarmMotion.position(e.phase,e.sp) + '%';
+    e.readout.textContent = actual === 'walk' ? `${FarmMotion.frame(e.phase,e.sp)+1} / ${FarmMotion.GAITS[e.sp].frames}` : '';
+  }
+  function frame(now) {
+    const dt = Math.min(.1,(now-last)/1000); last = now;
+    entries.forEach(e => {
+      if (running && pose.value === 'walk') e.phase = FarmMotion.advance(e.phase, e.s.speed * 16 * dt * +speed.value, 8.1 * e.s.size * 16, e.sp);
+      paint(e);
+    }); requestAnimationFrame(frame);
+  }
+  pause.onclick = () => { running = !running; pause.textContent = running ? '暂停' : '播放'; document.body.classList.toggle('farm-calm',!running); };
+  step.onclick = () => { running = false; pause.textContent = '播放'; document.body.classList.add('farm-calm'); entries.forEach(e=>{ e.phase = (e.phase + 1/FarmMotion.GAITS[e.sp].frames + 1e-9)%1; paint(e); }); };
+  flip.onclick = () => entries.forEach(e=>e.actor.classList.toggle('left'));
+  speed.oninput = () => { speedValue.value = speed.value+'×'; };
+  if (!running) { pause.textContent = '播放'; document.body.classList.add('farm-calm'); }
+  requestAnimationFrame(frame);
+</script>
+</html>

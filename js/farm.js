@@ -11,11 +11,14 @@
    ===================================================================== */
 (function () {
   const { esc, ICON, store, toast, modal } = window.Site;
-  const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
+  const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
+  const Motion = window.FarmMotion;
   const FARM = window.FARM || { residents: [] };
   const params = new URLSearchParams(location.search);
   const keeperMode = params.has("keeper");
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
+  let reduce = motionPreference.matches;
+  motionPreference.addEventListener("change", (e) => { reduce = e.matches; setWeather(season.name); });
   const lowPower = (navigator.hardwareConcurrency || 4) <= 4 || matchMedia("(pointer: coarse)").matches;
   const world = document.getElementById("world");
   const actorsEl = document.getElementById("actors");
@@ -40,11 +43,18 @@
   /* ================= the painted world (1600 × 900) ================= */
 
   function background() {
+    // A few foreground blades add local wind motion without moving the painting.
+    const grass = Array.from({ length: 24 }, (_, i) => {
+      const x = i < 18 ? 22 + i * 37 : 1440 + (i - 18) * 26;
+      const y = 851 + (i * 13) % 45, h = 9 + (i * 7) % 15;
+      return `<g class="meadow-tuft" style="--lean:${i % 2 ? -1 : 1}"><path d="M${x} ${y} q-3 -${h * .7} -8 -${h} M${x} ${y} q1 -${h} 4 -${h + 4} M${x} ${y} q8 -${h * .6} 12 -${h * .8}"/></g>`;
+    }).join('');
     return '<div class="farm-landscapes" aria-hidden="true">' +
       '<img class="farm-bg farm-landscape" data-s="spring summer" src="assets/farm/meadow-spring.webp" alt="" width="1920" height="1080" draggable="false" fetchpriority="high">' +
       '<img class="farm-bg farm-landscape" data-s="autumn" src="assets/farm/meadow-autumn.webp" alt="" width="1920" height="1080" draggable="false">' +
       '<img class="farm-bg farm-landscape" data-s="winter" src="assets/farm/meadow-winter.webp" alt="" width="1920" height="1080" draggable="false">' +
       '<div class="pond-shimmer"><i></i><i></i></div>' +
+      '<svg class="meadow-breeze" viewBox="0 0 1600 900">' + grass + '</svg>' +
       '<span class="scene-lantern lantern-cottage"></span><span class="scene-lantern lantern-pond"></span></div>';
   }
 
@@ -93,7 +103,7 @@
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height);
-    const W = weather.w, H = weather.h, wind = Math.sin(t * 0.15) * 14 + (window.FarmFX ? FarmFX.wind * 140 : 0);
+    const W = weather.w, H = weather.h, wind = breeze(t) * 14 + (window.FarmFX ? FarmFX.wind * 140 : 0);
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i];
       if (kind === "snow") {
@@ -137,8 +147,10 @@
   function randomSpot(nearX, self) {
     for (let i = 0; i < 70; i++) {
       const x = Math.max(GROUND.x0, Math.min(GROUND.x1, nearX == null ? GROUND.x0 + Math.random() * (GROUND.x1 - GROUND.x0) : nearX + (Math.random() - 0.5) * 34));
-      const y = GROUND.y0 + Math.random() * (GROUND.y1 - GROUND.y0);
-      if (!inPond(x, y) && !crowded(x,y,self) && !behindFrontTree(x,y) && !(Math.abs(x - ROCK.x) < 9 && y > 66 && y < 89)) return { x, y };
+      // Side-view art reads best on mostly lateral paths, rather than marching
+      // straight towards the camera while still showing its side.
+      const y = self ? Math.max(GROUND.y0, Math.min(GROUND.y1, self.y + (Math.random() - .5) * 10)) : GROUND.y0 + Math.random() * (GROUND.y1 - GROUND.y0);
+      if ((!self || Math.abs(x - self.x) > 3) && !inPond(x, y) && !crowded(x,y,self) && !behindFrontTree(x,y) && !(Math.abs(x - ROCK.x) < 9 && y > 66 && y < 89)) return { x, y };
     }
     return self ? {x: self.x, y: self.y} : { x: 35, y: 94 };
   }
@@ -151,8 +163,9 @@
       img.decoding = "async";
       img.src = walkSrc(sp);
       new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; if (img.complete && img.naturalWidth) ok(); })
-        .then(() => {
-          if (img.decode) img.decode().catch(() => {});   // warm the decoder; never wait on it (it can stall in background tabs)
+        .then(async () => {
+          if (img.naturalWidth !== Motion.GAITS[sp].frames * 384 || img.naturalHeight !== 384) return;
+          if (img.decode) await img.decode();
           walkReady.add(sp);
           document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach((el) => el.classList.add("walk-ready"));
         })
@@ -176,19 +189,50 @@
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
     el.setAttribute("aria-label", `${def.name}, ${sp.label}`);
-    const art = `<div class="flip"><div class="bob">${ART[def.species]()}${walkSprite(def.species)}</div></div>`;
-    el.innerHTML = (opts.keeper ? `<div class="art walk">${art}</div><div class="art sit"><div class="flip">${ART.snowcatSit()}</div></div>` : art)
+    const art = `<div class="flip"><div class="bob">${ART[def.species]()}${walkSprite(def.species)}${poseSprite(def.species)}</div></div>`;
+    el.innerHTML = art
       + `<span class="resident-label">${esc(def.name)}</span>`
       + (opts.pending ? `<span class="tag">waiting for approval</span>` : "");
     actorsEl.appendChild(el);
-    const a = { def, sp, el, x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", until: performance.now() + 1500 + Math.random() * 3000, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
+    const a = { def, sp, el, sprite: el.querySelector('.walk-sprite'), x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", pose: opts.keeper ? 'sleep' : 'sit', phase: 0, speed: 0, until: performance.now() + 2500 + Math.random() * 5000, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
+    el.querySelectorAll('.pose-sprite').forEach(img => {
+      const ready = async () => {
+        if (img.dataset.loading) return;
+        img.dataset.loading = 'true';
+        try { if (img.decode) await img.decode(); }
+        catch { return; } // keep the sitting image if a pose cannot be decoded
+        img.dataset.ready = 'true'; setPose(a, a.pose);
+      };
+      img.addEventListener('load', ready, { once: true });
+      if (img.complete && img.naturalWidth) ready();
+    });
     el.addEventListener("click", (e) => { e.stopPropagation(); openAnimal(a); });
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAnimal(a); } });
     if (walkReady.has(def.species)) el.classList.add("walk-ready");
     animals.push(a);
     const count = document.getElementById("residentCount"); if (count) count.textContent = animals.length + " little lives";
-    place(a);
+    setPose(a, a.pose); place(a);
     return a;
+  }
+  function setPose(a, pose) {
+    a.pose = pose;
+    const img = a.el.querySelector(`.pose-sprite[data-pose="${pose}"]`);
+    a.el.dataset.pose = pose === 'walk' || (img && img.dataset.ready) ? pose : 'sit';
+  }
+  function rest(a, now, duration, pose = 'sit') {
+    a.state = 'idle'; a.speed = 0; a.until = now + duration;
+    setPose(a, pose);
+  }
+  function planWalk(a, target, now) {
+    if (Math.hypot(target.x - a.x, target.y - a.y) < .3) { rest(a, now, 3000); return; }
+    a.tx = target.x; a.ty = target.y; a.speed = 0; a.phase = 0;
+    a.turnDir = Math.abs(target.x - a.x) > .2 ? Math.sign(target.x - a.x) : a.dir;
+    // Wake, then stand before starting: a sleepy kitten never jumps directly
+    // from its curled sleeping silhouette into a moving side profile.
+    const waking = a.pose === 'sleep';
+    a.state = 'prepare'; a.until = now + (waking ? 1600 : 420);
+    a.standAt = waking ? now + 1100 : now;
+    setPose(a, waking && a.def.species === 'snowcat' ? 'stretch' : a.def.species === 'snowcat' ? 'stand' : 'sit');
   }
   function place(a) {
     const s = depth(a.y) * a.sp.size * (a.keeper ? 1.13 : 1);
@@ -199,7 +243,12 @@
     a.el.classList.toggle("left", a.dir < 0);
     a.el.classList.toggle("walking", a.state === "walk" && a.sp.gait !== "hop");
     a.el.classList.toggle("hopping", a.state === "walk" && a.sp.gait === "hop");
-    if (a.keeper) a.el.classList.toggle("sitting", a.state !== "walk");
+    a.el.classList.toggle('sleeping', a.pose === 'sleep');
+    const frame = Motion.frame(a.phase, a.def.species);
+    if (a.sprite && a.lastFrame !== frame) {
+      a.sprite.style.backgroundPositionX = Motion.position(a.phase, a.def.species) + '%';
+      a.lastFrame = frame;
+    }
   }
   function emote(a, ch) {
     const s = document.createElement("span");
@@ -209,33 +258,50 @@
   }
   function think(a, now) {
     if (a.keeper) {
-      // the keeper mostly sits on her rock, and sometimes patrols the orchard
+      // The keeper naps and stretches on her rock, with occasional patrols.
       const home = Math.hypot(a.x - ROCK.x, a.y - ROCK.y) < 1;
-      if (home && Math.random() < 0.8) { a.state = "idle"; a.until = now + 7000 + Math.random() * 9000; a.dir = 1; if (Math.random() < 0.5) emote(a, "z z"); return; }
+      if (home && Math.random() < 0.72) {
+        const pose = ['sleep', 'sleep', 'sit', 'sniff', 'stretch'][(Math.random() * 5) | 0];
+        rest(a, now, pose === 'stretch' ? 1800 : 5000 + Math.random() * 9000, pose);
+        if (pose === 'sleep' && Math.random() < .3) emote(a, 'z z');
+        return;
+      }
       const t = home ? randomSpot(28, a) : { x: ROCK.x, y: ROCK.y };
-      a.tx = t.x; a.ty = t.y; a.state = "walk"; return;
+      planWalk(a, t, now); return;
     }
     if (Math.random() < 0.35) {
-      a.state = "idle"; a.until = now + 2000 + Math.random() * 5000;
+      const pose = Math.random() < .45 ? 'sleep' : a.def.species === 'snowcat' ? 'sniff' : 'sit';
+      rest(a, now, 3500 + Math.random() * 6500, pose);
       if (Math.random() < 0.3) emote(a, ["♪", "♥", "✿", "…"][(Math.random() * 4) | 0]);
       return;
     }
     const t = randomSpot(a.x, a);
-    a.tx = t.x; a.ty = t.y; a.state = "walk";
+    planWalk(a, t, now);
   }
   function stepAnimal(a, dt, now) {
+    if (a.petUntil && now > a.petUntil) { a.petUntil = 0; setPose(a, 'sit'); place(a); }
     if (a.held) return;
+    if (a.state === 'prepare') {
+      if (now >= a.standAt) setPose(a, a.def.species === 'snowcat' ? 'stand' : 'sit');
+      if (now >= a.until - 150) a.dir = a.turnDir;
+      if (now >= a.until) { a.state = 'walk'; setPose(a, 'walk'); }
+      place(a); return;
+    }
     if (a.state === "idle") { if (now > a.until) { think(a, now); place(a); } return; }
     const dx = a.tx - a.x, dy = (a.ty - a.y) * 1.78, d = Math.hypot(dx, dy);
-    const v = a.sp.speed * dt * depth(a.y);
-    if (d <= v) { a.x = a.tx; a.y = a.ty; a.state = "idle"; a.until = now + 1500 + Math.random() * 4000; }
+    const travel = Motion.travel(a.speed, a.sp.speed * depth(a.y), d, dt), v = travel.distance;
+    a.speed = travel.speed;
+    const oldX = a.x, oldY = a.y;
+    if (d < .025) { a.x = a.tx; a.y = a.ty; rest(a, now, 1600 + Math.random() * 3000, a.def.species === 'snowcat' ? 'stand' : 'sit'); }
     else {
       let nx = a.x + (dx / d) * v, ny = a.y + (dy / d / 1.78) * v;
       if (inPond(nx, ny)) { ny += (ny < POND.cy ? -1 : 1) * v; nx = a.x + (dx / d) * v * 0.5; }
-      if (crowded(nx,ny,a) || behindFrontTree(nx,ny)) { a.state = "idle"; a.until = now + 1500 + Math.random()*2000; place(a); return; }
+      if (crowded(nx,ny,a) || behindFrontTree(nx,ny)) { rest(a, now, 1500 + Math.random()*2000, a.def.species === 'snowcat' ? 'sniff' : 'sit'); place(a); return; }
       a.x = nx; a.y = ny;
-      if (Math.abs(dx) > 0.2) a.dir = dx > 0 ? 1 : -1;
     }
+    const distance = Math.hypot(a.x - oldX, (a.y - oldY) * 1.78);
+    const square = 8.1 * depth(a.y) * a.sp.size * (a.keeper ? 1.13 : 1);
+    a.phase = Motion.advance(a.phase, distance, square, a.def.species);
     place(a);
   }
 
@@ -243,7 +309,11 @@
   let bubble = null;
   function closeBubble() {
     if (!bubble) return;
-    if (bubble.a) bubble.a.held = false;
+    if (bubble.a) {
+      const now = performance.now();
+      bubble.a.held = (bubble.a.reactUntil || 0) > now;
+      bubble.a.until = Math.max(bubble.a.reactUntil || 0, now + 1800);
+    }
     bubble.el.remove(); bubble = null;
   }
   function showBubble(html, anchorEl, a) {
@@ -253,7 +323,11 @@
     el.innerHTML = `<button class="x" type="button" aria-label="Close">×</button>${html}`;
     world.appendChild(el);
     bubble = { el, anchor: anchorEl, a };
-    if (a) { a.held = true; if (a.state === "walk") a.state = "idle"; place(a); }
+    if (a) {
+      a.held = true;
+      if (a.state !== 'idle') rest(a, performance.now(), 2000, a.def.species === 'snowcat' ? 'stand' : 'sit');
+      place(a);
+    }
     el.querySelector(".x").onclick = closeBubble;
     el.addEventListener("click", (e) => e.stopPropagation());
     positionBubble();
@@ -330,9 +404,17 @@
     [...a.el.classList].filter((c) => c.startsWith("react")).forEach((c) => a.el.classList.remove(c));
     void a.el.offsetWidth;
     a.el.classList.add("react", "react-" + kind);
-    a.held = true; a.state = "idle"; place(a);
+    const now = performance.now(), duration = kind === "nap" ? 9000 : 1800;
+    a.petUntil = 0;
+    rest(a, now, duration, kind === "nap" ? "sleep" : a.def.species === "snowcat" ? "stand" : "sit");
+    a.reactUntil = now + duration;
+    a.held = true; place(a);
     clearTimeout(a.reactT);
-    a.reactT = setTimeout(() => { a.el.classList.remove("react", "react-" + kind); if (!bubble || bubble.a !== a) a.held = false; }, kind === "nap" ? 9000 : 1800);
+    a.reactT = setTimeout(() => {
+      a.el.classList.remove("react", "react-" + kind);
+      a.reactUntil = 0; a.until = performance.now() + 1800;
+      if (!bubble || bubble.a !== a) a.held = false;
+    }, duration);
   }
   function flyTreat(fromEl, toEl, f) {
     const r = fromEl.getBoundingClientRect(), t = toEl.getBoundingClientRect();
@@ -403,7 +485,11 @@
       emote(a, "♥");
       fxAt(a.el, "heart");
     };
-    el.querySelector("[data-pet]").onclick = () => emote(a, a.keeper ? "purr…" : ["♪", "♥", "✿"][(Math.random() * 3) | 0]);
+    el.querySelector("[data-pet]").onclick = () => {
+      setPose(a, d.species === 'snowcat' ? 'stretch' : 'sit');
+      a.petUntil = performance.now() + 1800; place(a);
+      emote(a, a.keeper ? 'purr…' : ['♪', '♥', '✿'][(Math.random() * 3) | 0]);
+    };
   }
 
   /* ================= orchard ================= */
@@ -440,6 +526,7 @@
     t.el.style.top = slot.y + "%";
     t.el.style.width = 19.5 * s * wide + "%";
     t.el.style.zIndex = Math.round(slot.y * 10) - 1;
+    t.el.style.setProperty('--tree-flex', (.7 + (t.seed % 7) * .07).toFixed(2));
     const out = treeSVG({ type: t.type, seed: t.seed, stage: isSapling(t) ? "sapling" : "mature", season: season.name, picked: pickedNow(t), live: !!window.OrchardSim });
     if (!isSapling(t) && window.OrchardSim) {
       // a living tree: painted base + simulated blossoms, fruit, leaves and snow
@@ -869,7 +956,9 @@
   // start the view where the keeper and the orchard are
   requestAnimationFrame(() => { viewport.scrollLeft = Math.max(0, world.offsetWidth * ROCK.x / 100 - viewport.clientWidth * .32); comeBack(); });
 
-  let last = performance.now(), tick = 0, time = 0;
+  // One shared breeze moves weather, tree crowns and foreground grass.
+  function breeze(t) { return Math.sin(t * .38) * .65 + Math.sin(t * .91 + 1.4) * .22; }
+  let last = performance.now(), tick = 0, time = 0, windTick = 0;
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
@@ -878,10 +967,16 @@
     const calm = reduce || (window.Sky && Sky.calm);
     document.body.classList.toggle("farm-calm", !!calm);
     if (!calm) animals.forEach((a) => stepAnimal(a, dt, now));
+    windTick += dt;
+    if (windTick > .12) {
+      windTick = 0;
+      world.style.setProperty('--tree-bend', (calm ? 0 : breeze(time) * .65) + 'deg');
+      world.style.setProperty('--grass-bend', (calm ? 0 : breeze(time) * 5) + 'deg');
+    }
     positionBubble();
     drawWeather(calm ? 0 : dt, calm ? 0 : time);
     const gust = window.FarmFX ? FarmFX.wind : 0;
-    if (window.OrchardSim) OrchardSim.update(dt, time, season, clock().p, calm, Math.sin(time * 0.15) * 14 / 10 + gust * 14);
+    if (window.OrchardSim) OrchardSim.update(dt, time, season, clock().p, calm, breeze(time) * 1.4 + gust * 14);
     if (window.FarmFX) FarmFX.update(dt, time, {
       season: season.name, calm,
       animals: animals.map((a) => ({ id: a.def.species + ":" + a.def.name, x: a.x, y: a.y, dir: a.dir, walking: a.state === "walk", size: a.sp.size * depth(a.y) }))

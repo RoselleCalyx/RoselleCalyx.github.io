@@ -1,5 +1,7 @@
 # Farm walk-cycle assets — handoff to Claude
 
+> Update 2026-10-09: these sheets are now integrated. `snowcat-v2.webp` is the active eight-frame cat cycle; the other species retain their original six-frame cycles. The runtime advances frames by travelled distance rather than the historical CSS timer below. New posture assets, QA and preview are documented in [farm-motion.md](farm-motion.md).
+
 ## Scope
 
 Generated with the built-in imagegen tool, one separate call per species using its existing sitting sprite as the visual reference. The user asked to leave runtime integration to Claude. This work adds assets and documentation only; no walk-cycle changes were made to farm.html, js/farm.js, js/farm-art.js or css/style.css.

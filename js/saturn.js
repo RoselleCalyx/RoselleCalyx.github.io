@@ -314,7 +314,7 @@
     }
     moons = MOONS.map((m, i) => moonSprite(m.r * F.S * dpr, i * 17 + 3));
     if (veil) {                                             // deep space wrapped around the planet and its rings
-      const R = SAT.R * F.S, w = R * 6.1, h = R * 3.5;
+      const R = SAT.R * F.S, w = R * 4.8, h = R * 2.8;
       veil.style.width = w + "px"; veil.style.height = h + "px";
       veil.style.transform = `translate(${F.left + SAT.x * F.S - w / 2}px, ${F.top + SAT.y * F.S - h / 2}px) rotate(${TILT}rad)`;
     }

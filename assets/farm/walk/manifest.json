@@ -1,6 +1,6 @@
 {
   "generatedWith": "built-in imagegen",
-  "integrationStatus": "assets only; runtime integration left to Claude",
+  "integrationStatus": "integrated; distance-driven runtime in js/farm-motion.js; revised eight-frame snowcat-v2 active",
   "cell": {
     "width": 384,
     "height": 384
@@ -128,6 +128,20 @@
       "facing": "right",
       "loopSeconds": 1,
       "gait": "walk"
+    }
+  ],
+  "revisions": [
+    {
+      "species": "snowcat",
+      "path": "snowcat-v2.webp",
+      "frames": 8,
+      "width": 3072,
+      "height": 384,
+      "baselinePx": 360,
+      "quality": 86,
+      "alphaQuality": 100,
+      "bytes": 246420,
+      "source": "../poses/source/snowcat-walk-v2.png"
     }
   ]
 }

@@ -1,0 +1,78 @@
+{
+  "generatedWith": "built-in imagegen",
+  "cell": {
+    "width": 384,
+    "height": 384
+  },
+  "groundBaselinePx": 360,
+  "quality": 86,
+  "alphaQuality": 100,
+  "assets": [
+    {
+      "path": "duckling-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 25848
+    },
+    {
+      "path": "fox-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 30468
+    },
+    {
+      "path": "hedgehog-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 43706
+    },
+    {
+      "path": "panda-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 22046
+    },
+    {
+      "path": "penguin-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 24750
+    },
+    {
+      "path": "rabbit-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 24260
+    },
+    {
+      "path": "shiba-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 24520
+    },
+    {
+      "path": "snowcat-sleep.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 24124
+    },
+    {
+      "path": "snowcat-sniff.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 25554
+    },
+    {
+      "path": "snowcat-stand.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 35038
+    },
+    {
+      "path": "snowcat-stretch.webp",
+      "width": 384,
+      "height": 384,
+      "bytes": 29348
+    }
+  ]
+}

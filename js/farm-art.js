@@ -68,12 +68,20 @@
   const ART = Object.fromEntries(Object.keys(SPECIES).map(species => [species, () => animalImage(species)]));
   ART.snowcatSit = () => animalImage("snowcat");
 
-  // Side-view walk cycles: 6 frames of 384 × 384 in one row, facing right (assets/farm/walk).
+  // Original sheets have six frames; the revised cat has eight. FarmMotion
+  // selects frames from travelled distance instead of an independent CSS timer.
   const WALK = { snowcat: 0.8, rabbit: 0.7, panda: 1, fox: 0.6, shiba: 0.6, hedgehog: 0.45, duckling: 0.8, penguin: 1 };
-  const walkSrc = (species) => "assets/farm/walk/" + species + ".webp";
-  const walkSprite = (species) => WALK[species]
-    ? `<div class="walk-sprite" style="background-image:url(${walkSrc(species)});--walk-dur:${WALK[species]}s" aria-hidden="true"></div>`
-    : "";
+  const walkSrc = (species) => FarmMotion.GAITS[species].src || "assets/farm/walk/" + species + ".webp";
+  const walkSprite = (species) => {
+    const g = FarmMotion.GAITS[species];
+    return g ? `<div class="walk-sprite" style="background-image:url(${walkSrc(species)});background-size:${g.frames * 100}% 100%;--walk-scale:${g.scale};--walk-offset:${(0.94 - g.baseline) * 100}%" aria-hidden="true"></div>` : "";
+  };
+  const POSES = Object.fromEntries(Object.keys(SPECIES).map(sp => [sp, {
+    sleep: `assets/farm/poses/${sp}-sleep.webp`,
+    ...(sp === 'snowcat' ? Object.fromEntries(['stand', 'stretch', 'sniff'].map(p => [p, `assets/farm/poses/snowcat-${p}.webp`])) : {})
+  }]));
+  const poseSprite = (species) => Object.entries(POSES[species]).map(([pose, src]) =>
+    `<img class="pose-sprite" data-pose="${pose}" src="${src}" alt="" width="384" height="384" draggable="false" decoding="async">`).join('');
 
   /* ================= fruit trees ================= */
 
@@ -130,5 +138,5 @@
     return `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="9.5" r="5.5" fill="url(#fr-${type})"/><path d="M8 4 v-2.5" stroke="#5a3b1e" stroke-width="1.3"/><path d="M8 4 q3 -3 5.5 -1 q-3 2.5 -5.5 1z" fill="#5f9a3e"/></svg>`;
   }
 
-  window.FarmArt = { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, treeSVG, treeInline, fruitIcon, defs };
+  window.FarmArt = { ART, SPECIES, TREES, PHENO, FRUIT, WALK, POSES, walkSrc, walkSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs };
 })();
