@@ -349,26 +349,27 @@
   }
 
   /* ---------- the plasma jet trailing behind the dish ---------- */
-  function drawJet(c, x, y, dirx, diry, len, width, heat) {
-    if (len < 2) return;
-    const nx = -diry, ny = dirx;
-    const ex = x + dirx * len, ey = y + diry * len;
-    c.globalCompositeOperation = "lighter";
-    for (const [wMul, a, col] of [[2.4, 0.12, "255,130,50"], [1.0, 0.34, "255,186,110"], [0.32, 0.85, "255,246,224"]]) {
-      const g = c.createLinearGradient(x, y, ex, ey);
-      g.addColorStop(0, `rgba(${col},${a * (0.6 + 0.4 * heat)})`);
-      g.addColorStop(0.18, `rgba(${col},${a * 0.6})`);
-      g.addColorStop(1, `rgba(${col},0)`);
-      c.fillStyle = g;
-      const w0 = width * wMul;
-      c.beginPath();
-      c.moveTo(x + nx * w0, y + ny * w0);
-      c.quadraticCurveTo(x + dirx * len * 0.5 + nx * w0 * 0.45, y + diry * len * 0.5 + ny * w0 * 0.45, ex, ey);
-      c.quadraticCurveTo(x + dirx * len * 0.5 - nx * w0 * 0.45, y + diry * len * 0.5 - ny * w0 * 0.45, x - nx * w0, y - ny * w0);
-      c.closePath(); c.fill();
+  function drawJet(c, x, y, dirx, diry, len, width, heat, motionTime) {
+    if(len<2)return;
+    const opacity=c.globalAlpha,N=lowPower?20:34;
+    c.save();c.globalCompositeOperation='lighter';
+    c.translate(x,y);c.rotate(Math.atan2(diry,dirx));
+    // Overlapping soft emission kernels have no polygon cap or hard side edge.
+    // Their first halo extends ahead of the hull and fades through transparency.
+    for(let i=0;i<N;i++){
+      const t=(i+.5)/N,fade=Math.pow(1-t,1.45);
+      const inlet=.4+.6*smooth(0,.08,t);
+      const spread=width*(.25+1.2*Math.sqrt(t))*Math.pow(1-t,.75);
+      const wobble=Math.sin(t*12-motionTime*1.5)*width*.16*t;
+      const along=len/N*2.8,at=(t-.015)*len;
+      c.globalAlpha=opacity*fade*inlet*(.09+.035*heat);
+      c.drawImage(FIRE,at-along,wobble-spread*1.9,along*2,spread*3.8);
+      c.globalAlpha=opacity*fade*inlet*.28;
+      c.drawImage(FIRE,at-along*.7,wobble-spread*.46,along*1.4,spread*.92);
     }
-    c.globalCompositeOperation = "source-over";
+    c.restore();
   }
+
 
 
   // One continuous flyby: broad curved coast, then an accelerating atmospheric descent.
@@ -392,64 +393,79 @@
     return {x,y,angle,u,scale: ((mobile ? 235 : CASSINI.size) / 340) * (1 - .82 * u) * (1 - .4 * sink)};
   }
 
-  // Always render the same state at the same scroll position, including when scrolling back.
-  function drawArrival(c, progress, S, motionTime) {
-    const f = flight(progress), [x,y] = P(f.x,f.y), s = f.scale*S;
-    const heat = smooth(.55,.68,progress), gone = smooth(.71,.79,progress);
-    if (progress > .03 && progress < .61) {
-      c.lineWidth = .7*dpr; c.strokeStyle = "rgba(204,218,241,.11)";
-      c.beginPath();
-      for (let i=0;i<=45;i++) {
-        const q=flight(.035+(.61-.035)*i/45), v=P(q.x,q.y);
-        if(i===0)c.moveTo(...v); else c.lineTo(...v);
+  const FINAL_ENTRY = .765;
+  const burnFlight = progress => flight(Math.min(progress, FINAL_ENTRY));
+
+  function drawEntryFire(c,x,y,S,angle,heat,motionTime,fade) {
+    const bx=-Math.cos(angle),by=-Math.sin(angle),nx=-by,ny=bx;
+    const length=(110+250*heat)*S,width=(6+27*heat)*S;
+    c.save();c.globalAlpha=heat*fade;
+    drawJet(c,x,y,bx,by,length,width,heat,motionTime);
+    c.globalCompositeOperation='lighter';
+    // Folding plasma ribbons widen downstream and break into warm billows.
+    for(let i=0;i<(lowPower?5:9);i++){
+      const side=(i/8-.5)*2,phase=motionTime*1.4+i*1.7;
+      const g=c.createLinearGradient(x,y,x+bx*length,y+by*length);
+      g.addColorStop(0,'rgba(255,248,222,0)');g.addColorStop(.06,'rgba(255,248,222,.5)');g.addColorStop(.2,'rgba(255,191,105,.35)');g.addColorStop(.65,'rgba(238,78,35,.12)');g.addColorStop(1,'rgba(238,78,35,0)');
+      c.strokeStyle=g;c.lineWidth=(1.2+heat*3)*S;c.lineCap='round';c.beginPath();
+      for(let j=0;j<=24;j++){
+        const t=j/24,d=t*length;
+        const wave=(side*width*(.35+t)+Math.sin(t*17-phase)*width*.32*t)*Math.sin(Math.PI*t*.8);
+        const px=x+bx*d+nx*wave,py=y+by*d+ny*wave;
+        j?c.lineTo(px,py):c.moveTo(px,py);
       }
       c.stroke();
     }
-    if (heat > 0 && gone < 1) {
-      c.save(); c.globalAlpha = heat * (1-gone);
-      const backX = -Math.cos(f.angle), backY = -Math.sin(f.angle);
-      drawJet(c,x,y,backX,backY,(75+150*heat)*S,(2+7*heat)*S,heat);
-      c.globalCompositeOperation = "lighter";
-      for(let i=0;i<(lowPower?36:85);i++) {
-        const phase=(h1(i+9)+motionTime*.22)%1, distance=phase*(70+170*heat);
-        const side=(h1(i+80)-.5)*22*phase;
-        const px=x+(backX*distance-backY*side)*S, py=y+(backY*distance+backX*side)*S;
-        spr(c,px,py,(1+h1(i+56)*4)*S,(1-phase)*heat*(1-gone)*.7);
+    for(let i=0;i<(lowPower?28:60);i++){
+      const phase=(h1(i+9)+motionTime*.18)%1,d=phase*length;
+      const side=(h1(i+80)-.5)*width*2.4*phase+Math.sin(phase*13-motionTime*2+i)*width*.18;
+      spr(c,x+bx*d+nx*side,y+by*d+ny*side,(8+h1(i+56)*32)*S*(.4+phase),Math.pow(1-phase,1.8)*heat*fade*.4);
+    }
+    // A diffuse heated envelope merges into the hull instead of outlining it.
+    spr(c,x-bx*4*S,y-by*4*S,36*S,heat*fade*.24);
+    c.restore();
+  }
+
+  function drawFinalLight(c,x,y,S,strength,scale=1) {
+    const r=275*S*scale;
+    c.save();c.globalCompositeOperation='lighter';c.globalAlpha=strength;
+    const halo=c.createRadialGradient(x,y,0,x,y,r);
+    halo.addColorStop(0,'rgba(255,244,213,.88)');halo.addColorStop(.09,'rgba(255,225,165,.75)');
+    halo.addColorStop(.27,'rgba(255,162,71,.35)');halo.addColorStop(.58,'rgba(201,72,41,.12)');halo.addColorStop(1,'rgba(170,68,42,0)');
+    c.fillStyle=halo;c.fillRect(x-r,y-r,r*2,r*2);
+    // Soft diffraction through the burning vapour, with an incandescent core.
+    c.save();c.translate(x,y);c.scale(1,.055);c.fillStyle=halo;c.translate(-x,-y);c.fillRect(x-r*1.5,y-r,r*3,r*2);c.restore();
+    spr(c,x,y,160*S*scale,strength*.95);spr(c,x,y,45*S*scale,strength);
+    c.restore();
+  }
+
+  // Deterministic geometry preserves the same entry and breakup when scrolling back.
+  function drawArrival(c, progress, S, motionTime) {
+    const f=burnFlight(progress),[x,y]=P(f.x,f.y),s=f.scale*S;
+    const heat=smooth(.55,.69,progress),gone=smooth(.715,.79,progress);
+    if(progress>.03&&progress<.61){
+      c.lineWidth=.7*dpr;c.strokeStyle='rgba(204,218,241,.11)';c.beginPath();
+      for(let i=0;i<=45;i++){const q=flight(.035+(.61-.035)*i/45),v=P(q.x,q.y);i?c.lineTo(...v):c.moveTo(...v);}c.stroke();
+    }
+    const flameFade=1-smooth(.76,.86,progress);
+    if(heat>0&&flameFade>0)drawEntryFire(c,x,y,S,f.angle,heat,motionTime,flameFade);
+    if(gone<1){c.save();c.globalAlpha=1-gone;drawCassini(c,x,y,s,f.angle,heat*.75);c.restore();}
+    const breakup=smooth(.70,.85,progress),fade=1-smooth(.84,.96,progress);
+    if(breakup>0&&fade>0){
+      c.save();c.globalCompositeOperation='lighter';
+      for(let i=0;i<(lowPower?26:64);i++){
+        const angle=f.angle+(h1(i+140)-.5)*1.55;
+        const distance=(20+h1(i+210)*210)*breakup*S;
+        const px=x+Math.cos(angle)*distance,py=y+Math.sin(angle)*distance+breakup*breakup*18*S;
+        const length=(10+h1(i+170)*40)*S*breakup;
+        const trail=c.createLinearGradient(px,py,px-Math.cos(angle)*length,py-Math.sin(angle)*length);
+        trail.addColorStop(0,`rgba(255,239,201,${fade*.8})`);trail.addColorStop(1,'rgba(255,99,39,0)');
+        c.globalAlpha=1;c.strokeStyle=trail;c.lineWidth=(.6+h1(i+88)*1.6)*S;c.beginPath();c.moveTo(px,py);c.lineTo(px-Math.cos(angle)*length,py-Math.sin(angle)*length);c.stroke();
+        spr(c,px,py,(3+h1(i+310)*9)*S,fade*(.3+h1(i+45)*.5));
       }
       c.restore();
     }
-    if (gone < 1) {
-      c.save(); c.globalAlpha=1-gone;
-      drawCassini(c,x,y,s,f.angle,heat*.75);
-      c.restore();
-    }
-    const breakup = smooth(.70,.84,progress), fade = 1-smooth(.79,.91,progress);
-    if(breakup>0 && fade>0) {
-      const at=flight(.715), [bx,by]=P(at.x,at.y);
-      c.save(); c.globalCompositeOperation="lighter";
-      for(let i=0;i<(lowPower?22:52);i++) {
-        const angle=at.angle+(h1(i+140)-.5)*.65;
-        const distance=(14+h1(i+210)*105)*breakup*S;
-        const px=bx+Math.cos(angle)*distance, py=by+Math.sin(angle)*distance;
-        const length=(5+h1(i+170)*28)*S*breakup;
-        const tailX=px-Math.cos(angle)*length, tailY=py-Math.sin(angle)*length;
-        const trail=c.createLinearGradient(px,py,tailX,tailY);
-        trail.addColorStop(0,"rgba(255,233,183,"+fade*.75+")"); trail.addColorStop(1,"rgba(255,115,46,0)");
-        c.strokeStyle=trail; c.lineWidth=(.5+h1(i+88))*S;
-        c.beginPath(); c.moveTo(px,py); c.lineTo(tailX,tailY); c.stroke();
-        spr(c,px,py,(2+h1(i+310)*6)*S,fade*(.3+h1(i+45)*.5));
-      }
-      const flash = smooth(.70,.735,progress)*(1-smooth(.745,.82,progress));
-      spr(c,bx,by,(28+90*breakup)*S,flash*.75);
-      // Localized warm cloud illumination, dissipating along the limb.
-      c.globalAlpha=1;
-      const glow=c.createRadialGradient(bx,by,0,bx,by,125*S);
-      glow.addColorStop(0,"rgba(255,188,102,"+flash*.18+")");
-      glow.addColorStop(1,"rgba(255,115,62,0)");
-      c.fillStyle=glow; c.fillRect(bx-125*S,by-125*S,250*S,250*S);
-      c.restore();
-    }
-    c.globalAlpha=1; c.globalCompositeOperation="source-over";
+    c.globalAlpha=1;c.globalCompositeOperation='source-over';
   }
 
   function drawRingImage(c, S, image) {
@@ -495,30 +511,40 @@
   }
   addEventListener("scroll", readScroll, { passive: true });
 
-  // The final ring light leaves the painting and descends into the next chapter.
-  // Its path belongs to scroll progress, so pausing or scrolling back is seamless.
+  // One light, one anchor: the retained entry flare becomes the falling remnant.
+  function handoffPose(q,calm) {
+    const f=burnFlight(p),[sx,sy]=P(f.x,f.y),w=cvFall.width,h=cvFall.height;
+    const travel=calm?0:Math.pow(q,1.5);
+    return {x:sx+(w*.52-sx)*smooth(.08,.85,q),y:sy+h*.88*travel,
+      sx,sy,scale:1-.90*smooth(0,.28,q)-.06*smooth(.28,.9,q)};
+  }
   function drawHandoff(calm){
     if(!cFall)return;
     cFall.clearRect(0,0,cvFall.width,cvFall.height);
-    const q=fall,a=smooth(0,.09,q)*(1-smooth(.87,1,q));
+    const q=fall,ignition=smooth(.715,.80,p),a=ignition*(1-smooth(.78,1,q));
     cvFall.style.opacity=a.toFixed(3);cvFall.dataset.progress=q.toFixed(3);
     hero.style.setProperty('--fall',calm?'0':smooth(0,.8,q).toFixed(3));
     if(a<.002)return;
-    const [ex]=P(ENTRY.x,ENTRY.y),w=cvFall.width,h=cvFall.height;
-    const x=clamp(ex,w*.22,w*.78)+(w*.5-clamp(ex,w*.22,w*.78))*smooth(0,1,q);
-    const y=calm?h*.7:h*(.24+.96*Math.pow(q,1.55));
-    const length=calm?34*dpr:(85+75*q)*dpr;
-    cFall.save();cFall.globalCompositeOperation='lighter';
+    const {x,y,scale}=handoffPose(q,calm),S=F.S*dpr;
+    const retained=1-smooth(.48,.9,q);
+    drawFinalLight(cFall,x,y,S,retained,scale);
+    if(q<=0)return;
+    cFall.save();
+    const cooling=smooth(.24,.9,q),length=(25+105*smooth(0,.45,q))*dpr;
+    cFall.globalCompositeOperation='lighter';
     const trail=cFall.createLinearGradient(x,y-length,x,y);
-    trail.addColorStop(0,'rgba(126,170,255,0)');trail.addColorStop(.45,'rgba(186,193,238,.16)');trail.addColorStop(.9,'rgba(255,203,137,.65)');trail.addColorStop(1,'rgba(255,249,227,.95)');
-    cFall.strokeStyle=trail;cFall.lineWidth=1.8*dpr;cFall.beginPath();cFall.moveTo(x+length*.13,y-length);cFall.quadraticCurveTo(x+length*.025,y-length*.3,x,y);cFall.stroke();
-    for(let i=0;i<20;i++){
-      const t=h1(i+312),offset=calm?0:Math.sin(time*.7+i)*1.4*dpr;
-      const xx=x+t*length*.12+(h1(i+184)-.5)*13*dpr+offset,yy=y-t*length;
-      cFall.fillStyle=`rgba(255,${190+Math.round(t*45)},${125+Math.round(t*95)},${(1-t)*.6})`;
-      cFall.save();cFall.translate(xx,yy);cFall.rotate(i*.8+q*.4);cFall.fillRect(-dpr,-dpr,(1+h1(i)*2)*dpr,(2+h1(i+4)*4)*dpr);cFall.restore();
+    trail.addColorStop(0,'rgba(162,143,121,0)');trail.addColorStop(.7,`rgba(255,183,109,${.24*(1-cooling)})`);trail.addColorStop(1,`rgba(255,226,178,${.7*(1-cooling)})`);
+    cFall.strokeStyle=trail;cFall.lineWidth=(1.6+scale*3)*dpr;cFall.beginPath();cFall.moveTo(x,y-length);cFall.quadraticCurveTo(x-3*dpr,y-length*.3,x,y);cFall.stroke();
+    // Fragments cool from bright metal to charcoal, spreading into a thin ash wake.
+    for(let i=0;i<(lowPower?24:48);i++){
+      const t=h1(i+312),spread=(5+27*cooling)*dpr*t;
+      const drift=calm?0:Math.sin(time*.55+i)*1.1*dpr;
+      const xx=x+(h1(i+184)-.5)*spread+drift,yy=y-t*length;
+      const size=(.7+h1(i+4)*2.6)*dpr*(1-.5*cooling);
+      cFall.globalCompositeOperation='source-over';
+      const col=cooling>.6?`rgba(164,153,143,${(1-t)*.35*(1-smooth(.78,1,q))})`:`rgba(255,${150+Math.round(t*55)},${72+Math.round(t*65)},${(1-t)*.75})`;
+      cFall.fillStyle=col;cFall.save();cFall.translate(xx,yy);cFall.rotate(i*.8+q);cFall.fillRect(-size/2,-size/2,size,size*.65);cFall.restore();
     }
-    spr(cFall,x,y,27*dpr,.8);spr(cFall,x,y,6*dpr,1);
     cFall.restore();
   }
 
@@ -559,7 +585,7 @@
     const real = Math.min(1, (now - last) / 1000), dt = Math.min(0.05, real);
     last = now;
     if (document.hidden || !F) return;
-    if(!visible){
+    if(!visible&&fallTarget>=1){
       if(cFall){cFall.clearRect(0,0,cvFall.width,cvFall.height);cvFall.style.opacity='0';}
       return;
     }
@@ -632,7 +658,7 @@
     const dimA = smooth(0.8, 1, p) * 0.46;
     dim.style.opacity = dimA.toFixed(3);
     if (cvR) cvR.style.opacity = (1 - dimA).toFixed(3);              // the top layer dims with the rest at the end
-    const fA = smooth(0.84, 0.92, p)*(1-smooth(.03,.65,fall));
+    const fA = smooth(0.84, 0.92, p)*(1-smooth(.02,.32,fall));
     finale.style.opacity = fA.toFixed(3);
     finale.style.transform = `translate(-50%, ${-40 - fA * 10}%)`;
     updateLog();

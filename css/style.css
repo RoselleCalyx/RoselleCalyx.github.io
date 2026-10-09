@@ -212,7 +212,7 @@ body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
 .mission-log { position: absolute; left: 50%; bottom: 13vh; z-index: 3; width: min(640px, calc(100vw - 32px)); transform: translateX(-50%); text-align: center; font-family: var(--serif); font-style: italic; font-size: clamp(1.15rem, 1.6vw, 1.5rem); color: var(--gold-2); opacity: 0; transition: opacity 1s ease; text-shadow: 0 0 18px rgba(0, 0, 0, 1), 0 0 4px rgba(0, 0, 0, .9); pointer-events: none; }
 .mission-log.on { opacity: 1; }
 .mission-log small { display: block; font-family: var(--ui); font-style: normal; font-size: .66rem; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 8px; }
-.finale { position: absolute; left: 50%; top: 50%; z-index: 3; width: min(720px, calc(100vw - 32px)); transform: translate(-50%, -40%); text-align: center; opacity: 0; pointer-events: none; }
+.finale { text-shadow:0 2px 18px #02040b,0 1px 4px #02040b; position: absolute; left: 50%; top: 50%; z-index: 3; width: min(720px, calc(100vw - 32px)); transform: translate(-50%, -40%); text-align: center; opacity: 0; pointer-events: none; }
 .finale h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 14px; }
 .finale p:last-child { font-family: var(--serif); font-style: italic; font-size: 1.25rem; color: var(--ink-2); margin: 0; }
 @media (max-width: 760px) {
@@ -242,13 +242,9 @@ body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
 .home-sections { padding-top: 40px; }
 /* the coda: Cassini looked outward; the page turns to the person still looking up */
 .coda { text-align: center; max-width: 660px; margin: 0 auto 4px; }
-.coda-trail { position: relative; display: block; width: 1px; height: clamp(90px, 14vh, 150px); margin: 0 auto 26px; background: linear-gradient(rgba(244, 226, 180, 0), rgba(244, 226, 180, .45)); }
-.coda-trail i { position: absolute; left: 50%; top: 0; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #fff4d6; box-shadow: 0 0 10px 3px rgba(255, 214, 150, .65), 0 -14px 12px -4px rgba(255, 214, 150, .35); animation: coda-fall 4.2s cubic-bezier(.5, 0, .7, 1) infinite; }
-@keyframes coda-fall { 0% { top: 0; opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 .coda p { margin: 0; font-family: var(--serif); font-size: clamp(1.15rem, 1.7vw, 1.45rem); line-height: 1.55; color: var(--ink-2); letter-spacing: .01em; }
 .coda em { color: var(--gold-2); }
 .coda + .about { margin-top: 10px; }
-@media (prefers-reduced-motion: reduce) { .coda-trail i { animation: none; top: 100%; } }
 body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,32,.72), rgba(7,11,22,.54)); border-color: rgba(226,192,124,.13); box-shadow: 0 24px 80px rgba(0,0,0,.2); scroll-margin-top: 90px; }
 @media (prefers-reduced-motion: reduce) { .hero-cosmos { will-change: auto; } html { scroll-behavior: auto; } .reveal { transition: none; } }
 @media (max-height:540px) {
