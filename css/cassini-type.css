@@ -131,6 +131,5 @@ body { font-family: var(--text); font-size: 15px; line-height: 1.75; }
   .shore-kicker { font-size: .6rem; letter-spacing: .18em; }
   .shore-copy { font-size: .88rem; }
   .shore-fields label { font-size: .68rem; }
-  #previewToss { font-size: .65rem; }
   .v-story h1 { font-size: clamp(27px, 7.5vw, 38px); line-height: 1.3; }
 }

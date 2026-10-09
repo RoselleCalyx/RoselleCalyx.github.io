@@ -1,6 +1,12 @@
 # 漂流瓶：Cloudflare D1 收信与 Telegram 提醒
 
-**当前状态（2026-10-09）：已经准备网页、私密收件箱和独立 Worker 代码；尚未创建 Cloudflare 账号、D1 数据库或 Telegram bot，尚未部署、绑定真实服务或发送真实通知。** 完成下面的配置和验收后，匿名投递才会真正送达。设置命令本轮没有执行。
+**当前状态（2026-10-10）：Cloudflare 已用现有 Google 账号完成 Wrangler 授权。欧洲区 D1 `message-inbox` 已创建，`0001_message_inbox.sql` 已在云端执行，Worker 已部署。主人自行设置的 `HOST_PASSWORD` 已生效，生产 API 已启用，网页已填写实际 API 地址。Telegram 和 Turnstile 暂未配置。**
+
+- 收信 API：`https://quiet-shore-messages.quiet-shore-message-worker.workers.dev`
+- D1 ID：`f17acea9-503f-4463-992a-a3351107670d`
+- 主人登录标识：`chen.jia@tum.de`
+
+下面的创建步骤供重新部署或迁移参考；当前账号请复用已有数据库，不要重复创建。
 
 访客仍有两种方式：用自己的邮件客户端写邮件，或在网页直接投递漂流瓶。网页投递不需要访客注册或填写邮箱；昵称和联系方式可留空。来信保存在 D1，只有主人登录后能读取；Telegram 只提醒有新信并提供收件箱链接。
 
@@ -12,26 +18,27 @@
 
 网站页面继续放在 GitHub Pages；数据库和验证在独立 Worker 中运行。GitHub Pages 本身是静态 HTML/CSS/JavaScript 托管，不能独立执行本方案的写入与主人验证逻辑。[GitHub Pages 官方说明](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
 
-## 1. 注册账号并准备 Wrangler
+## 1. 授权已有账号并准备 Wrangler
 
-自己在 [Cloudflare 注册页](https://dash.cloudflare.com/sign-up) 创建账号并完成邮箱验证。Cloudflare 首次注册需要邮箱和密码；这些凭据由你自行输入，不需要发送到聊天。[Cloudflare 创建账号文档](https://developers.cloudflare.com/fundamentals/account/create-account/)
+你已经有 Cloudflare 账号，可直接继续。运行下面的登录命令后，在打开的浏览器中用现有 Google 登录方式进入 Cloudflare，再确认 Wrangler 授权。Google 登录用于管理 Cloudflare；网站 `inbox.html` 目前仍使用独立的 `HOST_EMAIL` 和 `HOST_PASSWORD`，不会自动变成 Google 登录。
 
-下面的命令从网站仓库根目录运行。需要 Node.js 与 npm；若未安装，可从 [Node.js 官方网站](https://nodejs.org/) 安装受支持的 LTS 版本。进入已经准备好的 Worker 目录：
+下面的命令从网站仓库根目录运行。需要 Node.js 与 pnpm；若未安装，可从 [Node.js 官方网站](https://nodejs.org/) 安装受支持的 LTS 版本。进入已经准备好的 Worker 目录：
 
 ```sh
 cd services/message-worker
-npm install -D wrangler@latest
-npx wrangler login
+pnpm install --frozen-lockfile
+pnpm exec wrangler login --scopes account:read user:read workers_scripts:write d1:write
+pnpm exec wrangler whoami
 ```
 
-Wrangler 是 Cloudflare 的官方 CLI；这里在 Worker 项目中安装，并用 `npx wrangler` 运行。登录命令会打开浏览器，登录自己的 Cloudflare 账号并确认 Wrangler 授权。[Wrangler 安装文档](https://developers.cloudflare.com/workers/wrangler/install-and-update/)、[Wrangler 登录文档](https://developers.cloudflare.com/workers/wrangler/commands/general/#login)
+Wrangler 是 Cloudflare 的官方 CLI；这里在 Worker 项目中安装，并用 `pnpm exec wrangler` 运行。仓库锁定了已验证的 Wrangler 版本。`whoami` 用于确认当前授权的是自己的账号。无需迁移现有 GitHub Pages 网站或另购域名。[Wrangler 安装文档](https://developers.cloudflare.com/workers/wrangler/install-and-update/)、[Wrangler 登录文档](https://developers.cloudflare.com/workers/wrangler/commands/general/#login)
 
 ## 2. 创建 D1 并应用数据库迁移
 
-仍在 `services/message-worker` 目录中：
+仍在 `services/message-worker` 目录中；如果尚未创建同名数据库，运行：
 
 ```sh
-npx wrangler d1 create message-inbox
+pnpm exec wrangler d1 create message-inbox
 ```
 
 命令会返回数据库 UUID。在 `wrangler.jsonc` 中，将 D1 配置的 `database_id` 占位值替换为这次返回的实际 UUID，保留绑定名 `DB` 和数据库名 `message-inbox`：
@@ -50,7 +57,7 @@ npx wrangler d1 create message-inbox
 然后建立线上数据库表：
 
 ```sh
-npx wrangler d1 migrations apply message-inbox --remote
+pnpm exec wrangler d1 migrations apply message-inbox --remote
 ```
 
 迁移文件已经放在 `migrations/0001_message_inbox.sql`，包括私信、主人会话、限流记录与通知任务。使用 `--remote` 才会迁移真正的云端数据库；本地数据库不能替代它。[D1 创建与迁移命令](https://developers.cloudflare.com/d1/wrangler-commands/)
@@ -74,11 +81,13 @@ npx wrangler d1 migrations apply message-inbox --remote
 主人密码使用 Worker secret：
 
 ```sh
-npx wrangler deploy
-npx wrangler secret put HOST_PASSWORD
+pnpm exec wrangler deploy
+pnpm exec wrangler secret put HOST_PASSWORD
 ```
 
 第一次 `deploy` 用于创建 `quiet-shore-messages` Worker。此时还没有主人密码，API 会返回未配置（HTTP 503），不会接受来信或开放收件箱。随后在 `secret put` 的交互提示中输入一个独立的、至少 16 字符的随机长密码，并自行保存在密码管理器中。不要把密码写入 `vars`、前端、Git 仓库或聊天。
+
+也可在 Cloudflare Dashboard 打开 `quiet-shore-messages` → **Settings** → **Runtime variables and secrets** → **Add variable**。选择 **Production**，Key 填 `HOST_PASSWORD`，Value 填独立密码，勾选 **Secret**，然后亲自点击 **Add 1 variable and deploy**。Key 是固定变量名，Value 是你以后登录收件箱所用的密码；不要在 Value 外添加引号。保存并部署后才会生效。
 
 这里直接配置 `HOST_PASSWORD` secret；不需要另建 `HOST_PASSWORD_HASH` 或 `HOST_PASSWORD_SALT`。敏感值由 Cloudflare secret 保存，普通网页只知道 Worker 的公开地址。[Workers secrets 官方文档](https://developers.cloudflare.com/workers/configuration/secrets/)
 
@@ -126,8 +135,8 @@ npx wrangler secret put HOST_PASSWORD
 4. 在 `services/message-worker` 目录，把 token 与上述 ID 设置成服务端 secrets：
 
    ```sh
-   npx wrangler secret put TELEGRAM_BOT_TOKEN
-   npx wrangler secret put TELEGRAM_CHAT_ID
+   pnpm exec wrangler secret put TELEGRAM_BOT_TOKEN
+   pnpm exec wrangler secret put TELEGRAM_CHAT_ID
    ```
 
    逐个在提示中输入。不要把这些值写进 `js/config.js`，不要贴到聊天或提交到 Git。创建 bot 和读取 chat ID 的步骤不会主动发送网站通知。
@@ -139,7 +148,7 @@ Telegram 默认 bot 消息在普通限额内不收费。本方案只向你自己
 仍在 Worker 目录：
 
 ```sh
-npx wrangler deploy
+pnpm exec wrangler deploy
 ```
 
 部署成功后，Wrangler 会返回 `workers.dev` HTTPS 地址。复制它的**根地址**到网站 `js/config.js` 中的 `SITE.messageApi`；不要加 `/api/messages` 或 `/api/host`：
@@ -207,9 +216,9 @@ turnstileSiteKey: "填写公开sitekey",
 在 Worker 目录设置配套的服务端 secret：
 
 ```sh
-npx wrangler secret put TURNSTILE_SECRET_KEY
+pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
 重新部署修改过的网页。两项必须成对配置：只设置服务端 secret，普通投递会因缺少 token 验证失败；只有前端 sitekey，服务端不会执行强制验证。前端采用 explicit render、暗色主题（`theme: "dark"`）、自适应尺寸（`size: "flexible"`）与 `action: "message"`；Worker 同时核验 token 成功状态、实际 hostname 与 `action`，过期后需要重新验证。[Turnstile 服务端验证文档](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
 
-本轮自动化验证在本地用真实 SQLite 模拟 D1 绑定，并模拟 HTTP/Telegram 返回。它不能替代真实 Cloudflare 部署、线上权限检查和 Telegram 送达验收；目前仍未接通真实收信服务。
+本地自动化验证使用真实 SQLite 模拟 D1 绑定，并模拟 HTTP/Telegram 返回；Worker 14 项测试与前端相关 50 项测试已通过。云端数据库迁移和 Worker 部署已完成，生产 API 的同源预检返回 204，未登录读取私信返回 401，不支持公开读取，其他域名请求返回 403。Telegram 送达仍需配置并独立验收。

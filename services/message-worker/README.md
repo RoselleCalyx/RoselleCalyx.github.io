@@ -4,29 +4,36 @@ Plain JavaScript Cloudflare Worker + private D1 inbox + Telegram notification ou
 
 ## Deploy after creating a Cloudflare account
 
-Run these commands from this directory. `npx` obtains the official Wrangler CLI; none of these cloud commands were run during implementation.
+The production Worker was deployed on 2026-10-10 at `https://quiet-shore-messages.quiet-shore-message-worker.workers.dev`; the configured D1 database and migration already exist. Reuse them for subsequent deployments. Telegram and Turnstile remain optional and unconfigured.
+
+Run commands from this directory. Install the locked official Wrangler CLI first:
 
 ```sh
-npx wrangler login
-npx wrangler d1 create message-inbox
+pnpm install --frozen-lockfile
+pnpm exec wrangler login --scopes account:read user:read workers_scripts:write d1:write
+# Only when creating a new deployment/database:
+pnpm exec wrangler d1 create message-inbox
 ```
 
 Copy the returned `database_id` into `wrangler.jsonc`. Confirm `ALLOWED_ORIGIN`, `HOST_EMAIL`, and `INBOX_URL`, then run:
 
 ```sh
-npx wrangler d1 migrations apply message-inbox --remote
-npx wrangler deploy
-npx wrangler secret put HOST_PASSWORD
-npx wrangler secret put TELEGRAM_BOT_TOKEN
-npx wrangler secret put TELEGRAM_CHAT_ID
+pnpm exec wrangler d1 migrations apply message-inbox --remote
+pnpm exec wrangler deploy
+pnpm exec wrangler secret put HOST_PASSWORD
+# Optional Telegram notifications:
+pnpm exec wrangler secret put TELEGRAM_BOT_TOKEN
+pnpm exec wrangler secret put TELEGRAM_CHAT_ID
 ```
 
 The first deployment creates the Worker. Until `HOST_PASSWORD` is set, every API request fails closed with HTTP 503. Enter secrets at Wrangler's prompt; never paste them into this repository, frontend configuration, or command arguments. The password must contain at least 16 characters; use a long random password. `HOST_EMAIL` is only the owner's login identifier, and sends no email.
 
+Alternatively, open the Worker's Dashboard **Settings** → **Runtime variables and secrets** → **Add variable**. Choose Production, set Key to `HOST_PASSWORD`, enter the password as Value, check Secret, and complete **Add 1 variable and deploy**. The password should be entered and submitted by the owner.
+
 For optional Turnstile protection, add the public site key to the site's `SITE.turnstileSiteKey`, allow the configured site's hostname in Turnstile, and run:
 
 ```sh
-npx wrangler secret put TURNSTILE_SECRET_KEY
+pnpm exec wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
 Once that secret is set, anonymous new submissions require a valid token with action `message` and the configured origin's hostname. The Worker verifies it through Cloudflare Siteverify.
@@ -65,6 +72,6 @@ Keep the same UUID `submissionId` when retrying the same draft after an uncertai
 - D1 enforces fixed-window limits per HMAC-SHA-256 IP hash: anonymous new letters 5/10 minutes, login 5/15 minutes, refresh 30/15 minutes. The HMAC key comes from the secret host password; raw IP addresses are not stored. Limits may allow short bursts at a window boundary. CORS is browser origin control; non-browser clients can set an Origin header, so the server limits and optional Turnstile remain relevant.
 - A letter and its notification outbox entry are saved in one D1 `batch()` transaction. Telegram is attempted after commit and cannot turn a saved letter into a failed submission. Missing Telegram secrets leave durable records pending. A five-minute Cron Trigger retries failures with backoff and honors Telegram `retry_after` responses. An atomic one-minute lease avoids concurrent workers sending the same batch.
 - Each Telegram notification contains only a count and the host inbox URL, with no sender name, contact, or letter text. Notification failure records contain only generic codes, never bot-token URLs. Telegram reminders are at least once: a network interruption after Telegram acceptance or a database failure while marking delivery can cause a repeated reminder. Original letters stay in D1.
-- Closing the site's inbox does not stop server notifications. Cloud cron execution, connectivity, free quotas, and Telegram delivery cannot guarantee an exact arrival time. This code has not been deployed or tested against a real D1 database yet.
+- Closing the site's inbox does not stop server notifications. Cloud cron execution, connectivity, free quotas, and Telegram delivery cannot guarantee an exact arrival time. The Worker and D1 migration have been deployed; Telegram delivery has not yet been configured or verified.
 
 Official references: [D1 batch transactions](https://developers.cloudflare.com/d1/worker-api/d1-database/), [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/), [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/), [Turnstile verification](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/), [Telegram sendMessage](https://core.telegram.org/bots/api#sendmessage).

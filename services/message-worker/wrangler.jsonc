@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "message-inbox",
-      "database_id": "REPLACE_WITH_CREATED_D1_DATABASE_ID",
+      "database_id": "f17acea9-503f-4463-992a-a3351107670d",
       "migrations_dir": "migrations"
     }
   ],

@@ -104,7 +104,7 @@
   }
   async function castBottle() {
     if (casting) return;
-    casting = true; $('previewToss').disabled = true;
+    casting = true;
     const sr = scene.getBoundingClientRect();
     if (sr.width <= 760 && scrollY > 20) window.scrollTo({top:0,behavior:Sky.calm ? 'instant' : 'smooth'});
     const w = bottle.offsetWidth, h = bottle.offsetHeight;
@@ -129,9 +129,8 @@
         ], {duration:6200, easing:'ease-in-out',fill:'forwards'}); await drift.finished;
       }
     } catch (_) { /* resize/navigation can interrupt an animation */ }
-    finally { ghost.remove(); bottle.style.opacity = '1'; casting = false; $('previewToss').disabled = false; }
+    finally { ghost.remove(); bottle.style.opacity = '1'; casting = false; }
   }
-  $('previewToss').addEventListener('click', () => { $('sceneStatus').textContent = 'A bottle drifts into the sea. This is a preview; no message is sent.'; castBottle(); });
   const shared = window.BOTTLES || [];
   $('bottleList').innerHTML = shared.map((b,i) => `<li><button type="button" data-i="${i}">${ICON.bottle}<span>${esc(b.from || 'A stranger')}<small>${esc(b.date || '')}</small><span class="ex">${esc(b.text)}</span></span></button></li>`).join('') || '<li>No bottles on the shore tonight.</li>';
   function openBottle(b) {

@@ -26,9 +26,9 @@ window.SITE = {
 
   // Private Message inbox: deploy services/message-worker to Cloudflare first,
   // then paste its HTTPS root URL here. Visitors need no email or account.
-  // Keep empty until deployed; see docs/message-cloudflare-setup.md.
+  // Deployment and optional notifications: docs/message-cloudflare-setup.md.
   // Tokens and the host password belong in Worker secrets, never this file.
-  messageApi: "",
+  messageApi: "https://quiet-shore-messages.quiet-shore-message-worker.workers.dev",
   turnstileSiteKey: "", // Optional PUBLIC Turnstile sitekey; pair with Worker secret.
 
   // Optional shared database (free tier is plenty). When set, bottles and adoption

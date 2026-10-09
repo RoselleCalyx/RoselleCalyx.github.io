@@ -34,7 +34,7 @@ function style() {
 
 function messageHarness(deliver) {
   const nodes = {};
-  for (const id of ['bottleForm', 'bText', 'bCount', 'bStatus', 'heroBottle', 'seaEffects', 'nightSea', 'bName', 'bContact', 'bAnon', 'bChallenge', 'sendLabel', 'deliveryNote', 'contactField', 'writePane', 'readPane', 'previewToss', 'sceneStatus', 'bottleList', 'pickBottle']) nodes[id] = element();
+  for (const id of ['bottleForm', 'bText', 'bCount', 'bStatus', 'heroBottle', 'seaEffects', 'nightSea', 'bName', 'bContact', 'bAnon', 'bChallenge', 'sendLabel', 'deliveryNote', 'contactField', 'writePane', 'readPane', 'bottleList', 'pickBottle']) nodes[id] = element();
   const form = nodes.bottleForm, sendButton = element(), anonymousLabel = element();
   form.elements = { delivery: { value: 'bottle' } };
   form.querySelector = selector => selector === '[type="submit"]' ? sendButton : selector === '.shore-anon' ? anonymousLabel : null;
