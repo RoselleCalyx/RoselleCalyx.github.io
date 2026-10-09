@@ -8,11 +8,11 @@
   <title>A Lonely Voyager · The Cassini Odyssey</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="css/style.css?v=20261009-voyager" />
-  <link rel="stylesheet" href="css/voyager.css?v=20261009-v10" />
+  <link rel="stylesheet" href="css/voyager.css?v=20261010-responsive" />
   <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
-  <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
+  <link rel="stylesheet" href="css/mobile.css?v=20261010-responsive" />
 </head>
 <body data-page="voyager">
   <a class="v-skip" href="#journeyControls">Skip to journey controls</a>
@@ -33,12 +33,14 @@
       <p class="v-poem sr-only" id="vPoem">She leaves the familiar world behind.<br />From here, every distant light might be a way home.</p>
       <button type="button" class="v-text-button" id="vJournalOpen" aria-haspopup="dialog"><span class="v-small-orbit" aria-hidden="true"></span>Read the field notes <span aria-hidden="true">↗</span></button>
     </section>
-    <div class="v-scene-caption v-ui"><span class="v-live-dot"></span><span id="vSceneLabel">EARTH</span><span class="v-caption-rule"></span><span id="vVantage">A lunar crater rim</span></div>
     <div class="v-scene-loading"><span id="vSceneStatus" role="status" hidden></span><button type="button" id="vRetryScene" hidden>Try again</button></div>
-    <div class="v-tools">
-      <button type="button" id="vPanoramaOpen" class="v-tool v-ui" aria-haspopup="dialog" title="See the complete composition">Full scene <span aria-hidden="true">↗</span></button>
-      <button type="button" id="vMotion" class="v-tool v-ui" aria-pressed="false" title="Pause the moving scene">Pause motion</button>
-      <button type="button" id="vImmersive" class="v-tool" aria-pressed="false" aria-label="Hide the interface and take in the view">Just look up <span aria-hidden="true">⤢</span></button>
+    <div class="v-context">
+      <div class="v-scene-caption v-ui"><span class="v-live-dot"></span><span id="vSceneLabel">EARTH</span><span class="v-caption-rule"></span><span id="vVantage">A lunar crater rim</span></div>
+      <div class="v-tools">
+        <button type="button" id="vPanoramaOpen" class="v-tool v-ui" aria-haspopup="dialog" title="See the complete composition">Full scene <span aria-hidden="true">↗</span></button>
+        <button type="button" id="vMotion" class="v-tool v-ui" aria-pressed="false" title="Pause the moving scene">Pause motion</button>
+        <button type="button" id="vImmersive" class="v-tool" aria-pressed="false" aria-label="Hide the interface and take in the view">Just look up <span aria-hidden="true">⤢</span></button>
+      </div>
     </div>
     <section class="v-dock v-ui" id="journeyControls" aria-label="Journey controls" tabindex="-1">
       <div class="v-dock-head">

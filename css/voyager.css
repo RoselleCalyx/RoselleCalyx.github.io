@@ -166,3 +166,50 @@ dialog::backdrop { background: #02050bd6; backdrop-filter: blur(12px); }
 .v-map-node[data-stop="saturn"] span { top: -12px; }
 .v-map-node[data-stop="blue-dot"] span { top: 39px; }
 @media (max-width: 700px) { .v-panorama-dialog { padding: 15px; width: calc(100% - 18px); } .v-panorama-head h2 { font-size: 21px; } #vPanoramaCaption { font-size: 10px; } }
+
+/* Text and controls reserve their own space, including in zoomed or short windows.
+   The scenery remains behind them; a short viewport may scroll instead of clipping copy. */
+.voyager {
+  display: grid;
+  grid-template-rows: auto auto minmax(80px, 1fr) auto auto;
+  gap: 20px;
+  height: auto;
+  min-height: 100svh;
+  padding: calc(var(--header-h) + 30px) 4.5% calc(18px + env(safe-area-inset-bottom, 0px));
+}
+.v-topline, .v-story, .v-scene-caption, .v-tools, .v-dock {
+  position: relative; inset: auto; min-width: 0;
+}
+.v-topline { grid-row: 1; gap: 20px; }
+.v-identity { min-width: 0; }
+.v-coordinates { max-width: 32%; line-height: 1.7; text-align: right; }
+.v-story { grid-row: 2; width: min(470px, 100%); }
+.v-story h1 { overflow-wrap: break-word; }
+.v-eyebrow { flex-wrap: wrap; }
+.v-context { grid-row: 4; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 28px; min-width: 0; }
+.v-scene-caption { flex-wrap: wrap; line-height: 1.7; }
+.v-tools { display: flex; flex-wrap: wrap; margin-left: auto; }
+.v-tool { white-space: nowrap; }
+.v-dock { grid-row: 5; }
+.v-dock-head { flex-wrap: wrap; }
+.v-position { min-width: 0; flex-wrap: wrap; gap: 8px 17px; }
+.v-dock-foot { flex-wrap: wrap; align-items: center; }
+.v-journal-dialog { max-height: calc(100svh - 32px); overflow-y: auto; }
+@media (max-width: 1050px) {
+  .v-dock-head { justify-content: space-between; }
+  .v-position { flex-basis: 100%; justify-content: space-between; }
+  .v-scene-caption { flex-basis: 100%; }
+}
+@media (max-width: 700px) {
+  .voyager { gap: 16px; padding: calc(var(--header-h) + 20px) 6% calc(18px + env(safe-area-inset-bottom, 0px)); }
+  .v-story { max-width: 100%; }
+  .v-tools { margin-left: 0; }
+}
+@media (max-height: 540px) {
+  .voyager { gap: 14px; padding-top: calc(var(--header-h) + 16px); }
+  .v-story h1 { font-size: 28px; }
+}
+body.v-immersive .voyager { height: 100svh; min-height: 100svh; padding: 0; }
+body.v-immersive .v-ui { display: none; }
+body.v-immersive .v-context { position: absolute; left: 4.5%; right: 4.5%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+body.v-immersive .v-tools { position: static; margin-left: auto; }

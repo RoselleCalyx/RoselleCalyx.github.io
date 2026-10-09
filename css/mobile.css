@@ -48,37 +48,8 @@
   .modal-card { max-height: calc(100dvh - 32px); }
   .modal-card, .lb-side { overscroll-behavior: contain; }
 }
-@media (max-width: 700px) {
-  .voyager { display: grid; grid-template-rows: 1fr auto auto; gap: 8px; padding: 0 6% calc(18px + env(safe-area-inset-bottom, 0px)); }
-  .v-tools { grid-row: 2; position: relative; left: auto; right: auto; bottom: auto; }
-  .v-dock { grid-row: 3; position: relative; left: auto; right: auto; bottom: auto; min-width: 0; }
-  body.v-immersive .v-tools { position: absolute; left: 6%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
-}
 @media (max-height: 540px) {
   .hero-title { font-size: clamp(24px, 8vh, 32px); line-height: 1.2; margin-bottom: 10px; }
   .hero-lede { font-size: .82rem; line-height: 1.45; margin-bottom: 10px; }
   .hero-rule { margin-bottom: 10px; }
-}
-@media (max-height: 500px) and (max-width: 960px) {
-  .voyager {
-    height: auto;
-    min-height: 100svh;
-    display: grid;
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-    padding: calc(var(--header-h) + 12px) 4.5% calc(16px + env(safe-area-inset-bottom, 0px));
-  }
-  .v-topline, .v-story, .v-tools, .v-dock { position: relative; top: auto; left: auto; right: auto; bottom: auto; min-width: 0; }
-  .v-topline { grid-row: 1; }
-  .v-story { grid-row: 2; max-width: 540px; }
-  .v-story h1 { font-size: 28px; line-height: 1.25; }
-  .v-story .v-eyebrow { margin-bottom: 8px; }
-  .v-story > .v-text-button { margin-top: 6px; }
-  .v-tools { grid-row: 3; }
-  .v-dock { grid-row: 4; }
-  .v-scene-caption { display: none; }
-  .v-tool, .v-view-switch button, .v-navigation button, .v-dock-foot button { min-height: 44px; }
-  .v-navigation button { min-width: 44px; }
-  body.v-immersive .voyager { height: 100svh; padding: 0; }
-  body.v-immersive .v-tools { position: fixed; left: 4.5%; bottom: 20px; }
 }
