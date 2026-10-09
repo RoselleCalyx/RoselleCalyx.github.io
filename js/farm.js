@@ -908,18 +908,31 @@
 
   // two wooden signposts, so the ways out are easy to find
   function signpost(kind) {
-    const left = kind === "woods", g = "sg-" + kind;
-    const plank = left ? "M130 26 H34 L10 52 L34 78 H130 Z" : "M10 26 H106 L130 52 L106 78 H10 Z", tx = left ? 80 : 60;
-    return `<svg viewBox="0 0 140 172" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfa06a"/><stop offset="1" stop-color="#8a5c32"/></linearGradient></defs>
-      <rect x="63" y="46" width="14" height="124" rx="3" fill="#5a3e26"/><rect x="63" y="46" width="5" height="124" fill="#7a5636" opacity=".6"/>
-      <path d="${plank}" fill="url(#${g})" stroke="#5a3a1e" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M${left ? 40 : 18} 36 H${left ? 122 : 100}" stroke="#a87a48" stroke-width="1.5" opacity=".7"/><path d="M${left ? 40 : 18} 70 H${left ? 122 : 100}" stroke="#7a4e28" stroke-width="1.5" opacity=".5"/>
-      <circle cx="70" cy="52" r="3" fill="#4a3018"/>
-      <text x="${tx}" y="51" text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-size="22" font-style="italic" font-weight="600" fill="#3a2410">${left ? "The woods" : "Fishing"}</text>
-      <text x="${tx}" y="70" text-anchor="middle" font-family="Noto Serif SC, serif" font-size="13" fill="#4a3018">${left ? "林间采集" : "池畔垂钓"}</text>
-      <path class="snowcap" d="M${left ? 34 : 10} 27 Q70 14 ${left ? 130 : 106} 27 L${left ? 130 : 106} 31 Q70 22 ${left ? 34 : 10} 31 Z" fill="#f2f6fc"/></svg>`;
+    const left = kind === "woods", tx = left ? 79 : 61, id = `sign-${kind}`;
+    // Burned lettering follows the timber's grain; a sunlit lower chisel edge
+    // gives it depth without a bright outline floating over the board.
+    const letters = `<text x="${tx}" y="41" font-size="15.5" font-weight="600">${left ? "The woods" : "Fishing"}</text>
+      <text x="${tx}" y="55.5" font-size="10.2" font-weight="500" letter-spacing=".35">${left ? "林间采集" : "池畔垂钓"}</text>`;
+    return `<svg viewBox="0 0 140 146" aria-hidden="true">
+      <defs>
+        <filter id="${id}-chisel" x="-5%" y="-8%" width="110%" height="116%">
+          <feTurbulence type="fractalNoise" baseFrequency=".055 .48" numOctaves="2" seed="7" result="grain"/>
+          <feDisplacementMap in="SourceGraphic" in2="grain" scale=".32" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <mask id="${id}-wear"><rect width="140" height="72" fill="white"/>
+          <path d="M24 34.8 Q62 34.1 112 35.2 M20 44.9 Q76 45.5 116 44.8 M26 51.1 L111 51.7 M36 56.2 L109 56.5" fill="none" stroke="black" stroke-width=".5" opacity=".22"/>
+        </mask>
+      </defs>
+      <ellipse cx="${left ? 82 : 58}" cy="143" rx="22" ry="3" fill="#111a14" opacity=".28"/>
+      <image href="assets/wild/equipment/farm-sign-v1.webp" width="140" height="146" ${left ? '' : 'transform="translate(140 0) scale(-1 1)"'}/>
+      <g font-family="Georgia, Noto Serif SC, serif" text-anchor="middle" filter="url(#${id}-chisel)" mask="url(#${id}-wear)">
+        <g fill="#dfbd82" opacity=".52" transform="translate(.22 .52)">${letters}</g>
+        <g fill="#302117" opacity=".9">${letters}</g>
+      </g>
+      <path class="snowcap" d="M${left ? 25 : 5} 25 Q45 21 68 24 T${left ? 137 : 115} 24 L${left ? 136 : 115} 28 Q100 26 74 28 T${left ? 22 : 5} 29 Z" fill="#edf2f7" opacity=".92"/>
+    </svg>`;
   }
-  const SIGNS = { woods: [24, 57.5], pond: [44.5, 91.5] };
+  const SIGNS = { woods: [24, 57.5], pond: [61, 97] };
   function placeSigns() {
     Object.entries(SIGNS).forEach(([kind, [x, y]]) => {
       const b = document.createElement("button");

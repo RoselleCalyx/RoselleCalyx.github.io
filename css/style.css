@@ -1006,12 +1006,10 @@ body[data-wild="pond"].wild-arriving .wild-stage::after { background: radial-gra
 .farm-zone-tip { position: absolute; z-index: 2700; transform: translate(-50%, calc(-100% - 18px)); padding: 6px 14px; border-radius: 999px; background: rgba(246, 240, 227, .96); color: #3b4733; font-family: var(--serif); font-size: 1.02rem; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .18s; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
 .farm-zone-tip.on { opacity: 1; }
 .farm-zone-tip .zh { font-family: "Noto Serif SC", serif; font-size: .78em; color: #73806a; margin-left: 4px; }
-.farm-sign { position: absolute; width: 6.4%; min-width: 58px; transform: translate(-50%, -100%); cursor: pointer; padding: 0; border: 0; background: none; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .45)); transition: filter .25s; }
-.farm-sign svg { display: block; width: 100%; height: auto; transform-origin: 50% 100%; animation: sign-sway 6s ease-in-out infinite; transition: transform .25s; }
-.farm-sign.pondway svg { animation-delay: -3s; }
+.farm-sign { position: absolute; width: 7.6%; min-width: 72px; transform: translate(-50%, -100%); cursor: pointer; padding: 0; border: 0; background: none; filter: drop-shadow(0 5px 6px rgba(0, 0, 0, .45)); transition: filter .25s; }
+.farm-sign svg { display: block; width: 100%; height: auto; transform-origin: 50% 100%; transition: transform .25s; }
 .farm-sign:hover, .farm-sign:focus-visible { filter: drop-shadow(0 0 12px rgba(255, 220, 150, .7)); }
 .farm-sign:hover svg { transform: translateY(-3%) rotate(-2deg); }
-@keyframes sign-sway { 50% { transform: rotate(1.6deg); } }
 .farm-calm .farm-sign svg { animation: none; }
 .farm-world.portal-in { transition: transform 1.05s cubic-bezier(.55, 0, .75, .25), filter 1.05s ease-in; transform: scale(2.6); filter: blur(4px) brightness(.55); }
 .farm-world.portal-from { transform: scale(2.6); filter: blur(4px) brightness(.55); }
