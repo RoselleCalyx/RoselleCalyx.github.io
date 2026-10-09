@@ -1,0 +1,366 @@
+{
+  "tool": "built-in imagegen",
+  "variants": 3,
+  "assets": [
+    {
+      "type": "porcini",
+      "variant": 0,
+      "path": "assets/wild/objects/porcini-shape1-v1.webp",
+      "width": 384,
+      "height": 330,
+      "bytes": 52788
+    },
+    {
+      "type": "porcini",
+      "variant": 1,
+      "path": "assets/wild/objects/porcini-shape2-v1.webp",
+      "width": 215,
+      "height": 384,
+      "bytes": 36112
+    },
+    {
+      "type": "porcini",
+      "variant": 2,
+      "path": "assets/wild/objects/porcini-shape3-v1.webp",
+      "width": 370,
+      "height": 384,
+      "bytes": 59308
+    },
+    {
+      "type": "chanterelle",
+      "variant": 0,
+      "path": "assets/wild/objects/chanterelle-shape1-v1.webp",
+      "width": 368,
+      "height": 384,
+      "bytes": 49740
+    },
+    {
+      "type": "chanterelle",
+      "variant": 1,
+      "path": "assets/wild/objects/chanterelle-shape2-v1.webp",
+      "width": 285,
+      "height": 384,
+      "bytes": 38682
+    },
+    {
+      "type": "chanterelle",
+      "variant": 2,
+      "path": "assets/wild/objects/chanterelle-shape3-v1.webp",
+      "width": 384,
+      "height": 357,
+      "bytes": 50776
+    },
+    {
+      "type": "amanita",
+      "variant": 0,
+      "path": "assets/wild/objects/amanita-shape1-v1.webp",
+      "width": 249,
+      "height": 384,
+      "bytes": 45674
+    },
+    {
+      "type": "amanita",
+      "variant": 1,
+      "path": "assets/wild/objects/amanita-shape2-v1.webp",
+      "width": 384,
+      "height": 322,
+      "bytes": 42074
+    },
+    {
+      "type": "amanita",
+      "variant": 2,
+      "path": "assets/wild/objects/amanita-shape3-v1.webp",
+      "width": 326,
+      "height": 384,
+      "bytes": 48158
+    },
+    {
+      "type": "shiitake",
+      "variant": 0,
+      "path": "assets/wild/objects/shiitake-shape1-v1.webp",
+      "width": 384,
+      "height": 340,
+      "bytes": 61140
+    },
+    {
+      "type": "shiitake",
+      "variant": 1,
+      "path": "assets/wild/objects/shiitake-shape2-v1.webp",
+      "width": 384,
+      "height": 315,
+      "bytes": 52864
+    },
+    {
+      "type": "shiitake",
+      "variant": 2,
+      "path": "assets/wild/objects/shiitake-shape3-v1.webp",
+      "width": 384,
+      "height": 340,
+      "bytes": 61922
+    },
+    {
+      "type": "matsutake",
+      "variant": 0,
+      "path": "assets/wild/objects/matsutake-shape1-v1.webp",
+      "width": 263,
+      "height": 384,
+      "bytes": 54580
+    },
+    {
+      "type": "matsutake",
+      "variant": 1,
+      "path": "assets/wild/objects/matsutake-shape2-v1.webp",
+      "width": 317,
+      "height": 384,
+      "bytes": 54698
+    },
+    {
+      "type": "matsutake",
+      "variant": 2,
+      "path": "assets/wild/objects/matsutake-shape3-v1.webp",
+      "width": 384,
+      "height": 340,
+      "bytes": 52944
+    },
+    {
+      "type": "morel",
+      "variant": 0,
+      "path": "assets/wild/objects/morel-shape1-v1.webp",
+      "width": 172,
+      "height": 384,
+      "bytes": 33660
+    },
+    {
+      "type": "morel",
+      "variant": 1,
+      "path": "assets/wild/objects/morel-shape2-v1.webp",
+      "width": 293,
+      "height": 384,
+      "bytes": 48348
+    },
+    {
+      "type": "morel",
+      "variant": 2,
+      "path": "assets/wild/objects/morel-shape3-v1.webp",
+      "width": 237,
+      "height": 384,
+      "bytes": 39850
+    },
+    {
+      "type": "strawberry",
+      "variant": 0,
+      "path": "assets/wild/objects/strawberry-shape1-v1.webp",
+      "width": 384,
+      "height": 236,
+      "bytes": 49652
+    },
+    {
+      "type": "strawberry",
+      "variant": 1,
+      "path": "assets/wild/objects/strawberry-shape2-v1.webp",
+      "width": 338,
+      "height": 384,
+      "bytes": 72180
+    },
+    {
+      "type": "strawberry",
+      "variant": 2,
+      "path": "assets/wild/objects/strawberry-shape3-v1.webp",
+      "width": 356,
+      "height": 384,
+      "bytes": 58946
+    },
+    {
+      "type": "shoot",
+      "variant": 0,
+      "path": "assets/wild/objects/shoot-shape1-v1.webp",
+      "width": 271,
+      "height": 384,
+      "bytes": 45530
+    },
+    {
+      "type": "shoot",
+      "variant": 1,
+      "path": "assets/wild/objects/shoot-shape2-v1.webp",
+      "width": 181,
+      "height": 384,
+      "bytes": 28902
+    },
+    {
+      "type": "shoot",
+      "variant": 2,
+      "path": "assets/wild/objects/shoot-shape3-v1.webp",
+      "width": 237,
+      "height": 384,
+      "bytes": 41096
+    },
+    {
+      "type": "pinecone",
+      "variant": 0,
+      "path": "assets/wild/objects/pinecone-shape1-v1.webp",
+      "width": 298,
+      "height": 384,
+      "bytes": 66060
+    },
+    {
+      "type": "pinecone",
+      "variant": 1,
+      "path": "assets/wild/objects/pinecone-shape2-v1.webp",
+      "width": 257,
+      "height": 384,
+      "bytes": 52346
+    },
+    {
+      "type": "pinecone",
+      "variant": 2,
+      "path": "assets/wild/objects/pinecone-shape3-v1.webp",
+      "width": 366,
+      "height": 384,
+      "bytes": 75980
+    },
+    {
+      "type": "rosehip",
+      "variant": 0,
+      "path": "assets/wild/objects/rosehip-shape1-v1.webp",
+      "width": 284,
+      "height": 384,
+      "bytes": 44722
+    },
+    {
+      "type": "rosehip",
+      "variant": 1,
+      "path": "assets/wild/objects/rosehip-shape2-v1.webp",
+      "width": 372,
+      "height": 384,
+      "bytes": 63278
+    },
+    {
+      "type": "rosehip",
+      "variant": 2,
+      "path": "assets/wild/objects/rosehip-shape3-v1.webp",
+      "width": 384,
+      "height": 339,
+      "bytes": 47634
+    },
+    {
+      "type": "bayberry",
+      "variant": 0,
+      "path": "assets/wild/objects/bayberry-shape1-v1.webp",
+      "width": 384,
+      "height": 335,
+      "bytes": 50000
+    },
+    {
+      "type": "bayberry",
+      "variant": 1,
+      "path": "assets/wild/objects/bayberry-shape2-v1.webp",
+      "width": 289,
+      "height": 384,
+      "bytes": 51476
+    },
+    {
+      "type": "bayberry",
+      "variant": 2,
+      "path": "assets/wild/objects/bayberry-shape3-v1.webp",
+      "width": 384,
+      "height": 364,
+      "bytes": 56272
+    },
+    {
+      "type": "rock",
+      "variant": 0,
+      "path": "assets/wild/objects/rock-shape1-v1.webp",
+      "width": 384,
+      "height": 239,
+      "bytes": 45310
+    },
+    {
+      "type": "rock",
+      "variant": 1,
+      "path": "assets/wild/objects/rock-shape2-v1.webp",
+      "width": 384,
+      "height": 310,
+      "bytes": 48742
+    },
+    {
+      "type": "rock",
+      "variant": 2,
+      "path": "assets/wild/objects/rock-shape3-v1.webp",
+      "width": 384,
+      "height": 198,
+      "bytes": 39220
+    },
+    {
+      "type": "grass",
+      "variant": 0,
+      "path": "assets/wild/objects/grass-shape1-v1.webp",
+      "width": 384,
+      "height": 233,
+      "bytes": 61830
+    },
+    {
+      "type": "grass",
+      "variant": 1,
+      "path": "assets/wild/objects/grass-shape2-v1.webp",
+      "width": 326,
+      "height": 384,
+      "bytes": 78996
+    },
+    {
+      "type": "grass",
+      "variant": 2,
+      "path": "assets/wild/objects/grass-shape3-v1.webp",
+      "width": 384,
+      "height": 379,
+      "bytes": 58084
+    },
+    {
+      "type": "fern",
+      "variant": 0,
+      "path": "assets/wild/objects/fern-shape1-v1.webp",
+      "width": 384,
+      "height": 215,
+      "bytes": 59478
+    },
+    {
+      "type": "fern",
+      "variant": 1,
+      "path": "assets/wild/objects/fern-shape2-v1.webp",
+      "width": 341,
+      "height": 384,
+      "bytes": 74992
+    },
+    {
+      "type": "fern",
+      "variant": 2,
+      "path": "assets/wild/objects/fern-shape3-v1.webp",
+      "width": 384,
+      "height": 344,
+      "bytes": 66832
+    },
+    {
+      "type": "leaves",
+      "variant": 0,
+      "path": "assets/wild/objects/leaves-shape1-v1.webp",
+      "width": 384,
+      "height": 178,
+      "bytes": 41508
+    },
+    {
+      "type": "leaves",
+      "variant": 1,
+      "path": "assets/wild/objects/leaves-shape2-v1.webp",
+      "width": 384,
+      "height": 153,
+      "bytes": 36852
+    },
+    {
+      "type": "leaves",
+      "variant": 2,
+      "path": "assets/wild/objects/leaves-shape3-v1.webp",
+      "width": 384,
+      "height": 258,
+      "bytes": 55348
+    }
+  ]
+}

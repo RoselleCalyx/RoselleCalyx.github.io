@@ -11,9 +11,15 @@
    ===================================================================== */
 (function () {
   const { esc, ICON, store, toast, modal } = window.Site;
-  const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
+  const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, jumpSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
   const Motion = window.FarmMotion;
   const FARM = window.FARM || { residents: [] };
+  // Renaming the keeper preserves the visitor's accumulated hearts.
+  const keeperHearts = store.get('farm-hearts', {});
+  if (keeperHearts['snowcat:Yuki'] !== undefined) {
+    keeperHearts['snowcat:Matcha'] = (keeperHearts['snowcat:Matcha'] || 0) + keeperHearts['snowcat:Yuki'];
+    delete keeperHearts['snowcat:Yuki']; store.set('farm-hearts', keeperHearts);
+  }
   const params = new URLSearchParams(location.search);
   const keeperMode = params.has("keeper");
   const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
@@ -138,7 +144,7 @@
   const GROUND = { x0: 5, x1: 93, y0: 65, y1: 94 };
   const POND = { cx: 64, cy: 78.5, rx: 26, ry: 12 };
   const ROCK = { x: 18, y: 78 };
-  const SLOTS = [{ x: 8, y: 67 }, { x: 47, y: 65 }, { x: 81, y: 64 }, { x: 93, y: 91 }, { x: 31, y: 94 }];
+  const SLOTS = [{ x: 8, y: 67 }, { x: 47, y: 65 }, { x: 81, y: 64 }, { x: 93, y: 91 }, { x: 31, y: 94 }, {x:27,y:66}, {x:64,y:65}, {x:11,y:96}];
   const HOMES = { rabbit: {x: 37,y: 72.5}, panda: {x: 47,y: 92}, fox: {x: 56,y: 65.5}, shiba: {x: 30,y: 92}, duckling: {x: 76,y: 94} };
   const inPond = (x, y) => ((x - POND.cx) / POND.rx) ** 2 + ((y - POND.cy) / POND.ry) ** 2 < 1;
   const depth = (y) => 0.72 + ((y - 66) / 30) * 0.5;
@@ -156,9 +162,14 @@
   }
 
   /* ---------- walk cycles: show them only once decoded, so a first step never flashes blank ---------- */
-  const walkReady = new Set();
+  const walkReady = new Set(),jumpReady=new Set();
   function preloadWalks() {
     const run = () => Object.keys(WALK).forEach((sp) => {
+      const jump=new Image();jump.decoding='async';jump.src=`assets/farm/jump/${sp}-v3.webp`;
+      jump.onload=async()=>{
+        if(jump.naturalWidth!==8*384||jump.naturalHeight!==384)return;
+        try{await jump.decode();jumpReady.add(sp);document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach(el=>el.classList.add('jump-ready'));}catch{}
+      };
       const img = new Image();
       img.decoding = "async";
       img.src = walkSrc(sp);
@@ -189,12 +200,12 @@
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
     el.setAttribute("aria-label", `${def.name}, ${sp.label}`);
-    const art = `<div class="flip"><div class="bob">${ART[def.species]()}${walkSprite(def.species)}${poseSprite(def.species)}</div></div>`;
+    const art = `<div class="flip"><div class="bob">${ART[def.species]()}${walkSprite(def.species)}${jumpSprite(def.species)}${poseSprite(def.species)}<canvas class="reaction-art" width="320" height="320" aria-hidden="true"></canvas></div></div>`;
     el.innerHTML = art
       + `<span class="resident-label">${esc(def.name)}</span>`
       + (opts.pending ? `<span class="tag">waiting for approval</span>` : "");
     actorsEl.appendChild(el);
-    const a = { def, sp, el, sprite: el.querySelector('.walk-sprite'), x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", pose: opts.keeper ? 'sleep' : 'sit', phase: 0, speed: 0, until: performance.now() + 2500 + Math.random() * 5000, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
+    const a = { def, sp, el, sprite: el.querySelector('.walk-sprite'), nextSprite: el.querySelector('.walk-sprite-next'), lift: 0, x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", pose: opts.keeper ? 'sleep' : 'sit', phase: 0, speed: 0, until: performance.now() + 2500 + Math.random() * 5000, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
     el.querySelectorAll('.pose-sprite').forEach(img => {
       const ready = async () => {
         if (img.dataset.loading) return;
@@ -209,6 +220,7 @@
     el.addEventListener("click", (e) => { e.stopPropagation(); openAnimal(a); });
     el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAnimal(a); } });
     if (walkReady.has(def.species)) el.classList.add("walk-ready");
+    if (jumpReady.has(def.species)) el.classList.add("jump-ready");
     animals.push(a);
     const count = document.getElementById("residentCount"); if (count) count.textContent = animals.length + " little lives";
     setPose(a, a.pose); place(a);
@@ -224,7 +236,9 @@
     setPose(a, pose);
   }
   function planWalk(a, target, now) {
+    if(!walkReady.has(a.def.species)){rest(a,now,1200,'sit');return;}
     if (Math.hypot(target.x - a.x, target.y - a.y) < .3) { rest(a, now, 3000); return; }
+    if(a.perch){leaveRock(a,now);return;}
     a.tx = target.x; a.ty = target.y; a.speed = 0; a.phase = 0;
     a.turnDir = Math.abs(target.x - a.x) > .2 ? Math.sign(target.x - a.x) : a.dir;
     // Wake, then stand before starting: a sleepy kitten never jumps directly
@@ -237,14 +251,22 @@
   function place(a) {
     const s = depth(a.y) * a.sp.size * (a.keeper ? 1.13 : 1);
     a.el.style.left = a.x + "%";
-    a.el.style.top = a.y + "%";
+    const bound=a.state==='walk'&&a.sp.gait==='hop'?Math.sin(Math.PI*Math.min(1,Math.max(0,(a.phase-.26)/.56)))*.7:0;
+    a.el.style.top = (a.y - (a.lift || 0) - bound) + "%";
+    a.el.classList.toggle("leaping", a.state === "hop");
     a.el.style.width = 8.1 * s + "%";
-    a.el.style.zIndex = Math.round(a.y * 10);
+    a.el.style.zIndex = Math.round(a.y * 10) + (a.perch || a.state === "hop" ? 2 : 0);
     a.el.classList.toggle("left", a.dir < 0);
     a.el.classList.toggle("walking", a.state === "walk" && a.sp.gait !== "hop");
     a.el.classList.toggle("hopping", a.state === "walk" && a.sp.gait === "hop");
     a.el.classList.toggle('sleeping', a.pose === 'sleep');
-    const frame = Motion.frame(a.phase, a.def.species);
+    const sample = Motion.sample(a.phase, a.def.species), frame = sample.frame;
+    const leap=Motion.leap(a.jumpPhase||0),j=a.el.querySelector('.jump-sprite'),jn=a.el.querySelector('.jump-sprite-next');
+    if(j){j.style.backgroundPositionX=leap.frame*100/7+'%';jn.style.backgroundPositionX=leap.next*100/7+'%';a.el.style.setProperty('--jump-blend',leap.blend.toFixed(3));}
+    if (a.nextSprite) {
+      a.nextSprite.style.backgroundPositionX = sample.next * 100 / (Motion.GAITS[a.def.species].frames - 1) + "%";
+      a.el.style.setProperty("--gait-blend", sample.blend.toFixed(3));
+    }
     if (a.sprite && a.lastFrame !== frame) {
       a.sprite.style.backgroundPositionX = Motion.position(a.phase, a.def.species) + '%';
       a.lastFrame = frame;
@@ -256,7 +278,33 @@
     a.el.appendChild(s);
     setTimeout(() => s.remove(), 2500);
   }
+  const climbable = a => ['snowcat','rabbit','fox','shiba'].includes(a.def.species);
+  function startHop(a, target, now, rock = null) {
+    if(!jumpReady.has(a.def.species)){rest(a,now,1200,'sit');return false;}
+    a.hop = {x:a.x,y:a.y,lift:a.lift||0,tx:target.x,ty:target.y,endLift:rock?rock.lift:0,rock,start:now,duration:1000};
+    a.jumpPhase=0;
+    a.state='hop';a.speed=0;a.petUntil=0;
+    a.dir=Math.sign(target.x-a.x)||a.dir;
+    setPose(a,a.def.species==='snowcat'?'stretch':'walk');place(a);
+  }
+  function finishHop(a, now) {
+    const h=a.hop;if(!h)return;
+    a.x=h.tx;a.y=h.ty;a.lift=h.endLift;a.perch=h.rock;a.hop=null;
+    rest(a,now,4000+Math.random()*3500,a.def.species==='snowcat'?'stand':'sit');place(a);
+  }
+  function leaveRock(a, now) {
+    for(const [dx,dy] of [[4.5,1],[-4.5,1],[0,4],[-4.5,2.5],[4.5,2.5]]) {
+      const target={x:a.x+dx,y:a.y+dy};
+      if(target.x>=GROUND.x0&&target.x<=GROUND.x1&&target.y<=GROUND.y1&&!inPond(target.x,target.y)&&!crowded(target.x,target.y,a)) {startHop(a,target,now);return true;}
+    }
+    rest(a,now,3000);return false;
+  }
   function think(a, now) {
+    if(a.perch){leaveRock(a,now);return;}
+    if(window.MeadowProps && climbable(a) && Math.random()<.28) {
+      const rock=MeadowProps.PROPS.find(p=>p.kind==='rock'&&Math.hypot(p.x-a.x,(p.y-a.y)*1.78)<7&&!crowded(p.x,p.y,a)&&!inPond((p.x+a.x)/2,(p.y+a.y)/2));
+      if(rock){startHop(a,{x:rock.x,y:rock.y},now,rock);return;}
+    }
     if (a.keeper) {
       // The keeper naps and stretches on her rock, with occasional patrols.
       const home = Math.hypot(a.x - ROCK.x, a.y - ROCK.y) < 1;
@@ -279,8 +327,17 @@
     planWalk(a, t, now);
   }
   function stepAnimal(a, dt, now) {
-    if (a.petUntil && now > a.petUntil) { a.petUntil = 0; setPose(a, 'sit'); place(a); }
+    if (a.petUntil && now > a.petUntil) { a.petUntil = 0; a.reaction=null;a.el.classList.remove('petting','reaction-ready'); setPose(a, 'sit'); place(a); }
     if (a.held) return;
+    if (a.state==='hop') {
+      const h=a.hop,u=Math.min(1,Math.max(0,(now-h.start)/h.duration)),air=Math.min(1,Math.max(0,(u-.26)/.56)),ease=air*air*(3-2*air);
+      a.jumpPhase=u;
+      a.x=h.x+(h.tx-h.x)*ease;a.y=h.y+(h.ty-h.y)*ease;
+      a.lift=h.lift+(h.endLift-h.lift)*ease+Math.sin(Math.PI*air)*3;
+      if(u>.65)setPose(a,a.def.species==='snowcat'?'stand':'sit');
+      if(u>=1)finishHop(a,now);else place(a);
+      return;
+    }
     if (a.state === 'prepare') {
       if (now >= a.standAt) setPose(a, a.def.species === 'snowcat' ? 'stand' : 'sit');
       if (now >= a.until - 150) a.dir = a.turnDir;
@@ -324,6 +381,7 @@
     world.appendChild(el);
     bubble = { el, anchor: anchorEl, a };
     if (a) {
+      if(a.state==='hop')finishHop(a,performance.now());
       a.held = true;
       if (a.state !== 'idle') rest(a, performance.now(), 2000, a.def.species === 'snowcat' ? 'stand' : 'sit');
       place(a);
@@ -363,6 +421,7 @@
   /* ================= feeding: orchard fruit, finds from the woods, fish from the pond ================= */
   const FOOD = {
     apple: ["Apple", "苹果", "farm"], peach: ["Peach", "桃子", "farm"], orange: ["Orange", "橙子", "farm"], cherry: ["Cherries", "樱桃", "farm"],
+    kiwi:['Kiwi','猕猴桃','farm'],grape:['Grapes','葡萄','farm'],durian:['Durian','榴莲','farm'],mango:['Mango','芒果','farm'],
     bayberry: ["Wild bayberry", "野杨梅", "woods"], strawberry: ["Wild strawberry", "野草莓", "woods"], shoot: ["Bamboo shoot", "竹笋", "woods"], rosehip: ["Rose hip", "野蔷薇果", "woods"],
     morel: ["Morel", "羊肚菌", "woods"], chanterelle: ["Chanterelle", "鸡油菌", "woods"], porcini: ["Porcini", "牛肝菌", "woods"], shiitake: ["Shiitake", "香菇", "woods"], matsutake: ["Matsutake", "松茸", "woods"], pinecone: ["Pine cone", "松果", "woods"],
     crucian: ["Crucian carp", "鲫鱼", "pond"], carp: ["Carp", "鲤鱼", "pond"], koi: ["Koi", "锦鲤", "pond"], goldkoi: ["Golden koi", "金锦鲤", "pond"], catfish: ["Catfish", "鲶鱼", "pond"], mandarin: ["Mandarin fish", "鳜鱼", "pond"],
@@ -400,19 +459,26 @@
     renderBasket();
   }
   const fed = {};                                              // recent snacks, to know when someone is full
-  function react(a, kind) {
+  const happyActions={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','munch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','happy-hop','munch'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop']};
+  const actionText={wave:'waves a little paw',wag:'wags that curly tail', 'happy-hop':'hops up with delight',flap:'flutters tiny wings'};
+  function react(a, kind, options = {}) {
     [...a.el.classList].filter((c) => c.startsWith("react")).forEach((c) => a.el.classList.remove(c));
     void a.el.offsetWidth;
     a.el.classList.add("react", "react-" + kind);
-    const now = performance.now(), duration = kind === "nap" ? 9000 : 1800;
-    a.petUntil = 0;
-    rest(a, now, duration, kind === "nap" ? "sleep" : a.def.species === "snowcat" ? "stand" : "sit");
+    const now = performance.now(), duration = options.duration || (kind === "nap" ? 9000 : 2400);
+    a.reaction={kind,start:now,duration};
+    a.petUntil = 0;a.el.classList.remove('petting');
+    const catPose=kind==='knead'?'stretch':kind==='munch'?'sniff':'stand';
+    rest(a, now, duration, kind === "nap" ? "sleep" : a.def.species === "snowcat" ? catPose : "sit");
     a.reactUntil = now + duration;
     a.held = true; place(a);
+    if(window.AnimalReactions)AnimalReactions.draw(a,now,reduce||!!window.Sky?.calm);
     clearTimeout(a.reactT);
     a.reactT = setTimeout(() => {
       a.el.classList.remove("react", "react-" + kind);
       a.reactUntil = 0; a.until = performance.now() + 1800;
+      a.reaction=null;a.el.classList.remove('reaction-ready');
+      if(options.onFinish){options.onFinish();return;}
       if (!bubble || bubble.a !== a) a.held = false;
     }, duration);
   }
@@ -428,6 +494,7 @@
     setTimeout(() => d.remove(), 700);
   }
   function feed(a, f, line, fromEl) {
+    if(a.feeding){line.textContent=`${a.def.name} is still enjoying that bite…`;return;}
     const d = DIET[a.def.species] || { love: [], like: [], act: "munch", does: "" };
     const key = a.def.species + ":" + a.def.name, now = Date.now(), name = a.def.name, food = f.name.toLowerCase();
     const known = store.get("farm-diet", {}); known[a.def.species] = known[a.def.species] || {};
@@ -443,14 +510,31 @@
     known[a.def.species][f.id] = kind; store.set("farm-diet", known);
     if (kind === "meh") { react(a, "shake"); emote(a, "…"); line.textContent = `${name} sniffs the ${food}… and politely declines.`; return; }
     useFood(f); fed[key].push(now);
+    a.feeding=true;
+    clearTimeout(a.reactT);a.petUntil=0;a.reaction=null;
+    a.el.classList.remove('petting','reaction-ready');
+    [...a.el.classList].filter(c=>c.startsWith('react')).forEach(c=>a.el.classList.remove(c));
+    // Hold the animal throughout delivery, eating, and its response.
+    const delivery=fromEl&&!reduce?620:0;
+    rest(a,performance.now(),delivery+2200+(kind==='love'?2400:0),'sit');
+    a.held=true;a.reactUntil=performance.now()+delivery+2200+(kind==='love'?2400:0);place(a);
     if (fromEl) flyTreat(fromEl, a.el, f);
     const hearts = store.get("farm-hearts", {});
     hearts[key] = (hearts[key] || 0) + (kind === "love" ? 3 : 1); store.set("farm-hearts", hearts);
-    setTimeout(() => {
-      if (kind === "love") { react(a, d.act); emote(a, "♥"); fxAt(a.el, "heart"); setTimeout(() => fxAt(a.el, "heart"), 380); line.textContent = `${name} loves ${food} — ${d.does}! ♥`; }
-      else { react(a, "munch"); emote(a, "♪"); line.textContent = `${name} munches the ${food} happily.`; }
+    a.feedT=setTimeout(() => {
+      const treat=document.createElement('span');treat.className='bite-treat';treat.setAttribute('aria-hidden','true');treat.innerHTML=f.icon||EMOJI[f.from];
+      a.el.querySelector('.bob').appendChild(treat);
+      line.textContent=`${name} lowers their head and munches the ${food}…`;
+      react(a,'munch',{duration:2200,onFinish:()=>{
+        treat.remove();
+        if (kind === "love") {
+        const choices=happyActions[a.def.species]||[d.act],act=choices[(a.snackAction||0)%choices.length];a.snackAction=(a.snackAction||0)+1;
+        react(a, act,{onFinish:()=>{a.feeding=false;if(!bubble||bubble.a!==a)a.held=false;}}); emote(a, "♥"); fxAt(a.el, "heart"); setTimeout(() => fxAt(a.el, "heart"), 380);
+        line.textContent = `${name} loves ${food} — ${actionText[act]||d.does}! ♥`;
+        }else{a.feeding=false;emote(a,'♪');line.textContent=`${name} munches the ${food} happily.`;if(!bubble||bubble.a!==a)a.held=false;}
+      }});
       const hb = bubble && bubble.a === a && bubble.el.querySelector("[data-heart] span"); if (hb) hb.textContent = hearts[key];
-    }, fromEl && !reduce ? 620 : 0);
+    },delivery);
   }
   function openTray(a, el) {
     const tray = el.querySelector(".feed-tray"), line = el.querySelector(".feed-line");
@@ -486,8 +570,18 @@
       fxAt(a.el, "heart");
     };
     el.querySelector("[data-pet]").onclick = () => {
+      if(a.feeding){el.querySelector('.feed-line').textContent=`Let ${a.def.name} finish that bite first…`;return;}
+      clearTimeout(a.reactT);a.reactUntil=0;
+      a.reaction=null;a.el.classList.remove('reaction-ready');
+      [...a.el.classList].filter(c=>c.startsWith('react')).forEach(c=>a.el.classList.remove(c));
+      a.el.classList.add('petting');
+      const now=performance.now();
+      a.reaction={kind:(a.petAction||0)%2?'pet-stretch':'pet-nuzzle',start:now,duration:2400};
+      a.petAction=(a.petAction||0)+1;
       setPose(a, d.species === 'snowcat' ? 'stretch' : 'sit');
-      a.petUntil = performance.now() + 1800; place(a);
+      a.petUntil = now + 2400; place(a);
+      clearTimeout(a.reactT);a.reactUntil=a.petUntil;a.held=true;
+      a.reactT=setTimeout(()=>{a.reactUntil=0;if(!bubble||bubble.a!==a)a.held=false;},2400);
       emote(a, a.keeper ? 'purr…' : ['♪', '♥', '✿'][(Math.random() * 3) | 0]);
     };
   }
@@ -503,6 +597,7 @@
   }
   trees.forEach((t, i) => {
     t.id = t.id || "t" + i + Date.now();
+    t.variant = FarmArt.treeVariant(t);
     if (t.plantedAbs == null) { t.plantedAbs = season.abs - 1; t.water = 3; }   // older saves: already grown
     if (!t.picked || Array.isArray(t.picked)) t.picked = { abs: -1, list: [] };
     delete t.stage; delete t.since; delete t.cycle; delete t.fruitN;
@@ -527,10 +622,10 @@
     t.el.style.width = 19.5 * s * wide + "%";
     t.el.style.zIndex = Math.round(slot.y * 10) - 1;
     t.el.style.setProperty('--tree-flex', (.7 + (t.seed % 7) * .07).toFixed(2));
-    const out = treeSVG({ type: t.type, seed: t.seed, stage: isSapling(t) ? "sapling" : "mature", season: season.name, picked: pickedNow(t), live: !!window.OrchardSim });
+    const out = treeSVG({ type: t.type, seed: t.seed, variant:t.variant, stage: isSapling(t) ? "sapling" : "mature", season: season.name, picked: pickedNow(t), live: !!window.OrchardSim });
     if (!isSapling(t) && window.OrchardSim) {
       // a living tree: painted base + simulated blossoms, fruit, leaves and snow
-      if (!t.sim) { t.el.innerHTML = OrchardSim.markup(); t.sim = OrchardSim.attach(t, t.el); t.art = "living"; t.url = null; }
+      if (!t.sim) { t.el.innerHTML = OrchardSim.markup(); t.sim = OrchardSim.attach(t, t.el,()=>renderTree(t)); t.art = "living"; t.url = null; }
     } else if (t.art !== out.art) {
       if (t.sim) { OrchardSim.detach(t); t.sim = null; }                       // re-rasterise only when the tree itself changes
       t.art = out.art;
@@ -541,7 +636,7 @@
     t.el.querySelector(".fruit-layer").innerHTML = out.fruits;
     const ripe = out.ripe;
     t.el.classList.toggle("ripe", ripe > 0);
-    t.el.setAttribute("aria-label", `${T.label} tree, ${isSapling(t) ? "a young sapling" : LOOKS[PHENO[t.type][season.name].fol]}${ripe ? `, ${ripe} ripe fruit` : ""}`);
+    t.el.setAttribute("aria-label", `${T.label} ${T.vine?'vine':'tree'}, ${isSapling(t) ? "a young sapling" : LOOKS[PHENO[t.type][season.name].fol]}${ripe ? `, ${ripe} ripe fruit` : ""}`);
   }
   function onTreeClick(t, e) {
     const f = e.target.closest(".fruit");
@@ -552,7 +647,7 @@
       : ph.fruit === "ripe" ? (t.el.querySelector(".fruit") ? "Ripe! Tap a fruit to pick it, or use Harvest." : "You picked everything this season. It will fruit again next year.")
       : `${T.label === "Orange" ? "Oranges" : T.label.replace(" blossom", "") + "s"} ripen in ${ripeIn.toLowerCase()}.`;
     const el = showBubble(`
-      <span class="sp">${esc(T.label)} tree · ${esc(T.zh)}</span>
+      <span class="sp">${esc(T.label)} ${T.vine?'vine':'tree'} · ${esc(T.zh)}</span>
       <h4>${sap ? "A young sapling" : cap(LOOKS[ph.fol])}</h4>
       <p>${line}</p>
       <div class="bubble-actions">
@@ -665,12 +760,13 @@
   }
   function applySeason(announce) {
     world.dataset.season = season.name;
+    if(window.MeadowProps)MeadowProps.mount(actorsEl,season.name);
     document.body.dataset.farmSeason = season.name;
     setWeather(season.name);
     trees.forEach(renderTree);
     renderChip();
     if (announce) {
-      const words = { spring: "Spring has come — the orchard is in blossom.", summer: "Summer — cherries and peaches are ripe.", autumn: "Autumn — the apples are ready.", winter: "Winter — snow on the branches, oranges glowing." };
+      const words = { spring: "Spring has come — the orchard is in blossom.", summer: "Summer — cherries, peaches, mangoes and durians ripen.", autumn: "Autumn — apples, kiwis and grapes ripen.", winter: "Winter — snow on the branches, oranges glowing." };
       toast(`${ICONS[season.name]} ${words[season.name]}`, 4200);
     }
   }
@@ -740,12 +836,12 @@
     const preview = (k) => treeInline({ type: k, seed: 5, stage: "mature", season: TREES[k].ripe, picked: [] });
     modal(`
       <h2>Plant a Tree</h2>
-      <p class="muted">Each tree fruits in its own season: cherries &amp; peaches in summer, apples in autumn, oranges in winter. Saplings grow up after a season — or after three waterings.</p>
-      <div class="species-grid tree-grid">${Object.entries(TREES).map(([k, T]) => `<button type="button" data-tree="${k}">${preview(k)}<span>${T.label} · ${T.zh}<br><small>ripe in ${T.ripe}</small></span></button>`).join("")}</div>`, {
+      <p class="muted">Choose a fruit tree or climbing vine. Each planting grows into one of three unique shapes. Summer brings cherries, peaches, mangoes and durians; autumn brings apples, kiwis and grapes; oranges ripen in winter. Saplings grow after a season or three waterings.</p>
+      <div class="species-grid tree-grid">${Object.entries(TREES).map(([k, T]) => `<button type="button" data-tree="${k}">${preview(k)}<span>${T.label} · ${T.zh}<br><small>${T.vine?'Climbing vine · ':''}ripe in ${T.ripe}</small></span></button>`).join("")}</div>`, {
       onOpen(m) {
         m.card.querySelector(".tree-grid").addEventListener("click", (e) => {
           const b = e.target.closest("button"); if (!b) return;
-          const t = { id: "t" + Date.now(), type: b.dataset.tree, slot: free[0], seed: (Math.random() * 1000) | 0, plantedAbs: season.abs, water: 0, picked: { abs: -1, list: [] } };
+          const t = { id: "t" + Date.now(), type: b.dataset.tree, slot: free[0], seed: (Math.random() * 1000) | 0, variant:Math.floor(Math.random()*3), plantedAbs: season.abs, water: 0, picked: { abs: -1, list: [] } };
           trees.push(t); saveTrees(); renderTree(t); m.close();
           water(t);
           toast(`A little ${TREES[t.type].label.toLowerCase()} tree. Water it to help it grow.`);
@@ -961,12 +1057,23 @@
   let last = performance.now(), tick = 0, time = 0, windTick = 0;
   function frame(now) {
     requestAnimationFrame(frame);
-    const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    if (document.hidden) return;
+    const elapsed = Math.max(0, now - last), dt = Math.min(0.1, elapsed / 1000); last = now;
+    if (document.hidden) {
+      animals.forEach(a => { if(a.hop) a.hop.start += elapsed; });
+      return;
+    }
     time += dt;
     const calm = reduce || (window.Sky && Sky.calm);
     document.body.classList.toggle("farm-calm", !!calm);
     if (!calm) animals.forEach((a) => stepAnimal(a, dt, now));
+    else animals.forEach(a => { if(a.hop) a.hop.start += elapsed; });
+    animals.forEach(a=>{
+      if(calm&&a.reaction)a.reaction.start+=elapsed;
+      if(a.reaction&&['happy-hop','binky','pounce'].includes(a.reaction.kind)){
+        a.jumpPhase=Math.min(1,Math.max(0,(now-a.reaction.start)/a.reaction.duration));place(a);
+      }
+      if(window.AnimalReactions)AnimalReactions.draw(a,now,calm);
+    });
     windTick += dt;
     if (windTick > .12) {
       windTick = 0;

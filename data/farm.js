@@ -9,7 +9,7 @@
 window.FARM = {
   keeper: {
     species: "snowcat",
-    name: "Yuki",
+    name: "Matcha",
     title: "Keeper of the Farm",
     note: "A snow-mountain leopard cat. Guards the orchard, naps on the warm rock, and silently judges everyone who forgets to water the trees."
   },

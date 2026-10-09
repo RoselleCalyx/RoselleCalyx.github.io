@@ -1,0 +1,55 @@
+{
+  "tool": "Built-in image_gen",
+  "purpose": "Seven quieter resting poses interspersed with the existing standing scenes. Preserve full-scene composition and target body.",
+  "assets": [
+    {
+      "id": "earth-return",
+      "source": "exec-0733abf2-6f5a-4f6a-b7e3-2621e95db0aa.png",
+      "file": "assets/voyager/scenes/earth-return-v2.png",
+      "reference": "assets/voyager/scenes/earth-return-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She is seated sideways on the existing lunar crater ledge, both lower legs hanging naturally over its edge, sneakers visible, palms resting lightly beside her on the rock. Her upper body faces the huge Earth, contemplative profile, head slightly lifted. Scale of her head same as original, her seated height lower than standing. Preserve all Earth clouds, phase, city lights and lunar terrain beyond her immediate seat."
+    },
+    {
+      "id": "europa-shore",
+      "source": "exec-a8c29927-4bc2-4b3c-b995-ee75e3e1135c.png",
+      "file": "assets/voyager/scenes/europa-shore-v2.png",
+      "reference": "assets/voyager/scenes/europa-shore-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She leans her upper back and one shoulder against a waist-to-shoulder-high angular ice boulder just behind her at left, both hands remain in jacket pockets, one knee relaxed and slightly bent, one shoe rests against the base. Casual restful standing lean, looking at Jupiter. Add only that local ice boulder, no change to the huge Jupiter, icy ravine or horizon."
+    },
+    {
+      "id": "venus-return",
+      "source": "exec-b9eb0412-5542-4fa0-a6d6-037af95b09e3.png",
+      "file": "assets/voyager/scenes/venus-return-v2.png",
+      "reference": "assets/voyager/scenes/venus-return-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She stands casually with her hip and one shoulder lightly leaning against a jagged dark basalt boulder just left/behind her. Both hands tucked in jacket pockets, legs loosely crossed at ankles, sneakers grounded, chin lifted toward Venus. Add only a small support boulder matching existing golden rim-lit volcanic rock. Preserve Venus and all the immense landscape."
+    },
+    {
+      "id": "titan-encounter",
+      "source": "exec-3138f699-11a5-47e3-a5b6-2c7d5326350b.png",
+      "file": "assets/voyager/scenes/titan-encounter-v2.png",
+      "reference": "assets/voyager/scenes/titan-encounter-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She sits on the same stone terrace with one knee drawn comfortably up, one forearm loosely resting across that knee, other leg bent down the ledge with sneaker on a lower rock. Body facing Titan, back three-quarter view, quiet thoughtful posture. Both hands natural, no gesture. Her head stays small and lower than in original standing pose. Preserve the giant orange Titan, lake, haze and distant cliffs."
+    },
+    {
+      "id": "iapetus-encounter",
+      "source": "exec-d95ff44e-b6db-464f-b150-ee518dcc20ac.png",
+      "file": "assets/voyager/scenes/iapetus-encounter-v2.png",
+      "reference": "assets/voyager/scenes/iapetus-encounter-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She is seated sideways on a higher dark boulder at the same left-quarter position, one knee raised toward her chest and arms loosely around it, other leg resting down on a lower rock, off-white sneakers visible. Keep small simplified anime profile, head turned toward giant Iapetus. Contemplative not smiling toward camera. Preserve the huge two-tone moon, equatorial ridge and all mountain terrain beyond her immediate seat."
+    },
+    {
+      "id": "blue-dot-eclipse",
+      "source": "exec-d4e9bab1-4e46-4978-ad26-25c71e6a231d.png",
+      "file": "assets/voyager/scenes/blue-dot-eclipse-v2.png",
+      "reference": "assets/voyager/scenes/blue-dot-eclipse-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She sits on the existing dark rock edge at the same left-quarter position, both knees loosely bent together in front of her, one palm braced beside her hip and other hand relaxed over a knee. A quiet three-quarter back view gazing at the tiny blue Earth point beyond Saturn’s rings. Her sneakers rest on the sloping rock, no floating. Her head is LOWER than in original standing pose, with the exact same small head scale. Preserve eclipsed Saturn, its rings, the little blue point and landscape precisely."
+    },
+    {
+      "id": "beyond-nebula",
+      "source": "exec-4717423b-666c-4032-8ccb-740fc0520fb0.png",
+      "file": "assets/voyager/scenes/beyond-nebula-v2.png",
+      "reference": "assets/voyager/scenes/beyond-nebula-v1.png",
+      "prompt": "Use case: precise-object-edit. Edit the supplied COMPLETE cinematic scene. Keep the exact entire scene: giant celestial body, sky, rings if present, distant terrain, framing, lighting, colors and painterly/anime character style. Do NOT replace the background, move the giant body, add new celestial bodies, or add text. Change ONLY the small woman's pose and a tiny local patch of rock needed to support her. Keep her at the same left-quarter horizontal position; she remains a small integrated figure. Same long straight black hair, young Chinese woman with simplified face, relaxed oversized glacier-blue/lavender/mint smooth technical jacket, ivory wide trousers, chunky off-white FILA sneakers, NO bag or helmet. Natural understated solitary rest, no dramatic gesture, not a portrait. Complete opaque16:9 scene. Do NOT add spacecraft. New pose: She sits comfortably cross-legged on the flat obsidian ledge at the same left-quarter position, loosely folded legs, hands resting on knees, shoulders relaxed, body angled away looking up into nebula. Casual traveller rest, not a ceremonial meditation pose: slight asymmetry and a gentle sideways lean. Same small head and body scale, seated head LOWER than standing, sneakers visible. Preserve crystal rocks, pale dunes, vast nebula and all sky details."
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "generatedWith": "built-in imagegen",
+  "cell": 384,
+  "assets": [
+    {
+      "species": "snowcat",
+      "kind": "walk",
+      "path": "assets/farm/walk/snowcat-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 341898
+    },
+    {
+      "species": "snowcat",
+      "kind": "jump",
+      "path": "assets/farm/jump/snowcat-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 181534
+    },
+    {
+      "species": "shiba",
+      "kind": "walk",
+      "path": "assets/farm/walk/shiba-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 380570
+    },
+    {
+      "species": "shiba",
+      "kind": "jump",
+      "path": "assets/farm/jump/shiba-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 219588
+    },
+    {
+      "species": "rabbit",
+      "kind": "walk",
+      "path": "assets/farm/walk/rabbit-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 336754
+    },
+    {
+      "species": "rabbit",
+      "kind": "jump",
+      "path": "assets/farm/jump/rabbit-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 200530
+    },
+    {
+      "species": "fox",
+      "kind": "walk",
+      "path": "assets/farm/walk/fox-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 358782
+    },
+    {
+      "species": "fox",
+      "kind": "jump",
+      "path": "assets/farm/jump/fox-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 213140
+    },
+    {
+      "species": "panda",
+      "kind": "walk",
+      "path": "assets/farm/walk/panda-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 304712
+    },
+    {
+      "species": "panda",
+      "kind": "jump",
+      "path": "assets/farm/jump/panda-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 186560
+    },
+    {
+      "species": "hedgehog",
+      "kind": "walk",
+      "path": "assets/farm/walk/hedgehog-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 483076
+    },
+    {
+      "species": "hedgehog",
+      "kind": "jump",
+      "path": "assets/farm/jump/hedgehog-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 291382
+    },
+    {
+      "species": "duckling",
+      "kind": "walk",
+      "path": "assets/farm/walk/duckling-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 367202
+    },
+    {
+      "species": "duckling",
+      "kind": "jump",
+      "path": "assets/farm/jump/duckling-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 222332
+    },
+    {
+      "species": "penguin",
+      "kind": "walk",
+      "path": "assets/farm/walk/penguin-v3.webp",
+      "frames": 12,
+      "baseline": 360,
+      "bytes": 323868
+    },
+    {
+      "species": "penguin",
+      "kind": "jump",
+      "path": "assets/farm/jump/penguin-v3.webp",
+      "frames": 8,
+      "baseline": 360,
+      "bytes": 202340
+    }
+  ]
+}

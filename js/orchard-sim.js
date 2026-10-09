@@ -26,6 +26,37 @@
   /* ---------- read the paintings ---------- */
   const A = { ground: 302, tops: { winter: [], summer: [] }, blossoms: [], leaves: { autumn: [], summer: [] } };
   let ready = null;
+  const speciesArt=new Map();
+  function prepareSpecies(type,variant=0){
+    if(!window.FarmArt.TREES[type]?.asset)return prepare();
+    const key=`${type}:${variant}`;
+    if(speciesArt.has(key))return speciesArt.get(key);
+    const promise=Promise.all(['summer','autumn','winter'].map(s=>load(FarmArt.treeSrc(type,s,variant)).then(img=>[s,img]))).then(pairs=>{
+      const img=Object.fromEntries(pairs),a={ground:302,tops:{summer:[],winter:[]},blossoms:[],leaves:{summer:[],autumn:[]}},branches=[];
+      for(const s of ['summer','winter'])scan(img[s],(x,y,r,g,b,top,fy,i,j,alpha)=>{
+        if(top&&fy<.85&&alpha(i,j+2)>100){
+          const edge=col=>{for(let v=j-4;v<=j+4;v++)if(alpha(col,v)>100&&alpha(col,v-2)<40)return v;return j;};
+          a.tops[s].push([x,y,Math.atan2(edge(i+3)-edge(i-3),6)]);
+        }
+        if(s==='summer'&&fy<.82&&g>r*.93&&g>b*1.08)a.leaves.summer.push([x,y,r,g,b]);
+        if(s==='summer'&&y>70&&y<235&&r>g*1.12&&r>b*1.2)branches.push([x,y]);
+      });
+      scan(img.autumn,(x,y,r,g,b,top,fy)=>{if(fy<.82&&r>g*1.05)a.leaves.autumn.push([x,y,r,g,b]);});
+      for(const s of ['summer','winter'])a.tops[s]=spread(a.tops[s],5);
+      a.leaves.summer=spread(a.leaves.summer,5);a.leaves.autumn=spread(a.leaves.autumn,5);
+      a.blossoms=a.leaves.summer.map(p=>p.slice(0,2));
+      // Hang fruit on this actual plant's foliage/branches, including irregular vine supports.
+      const candidates=type==='durian'&&branches.length?branches:a.blossoms;
+      const used=[];
+      const slots=FarmArt.fruitSlots(type,variant).map(([x,y])=>{
+        const points=candidates.filter(p=>used.every(q=>Math.hypot(p[0]-q[0],p[1]-q[1])>23));
+        const nearest=(points.length?points:candidates).reduce((best,p)=>!best||Math.hypot(p[0]-x,p[1]-y)<Math.hypot(best[0]-x,best[1]-y)?p:best,null)||[x,y];
+        const point=nearest.slice(0,2);used.push(point);return point;
+      });
+      FarmArt.registerFruitSlots(type,variant,slots);
+      return a;
+    });speciesArt.set(key,promise);return promise;
+  }
   function load(src) {
     return new Promise((ok, bad) => { const i = new Image(); i.decoding = "async"; i.onload = () => ok(i); i.onerror = bad; i.src = src; });
   }
@@ -102,13 +133,22 @@
     cherry: { petal: "#fbd0dc", edge: "#f2a3bb", eye: "#e0607f", bud: "#e57a98" },
     peach: { petal: "#f8b2c6", edge: "#e6799a", eye: "#b8405f", bud: "#d9587c" },
     apple: { petal: "#fff7f6", edge: "#f4c7cf", eye: "#e2b84a", bud: "#ef9fae" },
-    orange: { petal: "#fffdf6", edge: "#efe6cf", eye: "#f0c040", bud: "#f4ead2" }
+    orange: { petal: "#fffdf6", edge: "#efe6cf", eye: "#f0c040", bud: "#f4ead2" },
+    kiwi:{petal:'#fffbea',edge:'#e8dfb8',eye:'#d8ad31',bud:'#dcd9a0'},
+    grape:{petal:'#d8de9b',edge:'#9ba55e',eye:'#c9b458',bud:'#9caf63'},
+    durian:{petal:'#fff5d8',edge:'#d9cba3',eye:'#d7b45e',bud:'#d8c698'},
+    mango:{petal:'#f7e4b8',edge:'#e0bf82',eye:'#d6a448',bud:'#bf9980'}
   };
   const sprites = {};
   function flowerSprite(type) {
     if (sprites[type]) return sprites[type];
     const f = FLOWER[type], S = 48, c = document.createElement("canvas"); c.width = c.height = S;
     const g = c.getContext("2d"), m = S / 2;
+    if(type==='grape'||type==='mango'){
+      g.strokeStyle='#8d8956';g.lineWidth=1;g.beginPath();g.moveTo(m,42);g.lineTo(m,5);g.stroke();
+      for(let i=0;i<28;i++){const y=8+(i/28)*29,w=3+(i/28)*13,x=m+(i%2?-1:1)*hash(i+29)*w;g.strokeStyle='#a2a071';g.beginPath();g.moveTo(m,y+3);g.lineTo(x,y);g.stroke();g.fillStyle=i%3?f.petal:f.eye;g.beginPath();g.arc(x,y,type==='grape'?1.1:1.5,0,Math.PI*2);g.fill();}
+      return sprites[type]=c;
+    }
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
       g.save(); g.translate(m + Math.cos(a) * 9.5, m + Math.sin(a) * 9.5); g.rotate(a + Math.PI / 2);
@@ -135,12 +175,12 @@
   }
 
   /* ---------- what each tree does through the year ---------- */
-  const RIPE = { apple: [214, 59, 51], peach: [244, 162, 124], orange: [243, 154, 31], cherry: [179, 20, 43] };
+  const RIPE = { apple: [214, 59, 51], peach: [244, 162, 124], orange: [243, 154, 31], cherry: [179, 20, 43],kiwi:[145,97,63],grape:[114,80,149],durian:[133,146,66],mango:[239,187,69] };
   const GREEN = [190, 206, 96];
-  const EVERGREEN = { orange: true };
+  const EVERGREEN = { orange: true,durian:true,mango:true };
   // the painted base: which two sprites to show and how far we are between them
   function base(type, season, p) {
-    if (EVERGREEN[type]) return ["summer", "summer", 0];
+    if (EVERGREEN[type]) return FarmArt.TREES[type].asset?[season,season,0]:["summer", "summer", 0];
     if (season === "spring") return p < 0.6 ? ["winter", "spring", smooth(0.12, 0.42, p)] : ["spring", "summer", smooth(0.62, 0.96, p)];
     if (season === "autumn") return ["summer", "autumn", smooth(0.04, 0.45, p)];
     if (season === "winter") return ["autumn", "winter", smooth(0, 0.2, p)];
@@ -148,6 +188,8 @@
   }
   // growing (not yet ripe) fruit; ripe fruit is the clickable SVG layer
   function growth(type, season, p) {
+    if(type==='kiwi'||type==='grape')return season==='summer'?{g:.18+.82*p,ripe:.4*smooth(.65,1,p),from:0,to:.25}:null;
+    if(type==='durian'||type==='mango')return season==='spring'?{g:smooth(.55,1,p),ripe:.5*smooth(.8,1,p),from:.55,to:.78}:null;
     if (type === "cherry" || type === "peach") return season === "spring" ? { g: smooth(0.55, 1, p), ripe: 0.65 * smooth(0.82, 1, p), from: 0.55, to: 0.82 } : null;
     if (type === "apple") return season === "summer" ? { g: 0.25 + 0.75 * p, ripe: 0.35 * smooth(0.72, 1, p), from: 0, to: 0.3 } : null;
     if (type === "orange") {
@@ -156,37 +198,38 @@
     }
     return null;
   }
-  const FRUIT_SLOTS = [[91, 86], [154, 73], [212, 104], [115, 135], [186, 151], [76, 161], [240, 173], [154, 181], [205, 199]];
 
   /* ---------- one living tree ---------- */
   const sims = new Set();
   function markup() {
     return `<div class="tree-inner living"><img class="tree-img base-a" alt="" draggable="false"><img class="tree-img base-b" alt="" draggable="false"><canvas class="tree-sim" aria-hidden="true"></canvas><div class="fruit-layer"></div></div>`;
   }
-  function attach(tree, el) {
+  function attach(tree, el, onReady) {
     const sim = {
       tree, el, a: el.querySelector(".base-a"), b: el.querySelector(".base-b"), cv: el.querySelector(".tree-sim"),
       ctx: null, cw: 0, ch: 0, dpr: 1, flowers: [], caps: [], parts: [], resting: [], flyers: [],
       abs: null, slideT: 0, leafT: 0, petalT: 0, built: false, lastDraw: 0
     };
     sim.ctx = sim.cv.getContext("2d");
-    sim.a.src = SRC.summer;
+    sim.a.src = FarmArt.treeSrc(tree.type,'summer',FarmArt.treeVariant(tree));
     sims.add(sim);
-    prepare().then(() => build(sim)).catch(() => {});
+    prepareSpecies(tree.type,FarmArt.treeVariant(tree)).then(a => {if(!sim.el.isConnected)return;sim.anchors=a;build(sim);if(onReady)onReady();}).catch(error => console.error('Orchard texture failed to load',error));
     return sim;
   }
   function detach(tree) { for (const s of sims) if (s.tree === tree) sims.delete(s); }
   function build(sim) {
+    const A=sim.anchors;
     const t = sim.tree, r = rng(t.seed * 9973 + 17), k = lowPower ? 0.6 : 1;
-    const nFlowers = Math.round((t.type === "cherry" ? 130 : t.type === "orange" ? 50 : 95) * k);
-    const fsrc = EVERGREEN[t.type] ? A.tops.summer : A.blossoms;
+    const nFlowers = Math.round((({kiwi:65,grape:48,durian:24,mango:24})[t.type]||(t.type === "cherry" ? 130 : t.type === "orange" ? 50 : 95)) * k);
+    const fsrc = t.type==='durian'?FarmArt.fruitSlots(t.type,FarmArt.treeVariant(t)).flatMap(([x,y])=>[[-4,0],[0,4],[4,0]].map(([u,v])=>[x+u,y+v])):t.type==='mango'?A.tops.summer:FarmArt.TREES[t.type].asset?A.blossoms:EVERGREEN[t.type]?A.tops.summer:A.blossoms;
     sim.flowers = pick(fsrc, nFlowers, r).map((p, i) => {
       const bud = 0.02 + r() * 0.22;
-      return { x: p[0] + (r() - 0.5) * 3, y: p[1] + (r() - 0.5) * 3, s: 6.5 + r() * 4.5, rot: r() * 6.28, bud, open: bud + 0.1 + r() * 0.2, drop: 0.6 + r() * 0.34, dropped: false, ph: r() * 6.28 };
+      const size=t.type==='grape'?4:t.type==='mango'?13:t.type==='durian'?13:6.5;
+      return { x: p[0] + (r() - 0.5) * 3, y: p[1] + (r() - 0.5) * 3, s: size + r() * 4.5, rot: r() * 6.28, bud, open: bud + 0.1 + r() * 0.2, drop: 0.6 + r() * 0.34, dropped: false, ph: r() * 6.28 };
     });
-    const csrc = EVERGREEN[t.type] ? A.tops.summer : A.tops.winter;
+    const csrc = FarmArt.TREES[t.type].asset?A.tops.winter:EVERGREEN[t.type]?A.tops.summer:A.tops.winter;
     sim.caps = pick(csrc, Math.round((EVERGREEN[t.type] ? 80 : 140) * k), r).map(([x, y, ang]) => ({ x, y, ang: ang || 0, start: r() * 0.45, w: 2.2 + r() * 2.2, k: 1 }));
-    sim.leafSrc = t.type === "orange" ? A.leaves.summer : A.leaves.autumn;
+    sim.leafSrc = EVERGREEN[t.type] ? A.leaves.summer : A.leaves.autumn;
     sim.flyers = Array.from({ length: t.type === "cherry" ? 2 : 1 }, (_, i) => ({ ph: r() * 6.28 + i * 2, col: ["#f6e49a", "#bcd6f4", "#fdf7f2", "#f7c6d8"][(r() * 4) | 0] }));
     sim.built = true;
   }
@@ -202,10 +245,22 @@
     if (sim.parts.length > (lowPower ? 90 : 180)) return;
     sim.parts.push({ kind, x, y, col, size, vx: (Math.random() - 0.5) * 8, vy: kind === "clump" ? 10 : 4, rot: Math.random() * 6.28, vr: (Math.random() - 0.5) * 3, ph: Math.random() * 6.28 });
   }
+  function leafShape(g,type,size){
+    g.beginPath();
+    if(type==='kiwi'){
+      g.moveTo(0,size*.6);g.bezierCurveTo(-size*1.7,-size*.3,-size*.6,-size*1.5,0,-size*.6);g.bezierCurveTo(size*.6,-size*1.5,size*1.7,-size*.3,0,size*.6);
+    }else if(type==='grape'){
+      for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=size*(i%2?.52:1);const x=Math.cos(a)*r,y=Math.sin(a)*r;if(i)g.lineTo(x,y);else g.moveTo(x,y);}g.closePath();
+    }else{
+      const narrow=type==='mango'?.28:type==='durian'?.42:.8;
+      g.moveTo(-size,0);g.quadraticCurveTo(0,-size*narrow,size,0);g.quadraticCurveTo(0,size*narrow,-size,0);
+    }g.fill();
+  }
 
   function step(sim, dt, time, season, p, calm, wind) {
     if (!sim.built) return;
     const t = sim.tree, type = t.type;
+    const A=sim.anchors;
     // a new season: buds reset, snow comes back
     if (sim.abs !== season.abs) {
       if (sim.abs != null && season.name !== "autumn") sim.resting = sim.resting.filter((q) => q.kind !== "leaf" || Math.random() < 0.3);
@@ -215,8 +270,8 @@
     }
     // painted base, cross-faded
     const [ka, kb, mix] = base(type, season.name, p);
-    if (sim.ka !== ka) { sim.a.src = SRC[ka]; sim.ka = ka; }
-    if (sim.kb !== kb) { sim.b.src = SRC[kb]; sim.kb = kb; }
+    if (sim.ka !== ka) { sim.a.src = FarmArt.treeSrc(type,ka,FarmArt.treeVariant(t)); sim.ka = ka; }
+    if (sim.kb !== kb) { sim.b.src = FarmArt.treeSrc(type,kb,FarmArt.treeVariant(t)); sim.kb = kb; }
     // both sprites have transparent backgrounds: hold both opaque through the middle, then let the old one go,
     // so the trunk never turns see-through and old leaves never show through the new picture
     sim.b.style.opacity = Math.min(1, mix * 2).toFixed(3);
@@ -284,6 +339,7 @@
   }
 
   function draw(sim, time, season, p, calm) {
+    const A=sim.anchors;
     fit(sim);
     const { ctx, cw, dpr } = sim, t = sim.tree, type = t.type;
     if (!cw) return;
@@ -298,16 +354,18 @@
     let drift = 0;
     if (season.name === "winter") drift = smooth(0.05, 0.65, p) * (1 - smooth(0.86, 1, p));
     if (drift > 0.01) {
-      ctx.fillStyle = "rgba(198,212,234,.9)";
-      ctx.beginPath(); ctx.ellipse(160, ground + 3, 30 + 82 * drift, 3 + 6 * drift, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "rgba(246,249,253,.95)";
-      ctx.beginPath(); ctx.ellipse(158, ground + 1.5, 26 + 76 * drift, 2.4 + 5 * drift, 0, 0, Math.PI * 2); ctx.fill();
+      const rx=22+55*drift,h=3+7*drift;
+      ctx.save();ctx.translate(160,ground+3);
+      const shade=ctx.createLinearGradient(0,-h,0,h*.5);shade.addColorStop(0,'#fafcff');shade.addColorStop(.55,'#e3ebf5');shade.addColorStop(1,'#bccde3');ctx.fillStyle=shade;
+      ctx.beginPath();ctx.moveTo(-rx,2);ctx.bezierCurveTo(-rx*.85,0,-rx*.8,-h*.55,-rx*.5,-h*.5);ctx.bezierCurveTo(-rx*.3,-h*.85,-rx*.15,-h*.45,0,-h);ctx.bezierCurveTo(rx*.25,-h*.85,rx*.3,-h*.25,rx*.53,-h*.45);ctx.bezierCurveTo(rx*.78,-h*.6,rx*.9,1,rx,3);ctx.quadraticCurveTo(rx*.15,h*.75,-rx,2);ctx.fill();
+      ctx.restore();
     }
     // leaves and petals resting on the ground
     for (const q of sim.resting) {
       ctx.globalAlpha = clamp(q.life / 4, 0, 1) * 0.95;
       ctx.fillStyle = q.col;
-      ctx.beginPath(); ctx.ellipse(q.x, q.y, q.size, q.size * 0.45, q.rot, 0, Math.PI * 2); ctx.fill();
+      ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.rot);ctx.scale(1,.6);
+      if(q.kind==='leaf')leafShape(ctx,type,q.size);else{ctx.beginPath();ctx.ellipse(0,0,q.size,q.size*.62,0,0,Math.PI*2);ctx.fill();}ctx.restore();
     }
     ctx.globalAlpha = 1;
 
@@ -359,12 +417,18 @@
     // fruit setting and growing (ripe fruit is the clickable layer above)
     const gr = growth(type, season.name, p);
     if (gr) {
-      FRUIT_SLOTS.forEach(([x, y], i) => {
+      FarmArt.fruitSlots(type,FarmArt.treeVariant(t)).forEach(([x, y], i) => {
         x += Math.sin(t.seed * 3 + i) * 6; y += Math.cos(t.seed + i) * 5;
         const appear = gr.from + hash(t.seed * 31 + i) * (gr.to - gr.from);
         const size = gr.g * smooth(appear, appear + 0.15, p);
         if (size < 0.04) return;
         const col = mixRGB(GREEN, RIPE[type], gr.ripe * (0.7 + 0.3 * hash(i + t.seed)));
+        if(['kiwi','grape','durian','mango'].includes(type)){
+          const key=type+Math.round(gr.ripe*16);
+          if(!sprites[key]){const img=new Image();img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">${FarmArt.fruitSVG(type,24,1,0,col)}</svg>`);sprites[key]=img;}
+          const img=sprites[key];if(img.complete&&img.naturalWidth)ctx.drawImage(img,x-24*size,y,48*size,48*size);
+          return;
+        }
         const drawOne = (cx, cy, R) => {
           ctx.fillStyle = col; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
           ctx.lineWidth = Math.max(0.6, R * 0.16); ctx.strokeStyle = "rgba(58,70,22,.7)"; ctx.stroke();
@@ -409,10 +473,8 @@
       if (q.kind === "clump") { ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, Math.PI * 2); ctx.fill(); continue; }
       const flip = Math.abs(Math.cos(time * 3 + q.ph));
       ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.scale(1, 0.3 + flip * 0.7);
-      ctx.beginPath();
-      if (q.kind === "leaf") { ctx.moveTo(-q.size, 0); ctx.quadraticCurveTo(0, -q.size * 0.8, q.size, 0); ctx.quadraticCurveTo(0, q.size * 0.8, -q.size, 0); }
-      else ctx.ellipse(0, 0, q.size, q.size * 0.62, 0, 0, Math.PI * 2);
-      ctx.fill();
+      if(q.kind==='leaf')leafShape(ctx,type,q.size);
+      else{ctx.beginPath();ctx.ellipse(0,0,q.size,q.size*.62,0,0,Math.PI*2);ctx.fill();}
       ctx.restore();
     }
   }

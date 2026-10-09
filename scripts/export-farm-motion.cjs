@@ -106,4 +106,5 @@ async function main() {
   await fs.writeFile(walkManifestPath,JSON.stringify(walkManifest,null,2)+'\n');
   console.log('Exported 8 walk frames, 4 cat postures, 7 other resting animals; baseline 360/384.');
 }
-main().catch(e => { console.error(e); process.exitCode = 1; });
+module.exports={cells,render,scaleFor};
+if(require.main===module)main().catch(e => { console.error(e); process.exitCode = 1; });

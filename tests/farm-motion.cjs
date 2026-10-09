@@ -13,6 +13,12 @@ for (const [species, gait] of Object.entries(m.GAITS)) {
   assert.equal(m.position(1 - 1e-8, species), 100, 'last frame must stay inside the sheet');
   assert.equal(m.position(1, species), 0, 'loop must wrap to frame zero');
 }
+for(const species of Object.keys(m.GAITS)) {
+  const start=m.sample(0,species),end=m.sample(1-1e-8,species);
+  assert.equal(start.frame,0);assert.equal(start.blend,0);assert.equal(end.next,0);
+  assert.ok(end.blend>.999,'the wrap blends toward the first frame');
+  for(let i=0;i<300;i++){const s=m.sample(i/300,species);assert.ok(s.blend>=0&&s.blend<=1);assert.ok(s.next<m.GAITS[species].frames);}
+}
 const takeoff = m.travel(0, 2.4, 20, .1);
 assert.ok(takeoff.speed > 0 && takeoff.speed < 2.4, 'start gradually');
 assert.ok(takeoff.distance > 0 && takeoff.distance < .24);

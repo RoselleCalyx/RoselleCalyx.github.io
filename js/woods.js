@@ -71,6 +71,9 @@
   /* ================= scene state ================= */
   let W = 0, H = 0, k = 1, dpr = 1, season = Wd.season(), time = 0;
   const bg = document.createElement("canvas"), fg = document.createElement("canvas");
+  const painting=window.SceneTextures?.create("woods",()=>{if(W){paintBackground();paintForeground();}});
+  const objects=window.WoodsObjects;
+  objects?.ready.then(()=>{stage.dataset.objects=objects.loaded()===45?'natural':'partial';if(W){paintForeground();renderBasket();}});
   let items = [], berries = [], hips = [], parts = [], weather = [], flies = [], motes = [];
   let hover = null, nextSpawn = 0, rain = { on: false, until: 0, next: 60 + Math.random() * 60, drops: [] };
   const P = (u, v) => [u * W, v * H];
@@ -163,6 +166,7 @@
     }
   }
   function fern(g, x, y, s, ang, col, colHi) {
+    if(objects?.draw(g,'fern',x,y,s*1.75,s,Math.round(Math.abs(x))%3,{season:season.name,snow:season.name==='winter'}))return;
     for (let f = 0; f < 6; f++) {
       const a = ang + (f - 2.5) * 0.36, len = s * (0.75 + (f % 3) * 0.12);
       const ex = x + Math.sin(a) * len, ey = y - Math.cos(a) * len * 0.9;
@@ -190,6 +194,11 @@
 
   /* ================= the things you can pick ================= */
   const ART = {};
+  function naturalFind(g,id,x,y,w,h,variant,blend,fallback,options={}){
+    if(!objects?.has(id,variant)){fallback();return;}
+    if(blend<1){g.save();g.globalAlpha*=1-blend;fallback();g.restore();}
+    if(blend>0){g.save();g.globalAlpha*=blend;objects.draw(g,id,x,y,w,h,variant,{season:season.name,...options});g.restore();}
+  }
   function stem(g, x, y, w, h, c1, c2, flare = 1.2) {
     const sg = g.createLinearGradient(x - w, 0, x + w, 0);
     sg.addColorStop(0, c1); sg.addColorStop(1, c2);
@@ -337,7 +346,7 @@
     g.fillStyle = cg; g.beginPath(); g.ellipse(x, y - s * 0.28, s * 0.2, s * 0.17, 0, 0, TAU); g.fill();
     if (id === "amanita") { g.fillStyle = "rgba(210,40,30,.75)"; g.beginPath(); g.ellipse(x, y - s * 0.4, s * 0.12, s * 0.06, 0, 0, TAU); g.fill(); }
   }
-  const iconOf = (id) => Wd.icon("woods-" + id, (g, x, y, s) => (id === "bayberry" ? ART.bayberry(g, x, y - s * 0.1, s * 0.75) : id === "rosehip" ? ART.rosehip(g, x, y - s * 0.05, s * 0.8) : ART[id](g, x, y, s)));
+  const iconOf = (id) => objects?.has(id)?objects.src(id):Wd.icon("woods-" + id, (g, x, y, s) => (id === "bayberry" ? ART.bayberry(g, x, y - s * 0.1, s * 0.75) : id === "rosehip" ? ART.rosehip(g, x, y - s * 0.05, s * 0.8) : ART[id](g, x, y, s)));
 
   /* ================= the static backdrop ================= */
   const TREE = { u: 0.705, v: 0.7 };
@@ -345,6 +354,10 @@
   function paintBackground() {
     const g = bg.getContext("2d"), pal = PAL[season.name], r = rng(1234), snow = season.name === "winter";
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if(painting?.draw(g,W,H,season.name)) {
+      paintRays();stage.dataset.texture='illustrated';return;
+    }
+    stage.dataset.texture='procedural';
     // sky and the glow over the clearing
     const sky = g.createLinearGradient(0, 0, 0, H * 0.66);
     sky.addColorStop(0, pal.sky[0]); sky.addColorStop(0.5, pal.sky[1]); sky.addColorStop(1, pal.sky[2]);
@@ -478,6 +491,10 @@
     const g = fg.getContext("2d"), pal = PAL[season.name], r = rng(4321), snow = season.name === "winter";
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, W, H);
+    if(painting?.ready(season.name)){
+      [[.035,1.025,58],[.98,1.035,68],[.91,1.025,42]].forEach(([u,v,s],i)=>objects?.draw(g,'fern',u*W,v*H,s*k*1.7,s*k,i,{season:season.name,snow}));
+      return;
+    }
     // two great trunks frame the view
     [[W * 0.03, 1], [W * 0.975, -1]].forEach(([x, side]) => {
       const w = 64 * k;
@@ -530,19 +547,19 @@
     const n = season.name === "summer" ? 26 : 18;
     for (let i = 0; i < n; i++) {
       const a = -Math.PI * 0.05 + r() * Math.PI * 1.1 + (r() < 0.3 ? Math.PI : 0), d = 0.45 + r() * 0.5;
-      berries.push({ x: c.x + Math.cos(a) * d * c.rx * 0.95, y: c.y + Math.sin(a) * d * c.ry * 0.85 + 6 * k, ripe: season.name === "summer" ? (r() < 0.45 ? 1 : r() * 0.7) : r() * 0.3, speed: 0.7 + r() * 0.6, picked: false, regrow: 0, ph: r() * TAU, s: (10 + r() * 3) * k });
+      berries.push({ variant:i%3, x: c.x + Math.cos(a) * d * c.rx * 0.95, y: c.y + Math.sin(a) * d * c.ry * 0.85 + 6 * k, ripe: season.name === "summer" ? (r() < 0.45 ? 1 : r() * 0.7) : r() * 0.3, speed: 0.7 + r() * 0.6, picked: false, regrow: 0, ph: r() * TAU, s: (10 + r() * 3) * k });
     }
   }
   function makeHips() {
     hips = [];
     if (season.name !== "autumn" && season.name !== "winter") return;
     const r = rng(808), rb = { x: W * 0.885, y: H * 0.78 };
-    for (let i = 0; i < 11; i++) { const a = -Math.PI / 2 + (r() - 0.5) * 2.2, len = (34 + r() * 46) * k; hips.push({ x: rb.x + Math.cos(a) * len, y: rb.y + Math.sin(a) * len + 6 * k, picked: false, regrow: 0, s: 15 * k, ph: r() * TAU, ripe: season.name === "winter" ? 1 : r() < 0.4 ? 1 : 0.1 + r() * 0.5, speed: 0.7 + r() * 0.6 }); }
+    for (let i = 0; i < 11; i++) { const a = -Math.PI / 2 + (r() - 0.5) * 2.2, len = (34 + r() * 46) * k; hips.push({ variant:i%3, x: rb.x + Math.cos(a) * len, y: rb.y + Math.sin(a) * len + 6 * k, picked: false, regrow: 0, s: 15 * k, ph: r() * TAU, ripe: season.name === "winter" ? 1 : r() < 0.4 ? 1 : 0.1 + r() * 0.5, speed: 0.7 + r() * 0.6 }); }
   }
   const depthScale = (y) => 0.72 + (y / H - 0.65) * 1.6;
   let covers = [];
   function setupCovers() {
-    covers = COVERS.filter((c) => !c.only || c.only === season.name).map((c) => ({ ...c, kind: season.name === "winter" && c.kind === "grass" ? "snow" : c.kind, off: 0, target: 0, closeAt: 0, rustle: 0, rustleNext: time + 2 + Math.random() * 5, ph: Math.random() * TAU, seed: (Math.random() * 1e6) | 0 }));
+    covers = COVERS.filter((c) => !c.only || c.only === season.name).map((c,i) => ({ ...c, variant:i%3, kind: season.name === "winter" && c.kind === "grass" ? "snow" : c.kind, off: 0, target: 0, closeAt: 0, rustle: 0, rustleNext: time + 2 + Math.random() * 5, ph: Math.random() * TAU, seed: (Math.random() * 1e6) | 0 }));
   }
   const coverItem = (c) => items.find((it) => !it.gone && it.cover === c);
   function spawn(now, quiet) {
@@ -564,7 +581,7 @@
     const grown = quiet ? 0.25 + Math.random() * 0.75 : 0;
     let size = base * 0.85 * k * depthScale(v * H) * (0.85 + Math.random() * 0.3);
     if (cover) size = Math.min(size, cover.h * k * depthScale(cover.v * H) * (cover.kind === "rock" ? 0.82 : cover.kind === "leaves" ? 1.6 : 0.78));   // small enough to stay hidden
-    items.push({ id, u, v, cover, g: grown, born: now + (quiet ? -2 : Math.random() * 0.6), s: size, wob: 0, shake: 0, gone: false, flip: Math.random() < 0.5 ? -1 : 1 });
+    items.push({ id, u, v, cover, variant:Math.floor(Math.random()*3), g: grown, born: now + (quiet ? -2 : Math.random() * 0.6), s: size, wob: 0, shake: 0, gone: false, flip: Math.random() < 0.5 ? -1 : 1 });
   }
   const READY = 0.72;
   const isMush = (id) => !!MUSH[id];
@@ -605,9 +622,27 @@
       const dx = side * o * w * 1.15, roll = side * Math.sin(o * Math.PI) * 0.35 + side * o * 0.12 + shake * 0.04;   // a half-turn wobble as it rolls, then settles
       ctx.save(); ctx.translate(bx + dx, by - h * 0.45); ctx.rotate(roll); ctx.translate(0, h * 0.45);
       ctx.fillStyle = "rgba(8,12,8,.35)"; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.55, h * 0.14, 0, 0, TAU); ctx.fill();
-      rock(ctx, 0, 0, w, h, snow, PAL[season.name].moss[(c.seed % 3)]);
+      if(objects?.draw(ctx,'rock',0,0,w*1.2,h*1.1,c.variant,{season:season.name,snow})){}
+      else if(window.MeadowProps)ctx.drawImage(MeadowProps.sprite("rock",c.seed,season.name),-w*.6,-h*1.7,w*1.2,h*1.85);
+      else rock(ctx, 0, 0, w, h, snow, PAL[season.name].moss[(c.seed % 3)]);
       ctx.restore();
       if (o > 0.05 && o < 0.98) { ctx.fillStyle = "rgba(60,50,40,.25)"; ctx.beginPath(); ctx.ellipse(bx, by, w * 0.45 * (1 - o * 0.4), h * 0.12, 0, 0, TAU); ctx.fill(); }
+      return;
+    }
+    if(['grass','leaves'].includes(c.kind)&&objects?.has(c.kind,c.variant)){
+      for(const side of [-1,1]){
+        ctx.save();ctx.translate(bx+side*o*w*.46,by);ctx.rotate(side*o*(c.kind==='grass'?.42:.12)+Math.sin(now*1.2+c.ph)*.012);
+        ctx.beginPath();ctx.rect(side<0?-w:0,-h*1.3,w,h*1.4);ctx.clip();
+        objects.draw(ctx,c.kind,0,0,w*1.2,h*1.1,c.variant,{season:season.name});ctx.restore();
+      }return;
+    }
+    if(c.kind==='grass' && window.MeadowProps) {
+      const tile=MeadowProps.sprite('grass',c.seed,season.name);
+      for(const side of [-1,1]) {
+        ctx.save();ctx.translate(bx+side*o*w*.42,by);ctx.rotate(side*o*.45+Math.sin(now*1.2+c.ph)*.025);
+        const sx=side<0?0:128;
+        ctx.drawImage(tile,sx,0,128,256,side<0?-w*.6:0,-h*1.2,w*.6,h*1.3);ctx.restore();
+      }
       return;
     }
     if (c.kind === "grass") {                                 // parts like a curtain
@@ -626,10 +661,16 @@
       return;
     }
     if (c.kind === "snow") {                                  // dug away
-      const hh = h * (0.55 - o * 0.42);
-      const sg = ctx.createRadialGradient(bx - w * 0.15, by - hh, 1, bx, by - hh * 0.3, w * 0.6);
-      sg.addColorStop(0, "#ffffff"); sg.addColorStop(1, "#c6d2e8");
-      ctx.fillStyle = sg; ctx.beginPath(); ctx.ellipse(bx + shake * 2, by, w * (0.5 + o * 0.25), hh, 0, Math.PI, TAU); ctx.fill();
+      const hh=h*(.38-o*.3),rx=w*(.56+o*.22),x=bx+shake*2;
+      const sg=ctx.createLinearGradient(0,by-hh,0,by+4*k);
+      sg.addColorStop(0,'#f4f7fc');sg.addColorStop(.55,'rgba(218,228,242,.94)');sg.addColorStop(1,'rgba(173,192,221,0)');
+      ctx.fillStyle=sg;ctx.beginPath();ctx.moveTo(x-rx,by+3*k);
+      for(let i=0;i<=12;i++){
+        const t=i/12,slope=Math.sin(t*Math.PI)**.8,yy=by-hh*slope*(.72+r()*.28),xx=x-rx+t*rx*2;
+        if(i)ctx.quadraticCurveTo(xx-rx/12,yy+(r()-.5)*2*k,xx,yy);else ctx.lineTo(xx,yy);
+      }
+      ctx.lineTo(x+rx,by+5*k);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(240,246,254,.38)';for(let i=0;i<16;i++){ctx.beginPath();ctx.ellipse(x+(r()-.5)*rx*2.3,by+(r()-.5)*6*k,(1+r()*2.4)*k,.6*k,0,0,TAU);ctx.fill();}
       return;
     }
     // a heap of fallen needles and leaves: swept apart
@@ -670,15 +711,15 @@
     });
   }
 
-  /* ================= Yuki came along ================= */
+  /* ================= Matcha came along ================= */
   const yuki = new Image(); yuki.src = "assets/farm/snowcat.webp";
   const YUKI = { u: 0.155, v: 0.95 };
   const yukiBox = () => { const h = 128 * k, [x, y] = P(YUKI.u, YUKI.v); return { x: x - h / 2, y: y - h, w: h, h, cx: x, cy: y - h / 2 }; };
   const YUKI_LINES = {
-    spring: ["Yuki sniffs a morel and sneezes.", "Yuki: “After rain, the shoots come up overnight.”", "Yuki is watching a petal very seriously."],
-    summer: ["Yuki: “The dark red ones are the sweet ones.”", "Yuki bats at a firefly and misses.", "Yuki will not go near the red mushroom. Wise cat."],
-    autumn: ["Yuki: “Matsutake hide under the pines. Look closely.”", "Yuki pounces on a leaf.", "Yuki has found a very good log to sit on."],
-    winter: ["Yuki: “The sweetest shoots sleep under the snow.”", "Yuki leaves tiny footprints all the way here.", "Yuki fluffs up against the cold."]
+    spring: ["Matcha sniffs a morel and sneezes.", "Matcha: “After rain, the shoots come up overnight.”", "Matcha is watching a petal very seriously."],
+    summer: ["Matcha: “The dark red ones are the sweet ones.”", "Matcha bats at a firefly and misses.", "Matcha will not go near the red mushroom. Wise cat."],
+    autumn: ["Matcha: “Matsutake hide under the pines. Look closely.”", "Matcha pounces on a leaf.", "Matcha has found a very good log to sit on."],
+    winter: ["Matcha: “The sweetest shoots sleep under the snow.”", "Matcha leaves tiny footprints all the way here.", "Matcha fluffs up against the cold."]
   };
 
   /* ================= frame ================= */
@@ -714,20 +755,20 @@
       const sw = Math.sin(now * 1.3 + b.ph) * 1.2 * k, grow = b.pop ? smooth(b.pop, b.pop + 0.6, now) : 1;
       const s = b.s * grow;
       ctx.strokeStyle = "#3a2a18"; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(b.x + sw, b.y - s * 0.85); ctx.lineTo(b.x + sw * 0.5, b.y - s * 1.3); ctx.stroke();
-      ART.bayberry(ctx, b.x + sw, b.y, s, b.ripe);
+      naturalFind(ctx,'bayberry',b.x+sw,b.y,s*1.5,s,b.variant,smooth(.55,.8,b.ripe),()=>ART.bayberry(ctx,b.x+sw,b.y,s,b.ripe));
       if (hover === b) { ctx.globalCompositeOperation = "lighter"; glow(ctx, b.x + sw, b.y - s * 0.4, s * 1.4, "255,170,170", 0.4); ctx.globalCompositeOperation = "source-over"; }
     });
     hips.forEach((h) => {
       if (h.picked) { if (now > h.regrow) { h.picked = false; h.ripe = 0.1; } else return; }
       if (h.ripe < 1) h.ripe = Math.min(1, h.ripe + (dt / 50) * h.speed);
-      ART.rosehip(ctx, h.x + Math.sin(now + h.ph) * k, h.y, h.s, h.ripe);
+      naturalFind(ctx,'rosehip',h.x+Math.sin(now+h.ph)*k,h.y,h.s*1.3,h.s,h.variant,smooth(.55,.8,h.ripe),()=>ART.rosehip(ctx,h.x+Math.sin(now+h.ph)*k,h.y,h.s,h.ripe));
       if (hover === h) { ctx.globalCompositeOperation = "lighter"; glow(ctx, h.x, h.y - h.s * 0.3, h.s * 1.3, "255,170,120", 0.45); ctx.globalCompositeOperation = "source-over"; }
     });
-    // ground finds, back to front, with Yuki among them
+    // ground finds, back to front, with Matcha among them
     items.forEach((it) => { if (!it.gone && it.g < 1) it.g = Math.min(1, it.g + (dt / (GROW[it.id] || 30)) * (rain.on ? 2 : 1)); });
     const list = [...items.filter((it) => !it.gone), ...covers.map((c) => ({ cover: true, c, v: c.v }))].sort((a, b) => a.v - b.v);
     let yukiDrawn = false;
-    const drawYuki = () => {
+    const drawMatcha = () => {
       yukiDrawn = true;
       if (!yuki.complete || !yuki.naturalWidth) return;
       const b = yukiBox(), br = 1 + Math.sin(now * 1.6) * 0.012;
@@ -738,7 +779,7 @@
       if (hover === "yuki") { ctx.globalCompositeOperation = "lighter"; glow(ctx, b.cx, b.cy, b.w * 0.6, "220,230,255", 0.18); ctx.globalCompositeOperation = "source-over"; }
     };
     list.forEach((it) => {
-      if (!yukiDrawn && it.v > YUKI.v) drawYuki();
+      if (!yukiDrawn && it.v > YUKI.v) drawMatcha();
       if (it.cover === true) { drawCover(it.c, now); return; }
       const [x, y] = P(it.u, it.v), age = now - it.born;
       if (age < 0) return;
@@ -749,15 +790,16 @@
       if (it.shake) { rot = Math.sin((now - it.shake) * 40) * 0.12 * Math.max(0, 1 - (now - it.shake) / 0.6); }
       ctx.fillStyle = "rgba(10,14,10,.32)"; ctx.beginPath(); ctx.ellipse(x, y, it.s * 0.36 * g2 * gs, it.s * 0.07, 0, 0, TAU); ctx.fill();
       ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y - lift); ctx.rotate(rot); ctx.scale(sx * it.flip, sy);
-      if (isMush(it.id) && it.g < 0.42) button(ctx, 0, 0, it.s * (0.45 + it.g), it.id);
-      else if (it.id === "strawberry") ART.strawberry(ctx, 0, 0, it.s * (0.6 + 0.4 * smooth(0, 1, it.g)), smooth(0.2, 1, it.g));
+      if(it.id==='strawberry')naturalFind(ctx,it.id,0,0,it.s*gs,it.s*gs,it.variant||0,smooth(.5,.8,it.g),()=>ART.strawberry(ctx,0,0,it.s*(.6+.4*smooth(0,1,it.g)),smooth(.2,1,it.g)),{shadow:true});
+      else if(objects?.draw(ctx,it.id,0,0,it.s*gs,it.s*gs,it.variant||0,{season:season.name,shadow:true,snow:season.name==='winter'&&it.id==='shoot'})){}
+      else if (isMush(it.id) && it.g < 0.42) button(ctx, 0, 0, it.s * (0.45 + it.g), it.id);
       else ART[it.id](ctx, 0, 0, it.s * gs, season.name === "winter");
       ctx.restore();
       if (it.g >= 1 && !it.matured && it.picking == null && !hiddenNow(it)) { it.matured = true; sparkle(x, y - it.s * 0.6, 6); }
       if (BY[it.id].rarity >= 3 && ready(it) && it.picking == null) { ctx.globalCompositeOperation = "lighter"; const tw = 0.5 + 0.5 * Math.sin(now * 3 + it.u * 20); glow(ctx, x + it.s * 0.3, y - it.s * 0.9, it.s * 0.35, "255,240,190", 0.5 * tw); ctx.globalCompositeOperation = "source-over"; }
       if (hover === it) { ctx.globalCompositeOperation = "lighter"; glow(ctx, x, y - it.s * 0.5, it.s * 1.1, it.id === "amanita" ? "255,120,110" : "255,236,170", 0.3); ctx.globalCompositeOperation = "source-over"; }
     });
-    if (!yukiDrawn) drawYuki();
+    if (!yukiDrawn) drawMatcha();
     // the foreground frame
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(fg, 0, 0);
@@ -845,7 +887,7 @@
       it.shake = time;
       if (!save.seen.amanita) { save.seen.amanita = 1; persist(); document.getElementById("btnJournal").classList.add("glint"); }
       Wd.float(stage, x, y - it.s - 10, "Poisonous! 毒蝇伞 — just look", "warn");
-      toast("Fly agaric: beautiful, and poisonous. Yuki says leave it for the fairies.", 3400);
+      toast("Fly agaric: beautiful, and poisonous. Matcha says leave it for the fairies.", 3400);
       return;
     }
     it.picking = time;
@@ -935,7 +977,7 @@
   const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   const COVER_TIP = { rock: "Roll the rock aside", grass: "Part the grass", snow: "Brush the snow away", leaves: "Sweep the needles aside" };
   function label(h) {
-    if (h === "yuki") return "Yuki · 雪山豹猫";
+    if (h === "yuki") return "Matcha · 雪山豹猫";
     if (h.coverHit) return h.coverHit.target > 0.5 ? "Put it back" : COVER_TIP[h.coverHit.kind];
     if (berries.includes(h)) return h.ripe >= 0.75 ? "Wild bayberry · 野杨梅" : h.ripe < 0.15 ? "Bayberry blossom" : `Bayberry · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
     if (hips.includes(h)) return h.ripe >= 0.75 ? "Rose hip · 野蔷薇果" : `Rose hip · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
@@ -985,7 +1027,7 @@
   document.getElementById("btnBack2").addEventListener("click", () => Wd.back("woods"));
   document.getElementById("btnJournal").addEventListener("click", openJournal);
   document.getElementById("btnLook").addEventListener("click", lookAround);
-  document.getElementById("btnYuki").addEventListener("click", () => { toast(seasonNote(), 4200); pick("yuki"); });
+  document.getElementById("btnMatcha").addEventListener("click", () => { toast(seasonNote(), 4200); pick("yuki"); });
 
   Wd.arrive("woods");
   renderBasket();

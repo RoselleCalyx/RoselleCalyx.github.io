@@ -1,0 +1,1164 @@
+{
+  "tool": "built-in imagegen",
+  "variants": 3,
+  "seasons": [
+    "spring",
+    "summer",
+    "autumn",
+    "winter"
+  ],
+  "assets": [
+    {
+      "type": "kiwi",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/kiwi-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 67056
+    },
+    {
+      "type": "kiwi",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/kiwi-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 67130
+    },
+    {
+      "type": "kiwi",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/kiwi-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 66828
+    },
+    {
+      "type": "kiwi",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/kiwi-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 59614
+    },
+    {
+      "type": "kiwi",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/kiwi-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 68492
+    },
+    {
+      "type": "kiwi",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/kiwi-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 67022
+    },
+    {
+      "type": "kiwi",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/kiwi-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 64942
+    },
+    {
+      "type": "kiwi",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/kiwi-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 55332
+    },
+    {
+      "type": "kiwi",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/kiwi-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 60408
+    },
+    {
+      "type": "kiwi",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/kiwi-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 60566
+    },
+    {
+      "type": "kiwi",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/kiwi-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 63420
+    },
+    {
+      "type": "kiwi",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/kiwi-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 55272
+    },
+    {
+      "type": "grape",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/grape-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 65344
+    },
+    {
+      "type": "grape",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/grape-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 65186
+    },
+    {
+      "type": "grape",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/grape-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 61286
+    },
+    {
+      "type": "grape",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/grape-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 48796
+    },
+    {
+      "type": "grape",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/grape-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 79296
+    },
+    {
+      "type": "grape",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/grape-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 86962
+    },
+    {
+      "type": "grape",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/grape-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 83550
+    },
+    {
+      "type": "grape",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/grape-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 67672
+    },
+    {
+      "type": "grape",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/grape-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 67228
+    },
+    {
+      "type": "grape",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/grape-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 68368
+    },
+    {
+      "type": "grape",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/grape-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 69872
+    },
+    {
+      "type": "grape",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/grape-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 54582
+    },
+    {
+      "type": "apple",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/apple-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 77980
+    },
+    {
+      "type": "apple",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/apple-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 72660
+    },
+    {
+      "type": "apple",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/apple-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 79600
+    },
+    {
+      "type": "apple",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/apple-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 73498
+    },
+    {
+      "type": "apple",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/apple-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 84046
+    },
+    {
+      "type": "apple",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/apple-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 82488
+    },
+    {
+      "type": "apple",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/apple-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 87890
+    },
+    {
+      "type": "apple",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/apple-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 69502
+    },
+    {
+      "type": "apple",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/apple-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 86046
+    },
+    {
+      "type": "apple",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/apple-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 82764
+    },
+    {
+      "type": "apple",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/apple-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 89976
+    },
+    {
+      "type": "apple",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/apple-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 92070
+    },
+    {
+      "type": "peach",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/peach-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 61764
+    },
+    {
+      "type": "peach",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/peach-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 59724
+    },
+    {
+      "type": "peach",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/peach-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 62530
+    },
+    {
+      "type": "peach",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/peach-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 49646
+    },
+    {
+      "type": "peach",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/peach-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 71540
+    },
+    {
+      "type": "peach",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/peach-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 68794
+    },
+    {
+      "type": "peach",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/peach-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 73372
+    },
+    {
+      "type": "peach",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/peach-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 52840
+    },
+    {
+      "type": "peach",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/peach-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 71316
+    },
+    {
+      "type": "peach",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/peach-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 68618
+    },
+    {
+      "type": "peach",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/peach-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 71926
+    },
+    {
+      "type": "peach",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/peach-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 49870
+    },
+    {
+      "type": "orange",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/orange-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 71408
+    },
+    {
+      "type": "orange",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/orange-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 72266
+    },
+    {
+      "type": "orange",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/orange-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 72160
+    },
+    {
+      "type": "orange",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/orange-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 70032
+    },
+    {
+      "type": "orange",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/orange-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 89846
+    },
+    {
+      "type": "orange",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/orange-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 87038
+    },
+    {
+      "type": "orange",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/orange-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 87460
+    },
+    {
+      "type": "orange",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/orange-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 85804
+    },
+    {
+      "type": "orange",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/orange-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 80606
+    },
+    {
+      "type": "orange",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/orange-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 77670
+    },
+    {
+      "type": "orange",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/orange-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 78288
+    },
+    {
+      "type": "orange",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/orange-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 75882
+    },
+    {
+      "type": "cherry",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/cherry-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 73424
+    },
+    {
+      "type": "cherry",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/cherry-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 66226
+    },
+    {
+      "type": "cherry",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/cherry-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 69602
+    },
+    {
+      "type": "cherry",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/cherry-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 64536
+    },
+    {
+      "type": "cherry",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/cherry-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 90020
+    },
+    {
+      "type": "cherry",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/cherry-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 84634
+    },
+    {
+      "type": "cherry",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/cherry-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 89742
+    },
+    {
+      "type": "cherry",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/cherry-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 66418
+    },
+    {
+      "type": "cherry",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/cherry-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 69780
+    },
+    {
+      "type": "cherry",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/cherry-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 62002
+    },
+    {
+      "type": "cherry",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/cherry-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 71734
+    },
+    {
+      "type": "cherry",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/cherry-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 56346
+    },
+    {
+      "type": "durian",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/durian-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 84684
+    },
+    {
+      "type": "durian",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/durian-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 82018
+    },
+    {
+      "type": "durian",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/durian-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 84482
+    },
+    {
+      "type": "durian",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/durian-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 80342
+    },
+    {
+      "type": "durian",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/durian-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 75416
+    },
+    {
+      "type": "durian",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/durian-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 72774
+    },
+    {
+      "type": "durian",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/durian-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 74566
+    },
+    {
+      "type": "durian",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/durian-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 70790
+    },
+    {
+      "type": "durian",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/durian-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 73644
+    },
+    {
+      "type": "durian",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/durian-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 71782
+    },
+    {
+      "type": "durian",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/durian-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 75122
+    },
+    {
+      "type": "durian",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/durian-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 69494
+    },
+    {
+      "type": "mango",
+      "variant": 0,
+      "season": "spring",
+      "path": "assets/farm/trees/mango-spring-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 63434
+    },
+    {
+      "type": "mango",
+      "variant": 0,
+      "season": "summer",
+      "path": "assets/farm/trees/mango-summer-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 61490
+    },
+    {
+      "type": "mango",
+      "variant": 0,
+      "season": "autumn",
+      "path": "assets/farm/trees/mango-autumn-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 64428
+    },
+    {
+      "type": "mango",
+      "variant": 0,
+      "season": "winter",
+      "path": "assets/farm/trees/mango-winter-shape1-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 60134
+    },
+    {
+      "type": "mango",
+      "variant": 1,
+      "season": "spring",
+      "path": "assets/farm/trees/mango-spring-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 68926
+    },
+    {
+      "type": "mango",
+      "variant": 1,
+      "season": "summer",
+      "path": "assets/farm/trees/mango-summer-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 63944
+    },
+    {
+      "type": "mango",
+      "variant": 1,
+      "season": "autumn",
+      "path": "assets/farm/trees/mango-autumn-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 66180
+    },
+    {
+      "type": "mango",
+      "variant": 1,
+      "season": "winter",
+      "path": "assets/farm/trees/mango-winter-shape2-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 62570
+    },
+    {
+      "type": "mango",
+      "variant": 2,
+      "season": "spring",
+      "path": "assets/farm/trees/mango-spring-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 60882
+    },
+    {
+      "type": "mango",
+      "variant": 2,
+      "season": "summer",
+      "path": "assets/farm/trees/mango-summer-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 57788
+    },
+    {
+      "type": "mango",
+      "variant": 2,
+      "season": "autumn",
+      "path": "assets/farm/trees/mango-autumn-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 59722
+    },
+    {
+      "type": "mango",
+      "variant": 2,
+      "season": "winter",
+      "path": "assets/farm/trees/mango-winter-shape3-v2.webp",
+      "width": 512,
+      "root": [
+        256,
+        483
+      ],
+      "bytes": 55802
+    }
+  ]
+}

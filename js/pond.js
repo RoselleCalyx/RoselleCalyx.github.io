@@ -2,7 +2,7 @@
    By the Pond — fishing below the farm.
    The scene is one canvas: a painted sky and far shore, mirrored into
    water that ripples strip by strip, fish shadows gliding under the
-   surface, reeds, lily pads, the dock where Yuki sits, and the rod.
+   surface, reeds, lily pads, the dock where Matcha sits, and the rod.
    Three ways to fish:
      rod   cast, watch the float, strike on the bite, then hold to reel
            and keep the line's tension in the safe band
@@ -229,6 +229,7 @@
   /* ================= scene geometry ================= */
   let W = 0, H = 0, k = 1, dpr = 1, season = Wd.season(), time = 0;
   const bg = document.createElement("canvas"), refl = document.createElement("canvas"), fg = document.createElement("canvas");
+  const painting=window.SceneTextures?.create("pond",()=>{if(W){paintBackground();paintForeground();}});
   const HZ = 0.4;                                     // the far shore's waterline
   const P = (u, v) => [u * W, v * H];
   const frozen = () => season.name === "winter";
@@ -290,6 +291,15 @@
     const wg = g.createLinearGradient(0, H * HZ, 0, H);
     wg.addColorStop(0, pal.water); wg.addColorStop(1, "#060c18");
     g.fillStyle = wg; g.fillRect(0, H * HZ, W, H * (1 - HZ));
+    if(painting?.draw(g,W,H,season.name)) {
+      stage.dataset.texture='illustrated';
+      const rg=refl.getContext('2d');rg.setTransform(1,0,0,1,0,0);rg.clearRect(0,0,refl.width,refl.height);
+      // Distort the painted reflection itself, preserving its mountain and light alignment.
+      rg.drawImage(bg,0,Math.round(H*HZ*dpr),bg.width,Math.round(H*(1-HZ)*dpr),0,0,refl.width,refl.height);
+      if(frozen())paintIce(g);
+      return;
+    }
+    stage.dataset.texture='procedural';
     // the mirror image of everything above the waterline
     const rg = refl.getContext("2d");
     rg.setTransform(1, 0, 0, 1, 0, 0);
@@ -305,6 +315,7 @@
     if (frozen()) paintIce(g);
   }
   function paintIce(g) {
+    if(!painting?.ready("winter")) {
     const r = rng(9090);
     const ig = g.createLinearGradient(0, H * HZ, 0, H);
     ig.addColorStop(0, "#9aa8c8"); ig.addColorStop(0.5, "#c6d2e8"); ig.addColorStop(1, "#e6eef8");
@@ -322,6 +333,7 @@
     g.fillStyle = "rgba(255,255,255,.7)"; g.filter = `blur(${2.5 * k}px)`;
     for (let i = 0; i < 30; i++) { g.beginPath(); g.ellipse(r() * W, H * (HZ + 0.04 + r() * 0.6), (30 + r() * 90) * k * scaleAt(H * 0.7), (3 + r() * 6) * k, 0, 0, TAU); g.fill(); }
     g.filter = "none";
+    }
     const [hx, hy] = P(HOLE.u, HOLE.v), hr = 44 * k;
     g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.ellipse(hx, hy, hr * 1.3, hr * 0.42, 0, 0, TAU); g.fill();
     const hg = g.createRadialGradient(hx, hy - hr * 0.1, 2, hx, hy, hr);
@@ -344,6 +356,12 @@
     g.strokeStyle = "rgba(20,12,6,.65)"; g.lineWidth = 1.4;
     for (let i = 1; i < 14; i++) { const t = i / 14, y = lerp(y0, H, t * t * 0.4 + t * 0.6); g.beginPath(); g.moveTo(0, y); g.lineTo(W, y - H * 0.02 * (1 - t)); g.stroke(); }
     g.strokeStyle = "rgba(255,230,190,.08)"; for (let i = 0; i < 30; i++) { const y = y0 + r() * (H - y0); g.beginPath(); g.moveTo(W * 0.62 + r() * W * 0.4, y); g.lineTo(W * 0.62 + r() * W * 0.4 + 30 * k, y); g.stroke(); }
+    for(let i=0;i<180;i++) {
+      const y=y0+r()*(H-y0),x=W*.63+r()*W*.4;
+      g.strokeStyle=i%3?'rgba(205,177,124,.13)':'rgba(17,13,10,.25)';g.lineWidth=.4+r()*.8;
+      g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+8*k,y-1,x+19*k,y+1,x+(20+r()*50)*k,y);g.stroke();
+    }
+    for(let i=0;i<12;i++){const x=W*(.72+r()*.29),y=y0+r()*(H-y0);g.strokeStyle='rgba(22,18,11,.32)';g.lineWidth=.6;g.beginPath();g.ellipse(x,y,4*k,1.2*k,0,0,TAU);g.stroke();}
     if (snow) { g.fillStyle = "rgba(238,244,252,.85)"; g.fillRect(0, y0 - 2, W, 8 * k); for (let i = 0; i < 12; i++) { g.beginPath(); g.ellipse(W * 0.7 + r() * W * 0.3, y0 + r() * (H - y0), 30 * k, 5 * k, 0, 0, TAU); g.fill(); } }
     g.restore();
     g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(xl0, y0, xr0 - xl0, 3 * k);
@@ -351,12 +369,14 @@
     const lx = W * 0.95, ly = y0 - 56 * k;
     g.fillStyle = "#2a1e14"; g.fillRect(lx - 2 * k, ly, 4 * k, 54 * k);
     // bank grass in the left corner
+    if(!painting?.ready(season.name)){
     g.fillStyle = snow ? "#dfe7f3" : season.name === "autumn" ? "#4a3e22" : "#1c3020";
     g.beginPath(); g.moveTo(0, H * 0.8); g.quadraticCurveTo(W * 0.12, H * 0.86, W * 0.2, H + 2); g.lineTo(0, H + 2); g.closePath(); g.fill();
     if (!snow) for (let i = 0; i < 70; i++) {                  // grass along the bank
       const t = r(), x = t * W * 0.2, edge = H * 0.8 + (H * 0.2) * Math.pow(t, 1.6), y = edge + r() * (H - edge) + 4 * k;
       for (let j = 0; j < 5; j++) { const a = -Math.PI / 2 + (j / 4 - 0.5) * 1.1, L = (9 + r() * 10) * k; g.strokeStyle = season.name === "autumn" ? ["#7a6a34", "#9a7a3a"][j % 2] : ["#3f6a32", "#5a8a42"][j % 2]; g.lineWidth = 1.3; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * L * 0.4, y + Math.sin(a) * L * 0.6, x + Math.cos(a) * L, y + Math.sin(a) * L); g.stroke(); }
     }
+    } // The illustrated shoreline already has detailed grass and ground cover.
     const vg = g.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.35, W / 2, H * 0.55, Math.max(W, H) * 0.78);
     vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(2,4,10,.5)");
     g.fillStyle = vg; g.fillRect(0, 0, W, H);
@@ -375,8 +395,11 @@
     const r = rng(3131);
     shadows = frozen() ? [] : Array.from({ length: Wd.lowPower ? 6 : 9 }, () => makeShadow(true));
     reeds = [];
-    const reedSpots = [[0.0, 0.07, 0.62, 0.92, 26], [0.88, 0.99, 0.5, 0.74, 12], [0.3, 0.38, 0.47, 0.5, 8]];
-    reedSpots.forEach(([u0, u1, v0, v1, n]) => { for (let i = 0; i < n; i++) reeds.push({ x: W * lerp(u0, u1, r()), y: H * lerp(v0, v1, r()), h: (60 + r() * 70) * k, ph: r() * TAU, cat: r() < 0.3 }); });
+    const reedSpots = [[0.012, 0.065, 0.84, 0.94, 3], [0.976, 0.998, 0.43, 0.45, 2], [0.3, 0.38, 0.425, 0.435, 3]];
+    reedSpots.forEach(([u0, u1, v0, v1, n]) => { for (let i = 0; i < n; i++) {
+      const v=lerp(v0,v1,r());
+      reeds.push({ x: W * lerp(u0, u1, r()), y: H*v, h: (v>.8?65+r()*45:18+r()*14)*k, ph: r()*TAU, cat:r()<.3 });
+    } });
     reeds.sort((a, b) => a.y - b.y);
     pads = [];
     if (!frozen()) [[0.2, 0.56, 6], [0.48, 0.63, 4], [0.7, 0.52, 5], [0.12, 0.83, 3]].forEach(([u, v, n]) => {
@@ -407,7 +430,7 @@
   const rodBase = () => [W * (W / H < 1.1 ? 0.99 : 0.97), H * 1.04];
   function rodTip() {
     const [bx, by] = rodBase();
-    let ang = W / H < 1.1 ? -1.95 : -2.25, bend = 0;                    // steeper on tall screens, clear of Yuki
+    let ang = W / H < 1.1 ? -1.95 : -2.25, bend = 0;                    // steeper on tall screens, clear of Matcha
     if (rod.state === "casting") { const p = (time - rod.t0) / 0.75; ang += p < 0.35 ? -0.5 * smooth(0, 0.35, p) : -0.5 + 0.9 * smooth(0.35, 0.6, p); }
     if (rod.state === "reeling") bend = rod.tension * 0.35 + Math.sin(time * 9) * 0.02 * rod.tension;
     if (rod.state === "bite") bend = 0.12 + Math.sin(time * 30) * 0.03;
@@ -597,10 +620,10 @@
     }
   }
 
-  /* ================= Yuki keeps you company on the dock ================= */
+  /* ================= Matcha keeps you company on the dock ================= */
   const yuki = new Image(); yuki.src = "assets/farm/snowcat.webp";
   const yukiBox = () => { const h = 108 * k, x = W * 0.745, y = H * 0.9; return { x: x - h / 2, y: y - h, w: h, h, cx: x, cy: y - h / 2 }; };
-  const YUKI = ["Yuki watches the float without blinking.", "Yuki: “The big ones bite at dusk.”", "Yuki is hoping you share.", "Yuki: “Patience. Then — strike!”", "Yuki dips a paw in the water and regrets it."];
+  const YUKI = ["Matcha watches the float without blinking.", "Matcha: “The big ones bite at dusk.”", "Matcha is hoping you share.", "Matcha: “Patience. Then — strike!”", "Matcha dips a paw in the water and regrets it."];
 
   /* ================= drawing ================= */
   let hover = null, hoverTrap = -1;
@@ -615,6 +638,7 @@
       ctx.drawImage(refl, 0, sy, refl.width, Math.max(1, band * dpr), off, y0 + y, W, band);
       y += band;
     }
+    if(painting?.ready(season.name))return;
     // depth: the water darkens and clears toward us
     const pal = PAL[season.name];
     const wg = ctx.createLinearGradient(0, y0, 0, H);
@@ -669,13 +693,18 @@
     });
   }
   function drawPads() {
+    const botanicals=[['hyacinth',.14,.69,58],['hyacinth',.21,.81,74],['hyacinth',.49,.58,38],['ottelia',.32,.72,58],['ottelia',.55,.66,49],['ottelia',.1,.84,66]];
+    botanicals.forEach(([kind,u,v,w],i)=>window.PondPlants?.floating(ctx,kind,W*u,H*v,w*k,time*.7+i*1.8,season.name));
     pads.forEach((p) => {
       const bob = Math.sin(time * 0.8 + p.ph) * 0.8 * k;
+      const textured=window.PondPlants?.leaf(ctx,p.x,p.y+bob,p.r,p.a+Math.sin(time*.16+p.ph)*.035,season.name);
+      if(!textured){
       ctx.save(); ctx.translate(p.x, p.y + bob); ctx.scale(1, 0.36);
       ctx.fillStyle = p.yellow ? "#8a8a3a" : "#2f6a3a";
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, p.r, p.a + 0.25, p.a + TAU - 0.25); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = "rgba(160,210,140,.35)"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(0, 0, p.r * 0.92, p.a + 0.4, p.a + TAU - 0.4); ctx.stroke();
       ctx.restore();
+      }
       if (p.flower || p.bud) {
         const fx = p.x + p.r * 0.2, fy = p.y + bob - 2 * k, fs = p.r * (p.bud ? 0.4 : 0.6);
         for (let i = 0; i < (p.bud ? 3 : 8); i++) {
@@ -692,6 +721,7 @@
     const wind = Math.sin(time * 0.4) * 0.06;
     reeds.forEach((r) => {
       const sw = Math.sin(time * 1.3 + r.ph) * 0.05 + wind, tx = r.x + Math.sin(sw) * r.h, ty = r.y - Math.cos(sw) * r.h;
+      if(window.PondPlants?.reed(ctx,r.x,r.y,r.h,sw,season.name,r.cat?'cattail':'reed'))return;
       ctx.strokeStyle = frozen() ? "#8a8a70" : season.name === "autumn" ? "#9a8040" : "#3e6a30"; ctx.lineWidth = Math.max(1, 2.2 * k * scaleAt(r.y)); ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.quadraticCurveTo(r.x + Math.sin(sw) * r.h * 0.3, r.y - r.h * 0.6, tx, ty); ctx.stroke();
       ctx.strokeStyle = frozen() ? "#9a9a80" : season.name === "autumn" ? "#b8a050" : "#5a8a3a"; ctx.lineWidth = Math.max(1, 3 * k * scaleAt(r.y));
@@ -699,6 +729,13 @@
       if (r.cat) { ctx.fillStyle = "#5a3a1e"; ctx.save(); ctx.translate(lerp(r.x, tx, 0.85), lerp(r.y, ty, 0.85)); ctx.rotate(sw); ctx.beginPath(); ctx.roundRect(-2.6 * k, -12 * k, 5.2 * k, 16 * k, 2.6 * k); ctx.fill(); ctx.restore(); }
       if (frozen()) { ctx.fillStyle = "rgba(240,246,255,.8)"; ctx.beginPath(); ctx.arc(tx, ty, 1.6 * k, 0, TAU); ctx.fill(); }
     });
+    if(!frozen()){
+      // Sparse rooted tufts follow the left bank, with depth and shared wind.
+      for(let i=0;i<12;i++){
+        const u=.012+i*.012,v=.85+Math.pow(i/12,1.6)*.14;
+        window.PondPlants?.reed(ctx,W*u,H*v,(27+i%4*8)*k,wind+Math.sin(time*.9+i)*.026,season.name,'grass');
+      }
+    }
   }
   function drawRod() {
     const tipP = rodTip(), [bx, by] = rodBase();
@@ -762,7 +799,7 @@
     const lx = W * 0.95, ly = H * DOCK.v0 - 62 * k, fl = 0.85 + 0.15 * Math.sin(time * 7) * Math.sin(time * 3.1);
     ctx.globalCompositeOperation = "lighter"; glow(ctx, lx, ly, 80 * k * fl, "255,190,110", 0.32); glow(ctx, lx, ly, 14 * k, "255,232,180", 0.9); ctx.globalCompositeOperation = "source-over";
     ctx.strokeStyle = "rgba(40,28,18,.9)"; ctx.lineWidth = 1.2; ctx.strokeRect(lx - 5 * k, ly - 7 * k, 10 * k, 14 * k);
-    // Yuki
+    // Matcha
     if (yuki.complete && yuki.naturalWidth) {
       const b = yukiBox();
       ctx.save(); ctx.translate(b.cx, b.y + b.h); ctx.scale(-1, 1 + Math.sin(time * 1.6) * 0.012);
@@ -890,7 +927,7 @@
     cv.style.cursor = hover || hoverTrap >= 0 ? "pointer" : rod.state === "reeling" ? "grabbing" : "default";
     if (e.pointerType === "mouse" && (hover === "yuki" || hoverTrap >= 0)) {
       const st = hoverTrap >= 0 ? trapState(hoverTrap) : "";
-      tip.textContent = hover === "yuki" ? "Yuki · 雪山豹猫" : st === "free" ? "Set a 地笼 crab trap" : st === "ready" ? "Haul up the trap!" : `Soaking… ${Math.ceil((save.traps[hoverTrap].t0 + save.traps[hoverTrap].dur - Date.now()) / 1000)}s`;
+      tip.textContent = hover === "yuki" ? "Matcha · 雪山豹猫" : st === "free" ? "Set a 地笼 crab trap" : st === "ready" ? "Haul up the trap!" : `Soaking… ${Math.ceil((save.traps[hoverTrap].t0 + save.traps[hoverTrap].dur - Date.now()) / 1000)}s`;
       tip.style.left = x + "px"; tip.style.top = y + "px"; tip.classList.add("on");
     } else tip.classList.remove("on");
   });

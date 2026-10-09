@@ -32,13 +32,14 @@ async function main() {
       if (url.pathname === '/js/farm.js') {
         const source = await fs.readFile(path.join(root,'js/farm.js'),'utf8');
         const end = source.lastIndexOf('})();');
-        return route.fulfill({ contentType:'application/javascript', body:source.slice(0,end) + 'window.__farmTest = {animals, trees, stepAnimal, planWalk, rest, place, openAnimal, closeBubble, feed};\n' + source.slice(end) });
+        return route.fulfill({ contentType:'application/javascript', body:source.slice(0,end) + 'window.__farmTest = {animals, trees, stepAnimal, planWalk, rest, place, openAnimal, closeBubble, feed, startHop, leaveRock};\n' + source.slice(end) });
       }
       return route.continue();
     });
     const base = `http://127.0.0.1:${server.address().port}`;
     await page.goto(base + '/farm.html?season=spring&p=.5');
     await page.waitForFunction(() => window.__farmTest && document.querySelectorAll('.actor.walk-ready').length === __farmTest.animals.length);
+    await page.waitForFunction(() => document.querySelectorAll('.actor.jump-ready').length === __farmTest.animals.length);
     await page.waitForFunction(() => [...document.querySelectorAll('.pose-sprite')].every(i => i.dataset.ready === 'true'));
     assert.deepEqual(errors, [], 'page must initialize without script errors');
     const cycle = await page.evaluate(() => {
@@ -55,7 +56,7 @@ async function main() {
       return { wake, standing, frames:[...frames], x:a.x, state:a.state, phase:a.phase, animation:getComputedStyle(a.sprite).animationName };
     });
     assert.equal(cycle.wake,'stretch'); assert.equal(cycle.standing,'stand');
-    assert.equal(cycle.frames.length,8,'all eight gait frames must play');
+    assert.equal(cycle.frames.length,12,'all twelve cat gait frames must play');
     assert.ok(cycle.x > 14 && cycle.x < 26); assert.equal(cycle.state,'walk');
     assert.equal(cycle.animation,'none','CSS must not run an independent foot timer');
     await page.waitForTimeout(300);
@@ -66,16 +67,18 @@ async function main() {
     await page.evaluate(() => __farmTest.closeBubble());
     // Exercise Claude's feeding flow together with the new posture controller.
     assert.equal(await page.evaluate(()=>typeof FarmFX.update),'function');
-    await page.evaluate(() => {
-      const t=__farmTest,a=t.animals.find(a=>a.keeper);
-      t.openAnimal(a);
-      const line=document.querySelector('.feed-line');
-      const food={id:'shrimp',name:'Shrimp',from:'pond',icon:'🦐'};
-      for(let i=0;i<3;i++) t.feed(a,food,line,null);
-    });
-    await page.waitForTimeout(80);
+    for(let i=0;i<3;i++){
+      await page.evaluate(() => {
+        const t=__farmTest,a=t.animals.find(a=>a.keeper);t.openAnimal(a);
+        t.feed(a,{id:'shrimp',name:'Shrimp',from:'pond',icon:'🦐'},document.querySelector('.feed-line'),null);
+      });
+      await page.waitForFunction(()=>__farmTest.animals.find(a=>a.keeper).reaction?.kind==='munch');
+      if(i<2)await page.waitForFunction(()=>!__farmTest.animals.find(a=>a.keeper).feeding);
+    }
+    await page.waitForFunction(()=>__farmTest.animals.find(a=>a.keeper).reaction?.kind==='happy-hop');
     assert.equal(await page.locator('.actor.keeper').getAttribute('data-pose'),'stand');
-    await page.waitForTimeout(1850);
+    assert.ok(await page.locator('.actor.keeper.react-happy-hop').count(),'successive favorite snacks vary their reactions');
+    await page.waitForFunction(()=>!__farmTest.animals.find(a=>a.keeper).feeding);
     await page.evaluate(() => {
       const t=__farmTest,a=t.animals.find(a=>a.keeper);
       t.feed(a,{id:'shrimp',name:'Shrimp',from:'pond'},document.querySelector('.feed-line'),null);
@@ -94,6 +97,17 @@ async function main() {
     await page.evaluate(()=>Sky.setCalm(false));
     await page.waitForTimeout(8900);
     assert.equal(await page.evaluate(()=>__farmTest.animals.find(a=>a.keeper).held),false,'feeding nap releases its hold');
+    const hop = await page.evaluate(() => {
+      const t=__farmTest,a=t.animals.find(a=>a.keeper),rock=MeadowProps.PROPS.find(p=>p.id==='rock-path'),now=performance.now();
+      a.held=false;a.x=rock.x-3;a.y=rock.y;
+      t.startHop(a,{x:rock.x,y:rock.y},now,rock);t.stepAnimal(a,.016,now+540);
+      const apex=a.lift;t.stepAnimal(a,.016,now+1050);
+      const perched={lift:a.lift,id:a.perch.id,z:Number(a.el.style.zIndex)};
+      t.leaveRock(a,now+1100);t.stepAnimal(a,.016,now+2150);
+      return {apex,perched,ground:a.lift,props:document.querySelectorAll('.meadow-prop').length};
+    });
+    assert.ok(hop.apex>hop.perched.lift);assert.equal(hop.perched.id,'rock-path');
+    assert.equal(hop.perched.z,752);assert.equal(hop.ground,0);assert.equal(hop.props,9);
     // Resting screenshot with every resident, and all four cat postures in preview.
     await page.evaluate(() => {
       const t=__farmTest;
@@ -141,14 +155,14 @@ async function main() {
     assert.equal(await page.locator('.actor[data-species="snowcat"]').getAttribute('data-pose'),'stretch');
     await page.locator('#pose').selectOption('walk');
     await page.locator('#pause').click();
-    const before=await page.locator('.actor[data-species="snowcat"] .walk-sprite').evaluate(e=>e.style.backgroundPositionX);
+    const before=await page.locator('.actor[data-species="snowcat"] .walk-sprite:not(.walk-sprite-next)').evaluate(e=>e.style.backgroundPositionX);
     await page.locator('#step').click();
-    const after=await page.locator('.actor[data-species="snowcat"] .walk-sprite').evaluate(e=>e.style.backgroundPositionX);
+    const after=await page.locator('.actor[data-species="snowcat"] .walk-sprite:not(.walk-sprite-next)').evaluate(e=>e.style.backgroundPositionX);
     assert.notEqual(after,before,'preview supports frame stepping');
     await page.locator('#flip').click();
     assert.equal(await page.locator('.actor.left').count(),8);
     assert.deepEqual(errors,[]); assert.deepEqual(broken,[],'all local assets must load');
-    console.log(JSON.stringify({passed:true,checks:['eight-frame cycle','wake/stand/walk','held phase','pet posture','feeding posture and nap hold/release','FarmFX integration','reduced motion','four seasons','mobile overflow','preview stepping/mirroring','local asset loads'],screenshots:out}));
+    console.log(JSON.stringify({passed:true,checks:['twelve-frame cat cycle','wake/stand/walk','held phase','pet posture','varied feeding postures and nap hold/release','FarmFX integration','eight-posture rock takeoff/perch/landing and depth','reduced motion','four seasons','mobile overflow','preview stepping/mirroring','local asset loads'],screenshots:out}));
   } finally { if(browser) await browser.close(); await new Promise(ok=>server.close(ok)); }
 }
 main().catch(e=>{ console.error(e); process.exitCode=1; });

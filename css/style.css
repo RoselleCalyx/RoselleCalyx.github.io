@@ -276,7 +276,7 @@ body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,3
 .news li { display: grid; grid-template-columns: 76px 1fr; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--ink-2); }
 .news li:last-child { border-bottom: 0; }
 .news time { font-family: var(--ui); font-size: .74rem; letter-spacing: .1em; color: var(--gold); padding-top: 4px; }
-.explore { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.explore { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .explore a { padding: 22px 20px; color: var(--ink); display: flex; flex-direction: column; gap: 8px; transition: transform .3s, border-color .3s; }
 .explore a:hover { transform: translateY(-4px); border-color: var(--line-2); }
 .explore svg { width: 28px; height: 28px; color: var(--gold-2); }
@@ -799,8 +799,8 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 /* ---------- Farm: distance-driven gait and genuine resting postures ---------- */
 .actor { aspect-ratio: 1; }
 .actor .flip { transition: none; }
-.actor .bob { position: relative; width: 100%; aspect-ratio: 1; transform-origin: 50% 94%; animation: quiet-breath 5.5s ease-in-out infinite; }
-.actor .animal-sprite, .actor .pose-sprite { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: opacity .18s ease; }
+.actor .bob { position: relative; width: 100%; aspect-ratio: 1; transform-origin: 50% 94%; animation: quiet-breath 5.5s ease-in-out infinite; isolation: isolate; }
+.actor .animal-sprite, .actor .pose-sprite { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: none; }
 .actor .pose-sprite { opacity: 0; pointer-events: none; transform: translateY(.25%); transform-origin: 50% 93.75%; }
 .actor[data-species="snowcat"] .pose-sprite { transform: translateY(.25%) scale(1.12); }
 .walk-sprite { position: absolute; inset: 0; display: block; width: 100%; aspect-ratio: 1; opacity: 0; background-repeat: no-repeat; background-position: 0 0; transform: translateY(var(--walk-offset, 1.8%)) scale(var(--walk-scale, 1.3)); transform-origin: 50% 93.75%; transition: opacity .18s ease; pointer-events: none; }
@@ -1031,9 +1031,15 @@ body[data-wild="pond"].wild-arriving .wild-stage::after { background: radial-gra
 .feed-empty a { color: #6a7d4e; text-decoration: underline; text-underline-offset: 2px; }
 .fly-treat { position: fixed; z-index: 3000; display: grid; place-items: center; width: 28px; height: 28px; pointer-events: none; font-size: 20px; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .35)); }
 .fly-treat img, .fly-treat svg { width: 28px; height: 28px; object-fit: contain; }
+.bite-treat { position:absolute; left:63%; top:68%; width:19%; height:19%; display:grid; place-items:center; pointer-events:none; font-size:clamp(10px,1.5vw,22px); transform-origin:50% 50%; animation:finish-bite 2.2s ease-in-out both; z-index:2; filter:drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+.bite-treat img,.bite-treat svg { width:100%; height:100%; object-fit:contain; }
+.actor[data-species="panda"] .bite-treat { left:55%; top:45%; }
+.actor[data-species="duckling"] .bite-treat,.actor[data-species="penguin"] .bite-treat { left:58%; top:52%; }
+@keyframes finish-bite { 0% { opacity:0; transform:scale(.85); } 12%,30% { opacity:1; transform:scale(1); } 48% { transform:translateY(-3%) scale(.8); } 70% { opacity:1; transform:scale(.55); } 90%,100% { opacity:0; transform:scale(.1); } }
+.farm-calm .bite-treat { animation:none; }
 .basket .wild-count { color: inherit; text-decoration: none; opacity: .9; }
 .basket .wild-count:hover { opacity: 1; text-decoration: underline; }
-.actor.react .bob { animation: var(--ra, react-munch) 1.6s cubic-bezier(.4, 0, .3, 1) 1 both !important; transform-origin: 50% 92%; }
+.actor.react .bob { animation: var(--ra, react-munch) 1.8s cubic-bezier(.4, 0, .3, 1) 1 both !important; transform-origin: 50% 92%; }
 .actor.react-knead { --ra: react-knead; }
 .actor.react-binky { --ra: react-binky; }
 .actor.react-roll { --ra: react-roll; }
@@ -1065,3 +1071,48 @@ body[data-page="farm"] .bubble.below::after { border-bottom-color: #f6f0e3; }
 /* A feeding nap uses the actual resting sprite; calm mode also quiets reactions. */
 .actor[data-pose="sleep"].react-nap .bob { animation: sleep-breath 6s ease-in-out infinite !important; }
 .farm-calm .actor.react .bob { animation: none !important; }
+
+/* Softly blend only the end of each grounded step, never an independent timer. */
+.actor.walk-ready.walking .walk-sprite:not(.walk-sprite-next), .actor.walk-ready.hopping .walk-sprite:not(.walk-sprite-next) { opacity: calc(1 - var(--gait-blend, 0)); }
+.actor.walk-ready.walking .walk-sprite-next, .actor.walk-ready.hopping .walk-sprite-next { opacity: var(--gait-blend, 0); }
+.walk-sprite-next { opacity: 0; }
+/* Add premultiplied frame colors inside an isolated group. Source-over would
+   make two half-opacity frames only 75% opaque and flash the background. */
+.actor .walk-sprite { mix-blend-mode: plus-lighter; }
+.actor.walking .walk-sprite, .actor.hopping .walk-sprite { transition: none; }
+.meadow-prop { position: absolute; transform: translate(-50%, -91%); pointer-events: none; }
+.meadow-prop img { width: 100%; height: 100%; display: block; transform-origin: 50% 91%; }
+.prop-grass img, .prop-flowers img { transform: rotate(var(--tree-bend, 0deg)); transition: transform .18s linear; }
+.actor.leaping::before { opacity: .28; }
+.actor.leaping .bob { animation: none; }
+.actor[data-species="snowcat"].react-knead .bob { animation: paw-knead 1.8s ease-in-out both !important; }
+@keyframes paw-knead { 0%,100% { transform: none; } 20%,55% { transform: rotate(-1.5deg) translateY(.8%); } 38%,72% { transform: rotate(1.5deg) translateY(-.8%); } }
+.actor.petting .bob { animation: pet-nuzzle 1.8s ease-in-out both; }
+.actor[data-species="rabbit"].petting .bob, .actor[data-species="duckling"].petting .bob { animation-name: pet-perk; }
+.actor[data-species="fox"].petting .bob, .actor[data-species="shiba"].petting .bob { animation-name: pet-wiggle; }
+.actor[data-species="penguin"].petting .bob, .actor[data-species="panda"].petting .bob { animation-name: pet-sway; }
+@keyframes pet-nuzzle { 25%,65% { transform: rotate(-3deg) scale(1.01); } 45% { transform: rotate(2deg); } }
+@keyframes pet-perk { 25%,65% { transform: translateY(-3%) rotate(-2deg); } 45% { transform: translateY(-1%) rotate(2deg); } }
+@keyframes pet-wiggle { 20%,60% { transform: rotate(-3deg); } 40%,80% { transform: rotate(3deg); } }
+@keyframes pet-sway { 30% { transform: translateX(-2%) rotate(-2deg); } 65% { transform: translateX(2%) rotate(2deg); } }
+.farm-calm .actor.react .bob, .farm-calm .actor.petting .bob { animation: none !important; }
+.reaction-art { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.actor.reaction-ready .reaction-art { opacity: 1; }
+.actor.reaction-ready .animal-sprite, .actor.reaction-ready .pose-sprite, .actor.reaction-ready .walk-sprite { opacity: 0 !important; }
+.actor.react-wave { --ra: reaction-wave; }
+.actor.react-wag { --ra: reaction-wag; }
+.actor.react-happy-hop { --ra: reaction-hop; }
+.actor.reaction-ready.react-knead .bob { animation: reaction-wave 1.8s ease-in-out both !important; }
+@keyframes reaction-wave { 0%,100% { transform: none; } 25%,65% { transform: rotate(-2deg) translateY(-1.5%); } 45% { transform: rotate(1deg); } }
+@keyframes reaction-wag { 0%,100% { transform: none; } 25%,65% { transform: translateY(-1.5%) rotate(-1deg); } 45%,80% { transform: rotate(1deg); } }
+@keyframes reaction-hop { 0%,100% { transform: none; } 20% { transform: scale(1.025,.96); } 52% { transform: translateY(-20%) rotate(-2deg); } 82% { transform: translateY(0); } 89% { transform: scale(1.025,.96); } }
+.actor.react-happy-hop::before { animation: reaction-hop-shadow 1.8s ease-in-out both; }
+@keyframes reaction-hop-shadow { 52% { opacity: .22; transform: scale(.75); } }
+.farm-calm .actor.react::before { animation: none; }
+.farm-calm .actor.reaction-ready .bob { animation: none !important; }
+.actor.reaction-ready.petting .bob, .actor.reaction-ready.react:not(.react-happy-hop):not(.react-binky):not(.react-pounce) .bob { animation: none !important; }
+.jump-sprite { position: absolute; inset: 0; width: 100%; aspect-ratio: 1; opacity: 0; pointer-events: none; background-repeat: no-repeat; transform: translateY(var(--walk-offset,.25%)) scale(var(--walk-scale,1.3)); transform-origin: 50% 93.75%; mix-blend-mode: plus-lighter; }
+.actor.jump-ready:is(.leaping,.react-happy-hop,.react-binky,.react-pounce) .jump-sprite:not(.jump-sprite-next) { opacity: calc(1 - var(--jump-blend,0)); }
+.actor.jump-ready:is(.leaping,.react-happy-hop,.react-binky,.react-pounce) .jump-sprite-next { opacity: var(--jump-blend,0); }
+.actor.jump-ready:is(.leaping,.react-happy-hop,.react-binky,.react-pounce) :is(.animal-sprite,.pose-sprite,.walk-sprite,.reaction-art) { opacity: 0 !important; }
+.actor.react-binky,.actor.react-pounce { --ra: reaction-hop; }

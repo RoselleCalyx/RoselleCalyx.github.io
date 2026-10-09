@@ -9,6 +9,7 @@
     ["gallery", "gallery.html", "Gallery"],
     ["message", "message.html", "Message"],
     ["starmap", "starmap.html", "Starmap"],
+    ["voyager", "voyager.html", "Voyager"],
     ["farm", "farm.html", "Farm"]
   ];
 
