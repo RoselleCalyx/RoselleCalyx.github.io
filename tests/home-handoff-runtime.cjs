@@ -29,7 +29,7 @@ async function light(page){
   });
 }
 async function scrollQ(page,q){
-  await page.evaluate(q=>scrollTo({top:document.querySelector('.story').offsetHeight-innerHeight*(1.02-.72*q),behavior:'instant'}),q);
+  await page.evaluate(q=>scrollTo({top:document.querySelector('.story').offsetHeight-innerHeight*(1.02-1.15*q),behavior:'instant'}),q);
   await page.waitForFunction(q=>{const s=__homeHandoff.state();return Math.abs(s.fall-q)<.005&&s.p>.9&&Math.abs(s.p-s.pTarget)<.002;},q);
   return light(page);
 }
@@ -63,8 +63,12 @@ async function finalGeometry(page){
     const plasmaPixels=await page.evaluate(()=>{const layer=__homeHandoff.arrivalLayer(.67),data=layer.getContext('2d').getImageData(0,0,layer.width,layer.height).data;let warm=0;for(let i=0;i<data.length;i+=4)if(data[i+3]>20&&data[i]>170&&data[i]>data[i+1]*1.1)warm++;return warm;});
     assert.ok(plasmaPixels>1200,'the entry plume renders a broad warm plasma layer, independently of Saturn and the rings');
     await page.screenshot({path:out+'/atmospheric-plasma.png'});
-    for(const progress of [.95,1]){
+    let previousDim=0;
+    for(const progress of [.85,.95,1]){
       await page.goto(base+`/index.html?p=${progress}`);await ready(page);
+      const dim=await page.locator('#heroDim').evaluate(el=>+getComputedStyle(el).opacity);
+      assert.ok(dim>previousDim,'the finale background progressively darkens');previousDim=dim;
+      if(progress===1)assert.ok(dim>.8,'the final light is framed by a deeply darkened landscape');
       const first=await light(page);assert.equal(first.fall,0,'pinned final chapter does not start falling');
       assert.ok(first.opacity>.99&&first.lit>20000&&first.bright>100&&first.maxAlpha>245,'a large incandescent light persists after the spacecraft burns away');
       await finalGeometry(page);await page.waitForTimeout(700);const held=await light(page);
@@ -74,6 +78,11 @@ async function finalGeometry(page){
     await page.goto(base+'/index.html');await ready(page);
     const start=await scrollQ(page,0);assert.ok(start.opacity>.99&&start.lit>20000,'the final light is present at the real story exit');
     await finalGeometry(page);
+    // A half-screen scroll now covers less than half the descent, preserving the ember near its source.
+    await page.evaluate(()=>scrollBy({top:innerHeight*.5,behavior:'instant'}));
+    await page.waitForTimeout(1600);
+    const slowed=await light(page);assert.ok(slowed.fall>.4&&slowed.fall<.45,'the descent spans more than a full viewport of scrolling');
+    await scrollQ(page,0);
     const first=await scrollQ(page,.25);await page.screenshot({path:out+'/remnant-early.png'});
     const second=await scrollQ(page,.65);await page.screenshot({path:out+'/fall-into-bio.png'});
     const ashes=await scrollQ(page,.94);await page.screenshot({path:out+'/remnant-ash.png'});

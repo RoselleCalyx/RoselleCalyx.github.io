@@ -496,7 +496,8 @@
     const r = story.getBoundingClientRect();
     const total = story.offsetHeight - (vh || innerHeight);
     pTarget = total > 0 ? clamp(-r.top / total, 0, 1) : 0;
-    fallTarget=clamp((innerHeight*1.02-r.bottom)/(innerHeight*.72),0,1);
+    // Give the ember a longer descent through the biography entrance.
+    fallTarget=clamp((innerHeight*1.02-r.bottom)/(innerHeight*1.15),0,1);
     leaving(r);
   }
   let leaveLast = -1;
@@ -594,7 +595,7 @@
     if (pinned >= 0) pTarget = pinned;
     p += (pTarget - p) * (calm ? 1 : 1 - Math.exp(-real * 5));
     const target=pinned>=0?0:fallTarget;
-    fall+=(target-fall)*(calm?1:1-Math.exp(-real*6));
+    fall+=(target-fall)*(calm?1:1-Math.exp(-real*4));
     if(target===0||Math.abs(target-fall)<.0005)fall=target;
     drawHandoff(calm);
     if (Math.abs(pTarget - p) < 0.0005) p = pTarget;
@@ -655,7 +656,7 @@
     const uiA = 1 - smooth(0.02, 0.1, p);
     ui.style.opacity = uiA.toFixed(3);
     ui.style.visibility = uiA < 0.01 ? "hidden" : "";
-    const dimA = smooth(0.8, 1, p) * 0.46;
+    const dimA = smooth(0.78, 1, p) * 0.84;
     dim.style.opacity = dimA.toFixed(3);
     if (cvR) cvR.style.opacity = (1 - dimA).toFixed(3);              // the top layer dims with the rest at the end
     const fA = smooth(0.84, 0.92, p)*(1-smooth(.02,.32,fall));
