@@ -393,6 +393,17 @@
   }
   function positionBubble() {
     if (!bubble) return;
+    // A fixed sheet keeps the expanded feeding tray clear of the clipped garden.
+    const mobile = window.matchMedia('(max-width: 900px)').matches;
+    bubble.el.classList.toggle('mobile-sheet', mobile);
+    if (mobile) {
+      if (bubble.el.parentNode !== document.body) document.body.appendChild(bubble.el);
+      bubble.el.style.width = '';
+      bubble.el.style.left = '';
+      bubble.el.style.top = '';
+      return;
+    }
+    if (bubble.el.parentNode !== world) world.appendChild(bubble.el);
     const w = world.getBoundingClientRect(), r = bubble.anchor.getBoundingClientRect();
     const vr = viewport.getBoundingClientRect();
     const half = Math.min(125, viewport.clientWidth / 2 - 12);
@@ -407,6 +418,7 @@
     bubble.el.style.top = (below ? r.bottom - w.top - 6 : Math.max(Math.min(250, hgt), above)) + "px";
   }
   world.addEventListener("click", closeBubble);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBubble(); });
   // a touch on empty ground: a little sparkle, a ripple on the pond, a puff of snow in winter
   world.addEventListener("click", (e) => {
     if (!window.FarmFX) return;
@@ -459,7 +471,8 @@
     renderBasket();
   }
   const fed = {};                                              // recent snacks, to know when someone is full
-  const happyActions={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','munch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','happy-hop','munch'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop']};
+  const happyActions={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','pet-stretch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','wave','happy-hop'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop']};
+  const petActions={snowcat:['knead','pet-nuzzle','wave','pet-stretch'],rabbit:['binky','pet-nuzzle','wave','pet-stretch'],panda:['wave','pet-nuzzle','pet-stretch'],fox:['wave','pet-nuzzle','pounce','pet-stretch'],shiba:['wag','pet-nuzzle','wave','pet-stretch'],hedgehog:['curl','pet-nuzzle','wave'],duckling:['flap','pet-nuzzle','wave'],penguin:['flap','pet-nuzzle','wave']};
   const actionText={wave:'waves a little paw',wag:'wags that curly tail', 'happy-hop':'hops up with delight',flap:'flutters tiny wings'};
   function react(a, kind, options = {}) {
     [...a.el.classList].filter((c) => c.startsWith("react")).forEach((c) => a.el.classList.remove(c));
@@ -472,12 +485,13 @@
     rest(a, now, duration, kind === "nap" ? "sleep" : a.def.species === "snowcat" ? catPose : "sit");
     a.reactUntil = now + duration;
     a.held = true; place(a);
-    if(window.AnimalReactions)AnimalReactions.draw(a,now,reduce||!!window.Sky?.calm);
+    if(window.AnimalReactions)AnimalReactions.draw(a,now,reduce);
     clearTimeout(a.reactT);
     a.reactT = setTimeout(() => {
       a.el.classList.remove("react", "react-" + kind);
       a.reactUntil = 0; a.until = performance.now() + 1800;
       a.reaction=null;a.el.classList.remove('reaction-ready');
+      setPose(a,a.def.species==='snowcat'?'stand':'sit');place(a);
       if(options.onFinish){options.onFinish();return;}
       if (!bubble || bubble.a !== a) a.held = false;
     }, duration);
@@ -516,8 +530,9 @@
     [...a.el.classList].filter(c=>c.startsWith('react')).forEach(c=>a.el.classList.remove(c));
     // Hold the animal throughout delivery, eating, and its response.
     const delivery=fromEl&&!reduce?620:0;
-    rest(a,performance.now(),delivery+2200+(kind==='love'?2400:0),'sit');
-    a.held=true;a.reactUntil=performance.now()+delivery+2200+(kind==='love'?2400:0);place(a);
+    const responseDuration=kind==='love'?2400:2000;
+    rest(a,performance.now(),delivery+2200+responseDuration,'sit');
+    a.held=true;a.reactUntil=performance.now()+delivery+2200+responseDuration;place(a);
     if (fromEl) flyTreat(fromEl, a.el, f);
     const hearts = store.get("farm-hearts", {});
     hearts[key] = (hearts[key] || 0) + (kind === "love" ? 3 : 1); store.set("farm-hearts", hearts);
@@ -527,11 +542,11 @@
       line.textContent=`${name} lowers their head and munches the ${food}…`;
       react(a,'munch',{duration:2200,onFinish:()=>{
         treat.remove();
-        if (kind === "love") {
         const choices=happyActions[a.def.species]||[d.act],act=choices[(a.snackAction||0)%choices.length];a.snackAction=(a.snackAction||0)+1;
-        react(a, act,{onFinish:()=>{a.feeding=false;if(!bubble||bubble.a!==a)a.held=false;}}); emote(a, "♥"); fxAt(a.el, "heart"); setTimeout(() => fxAt(a.el, "heart"), 380);
-        line.textContent = `${name} loves ${food} — ${actionText[act]||d.does}! ♥`;
-        }else{a.feeding=false;emote(a,'♪');line.textContent=`${name} munches the ${food} happily.`;if(!bubble||bubble.a!==a)a.held=false;}
+        react(a,act,{duration:responseDuration,onFinish:()=>{a.feeding=false;if(!bubble||bubble.a!==a)a.held=false;}});
+        emote(a,kind==='love'?'♥':'♪');fxAt(a.el,'heart');
+        if(kind==='love')setTimeout(()=>fxAt(a.el,'heart'),380);
+        line.textContent=`${name} ${kind==='love'?'loves':'enjoys'} ${food} — ${actionText[act]||d.does}! ${kind==='love'?'♥':'♪'}`;
       }});
       const hb = bubble && bubble.a === a && bubble.el.querySelector("[data-heart] span"); if (hb) hb.textContent = hearts[key];
     },delivery);
@@ -571,17 +586,10 @@
     };
     el.querySelector("[data-pet]").onclick = () => {
       if(a.feeding){el.querySelector('.feed-line').textContent=`Let ${a.def.name} finish that bite first…`;return;}
-      clearTimeout(a.reactT);a.reactUntil=0;
-      a.reaction=null;a.el.classList.remove('reaction-ready');
-      [...a.el.classList].filter(c=>c.startsWith('react')).forEach(c=>a.el.classList.remove(c));
-      a.el.classList.add('petting');
-      const now=performance.now();
-      a.reaction={kind:(a.petAction||0)%2?'pet-stretch':'pet-nuzzle',start:now,duration:2400};
+      const choices=petActions[d.species],act=choices[(a.petAction||0)%choices.length];
       a.petAction=(a.petAction||0)+1;
-      setPose(a, d.species === 'snowcat' ? 'stretch' : 'sit');
-      a.petUntil = now + 2400; place(a);
-      clearTimeout(a.reactT);a.reactUntil=a.petUntil;a.held=true;
-      a.reactT=setTimeout(()=>{a.reactUntil=0;if(!bubble||bubble.a!==a)a.held=false;},2400);
+      react(a,act,{duration:2600});
+      el.querySelector('.feed-line').textContent=`${d.name} ${actionText[act]||({knead:'stretches and kneads with soft paws',binky:'makes a happy little bunny hop',pounce:'crouches, then springs up',curl:'tucks in, then peeks out','pet-nuzzle':'leans into your hand','pet-stretch':'takes a long, contented stretch'}[act]||'looks very happy')}.`;
       emote(a, a.keeper ? 'purr…' : ['♪', '♥', '✿'][(Math.random() * 3) | 0]);
     };
   }
@@ -1065,14 +1073,14 @@
     time += dt;
     const calm = reduce || (window.Sky && Sky.calm);
     document.body.classList.toggle("farm-calm", !!calm);
+    document.body.classList.toggle('farm-reduced-motion',reduce);
     if (!calm) animals.forEach((a) => stepAnimal(a, dt, now));
     else animals.forEach(a => { if(a.hop) a.hop.start += elapsed; });
     animals.forEach(a=>{
-      if(calm&&a.reaction)a.reaction.start+=elapsed;
       if(a.reaction&&['happy-hop','binky','pounce'].includes(a.reaction.kind)){
         a.jumpPhase=Math.min(1,Math.max(0,(now-a.reaction.start)/a.reaction.duration));place(a);
       }
-      if(window.AnimalReactions)AnimalReactions.draw(a,now,calm);
+      if(window.AnimalReactions)AnimalReactions.draw(a,now,reduce);
     });
     windTick += dt;
     if (windTick > .12) {

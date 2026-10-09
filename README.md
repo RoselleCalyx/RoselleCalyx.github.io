@@ -65,6 +65,10 @@ python -m http.server 8000
 
 ## 漂流瓶和领养申请怎么送到我这里
 
+**新版 Message 私密收件箱：** 首选 [Cloudflare D1 + Telegram 配置说明](docs/message-cloudflare-setup.md)，后端在 `services/message-worker/`。Message 页面明确区分「漂流瓶留言」和「写邮件」；留言未确认保存时保留草稿，不自动切换成邮件。主人通过 `inbox.html` 登录读信，匿名访客不需要邮箱。填入 `js/config.js` 的 `messageApi` 后优先使用 Cloudflare；未部署前不要填写虚构地址。
+
+如果使用项目原先预留的 Supabase，可以按 [Supabase 收件箱配置](docs/message-inbox-setup.md) 与 [迁移 SQL](docs/message-inbox.sql) 启用。该私密迁移替代下文旧版 bottles 的公开读取策略，启用后不要再运行旧 bottles 策略。下文的自动投递优先级仍适用于农场领养申请。
+
 按优先级自动选择：
 
 1. **什么都不配**：访客的邮件客户端会打开一封写好的邮件（发往 `config.js` 里的 email）

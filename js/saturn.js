@@ -29,6 +29,7 @@
   const dim = document.getElementById("heroDim");
   const finale = document.getElementById("finale");
   const logEl = document.getElementById("missionLog");
+  const cvFall=document.getElementById('starFall'),cFall=cvFall?.getContext('2d');
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const lowPower = (navigator.hardwareConcurrency || 4) <= 4 || matchMedia("(pointer: coarse)").matches;
 
@@ -283,8 +284,7 @@
         const protection = 1 - smooth(.65, 1, subjectDistance);
         const edgeFade = smooth(0, 100, y - edge);
         const feather = edgeFade + protection * (1 - edgeFade);
-        const bottom = 1 - smooth(land.height - 155, land.height, y);
-        d[k + 3] *= feather * bottom * ringCut(x, y + LAND_Y0);
+        d[k + 3] *= feather * ringCut(x, y + LAND_Y0);
       }
     }
     c.putImageData(im, 0, 0);
@@ -306,9 +306,11 @@
     cvS.width = cvF.width = Math.round(vw * dpr);
     cvS.height = cvF.height = Math.round(vh * dpr);
     if (cvR) { cvR.width = cvS.width; cvR.height = cvS.height; }
+    if(cvFall){cvFall.width=cvS.width;cvFall.height=cvS.height;}
     F = window.HOME_FRAME(vw, vh);
     if (land) {
       land.style.width = F.IW * F.S + "px";
+      land.style.height = (F.IH-LAND_Y0)*F.S+'px';
       land.style.left = F.left + "px";
       land.style.top = F.top + LAND_Y0 * F.S + "px";
     }
@@ -472,12 +474,13 @@
   }
 
   /* ---------- scroll progress ---------- */
-  let pTarget = 0, p = 0;
+  let pTarget = 0, p = 0, fallTarget=0, fall=0;
   const pinned = parseFloat(new URLSearchParams(location.search).get("p"));   // ?p=0.7 freezes the story (for previews)
   function readScroll() {
     const r = story.getBoundingClientRect();
     const total = story.offsetHeight - (vh || innerHeight);
     pTarget = total > 0 ? clamp(-r.top / total, 0, 1) : 0;
+    fallTarget=clamp((innerHeight*1.02-r.bottom)/(innerHeight*.72),0,1);
     leaving(r);
   }
   let leaveLast = -1;
@@ -491,6 +494,33 @@
     document.body.style.setProperty("--home-sky", (0.48 + e * 0.37).toFixed(3));
   }
   addEventListener("scroll", readScroll, { passive: true });
+
+  // The final ring light leaves the painting and descends into the next chapter.
+  // Its path belongs to scroll progress, so pausing or scrolling back is seamless.
+  function drawHandoff(calm){
+    if(!cFall)return;
+    cFall.clearRect(0,0,cvFall.width,cvFall.height);
+    const q=fall,a=smooth(0,.09,q)*(1-smooth(.87,1,q));
+    cvFall.style.opacity=a.toFixed(3);cvFall.dataset.progress=q.toFixed(3);
+    hero.style.setProperty('--fall',calm?'0':smooth(0,.8,q).toFixed(3));
+    if(a<.002)return;
+    const [ex]=P(ENTRY.x,ENTRY.y),w=cvFall.width,h=cvFall.height;
+    const x=clamp(ex,w*.22,w*.78)+(w*.5-clamp(ex,w*.22,w*.78))*smooth(0,1,q);
+    const y=calm?h*.7:h*(.24+.96*Math.pow(q,1.55));
+    const length=calm?34*dpr:(85+75*q)*dpr;
+    cFall.save();cFall.globalCompositeOperation='lighter';
+    const trail=cFall.createLinearGradient(x,y-length,x,y);
+    trail.addColorStop(0,'rgba(126,170,255,0)');trail.addColorStop(.45,'rgba(186,193,238,.16)');trail.addColorStop(.9,'rgba(255,203,137,.65)');trail.addColorStop(1,'rgba(255,249,227,.95)');
+    cFall.strokeStyle=trail;cFall.lineWidth=1.8*dpr;cFall.beginPath();cFall.moveTo(x+length*.13,y-length);cFall.quadraticCurveTo(x+length*.025,y-length*.3,x,y);cFall.stroke();
+    for(let i=0;i<20;i++){
+      const t=h1(i+312),offset=calm?0:Math.sin(time*.7+i)*1.4*dpr;
+      const xx=x+t*length*.12+(h1(i+184)-.5)*13*dpr+offset,yy=y-t*length;
+      cFall.fillStyle=`rgba(255,${190+Math.round(t*45)},${125+Math.round(t*95)},${(1-t)*.6})`;
+      cFall.save();cFall.translate(xx,yy);cFall.rotate(i*.8+q*.4);cFall.fillRect(-dpr,-dpr,(1+h1(i)*2)*dpr,(2+h1(i+4)*4)*dpr);cFall.restore();
+    }
+    spr(cFall,x,y,27*dpr,.8);spr(cFall,x,y,6*dpr,1);
+    cFall.restore();
+  }
 
   let logIndex = -1;
   function updateLog() {
@@ -528,11 +558,19 @@
     requestAnimationFrame(frame);
     const real = Math.min(1, (now - last) / 1000), dt = Math.min(0.05, real);
     last = now;
-    if (!visible || document.hidden || !F) return;
+    if (document.hidden || !F) return;
+    if(!visible){
+      if(cFall){cFall.clearRect(0,0,cvFall.width,cvFall.height);cvFall.style.opacity='0';}
+      return;
+    }
     time += dt;
     const calm = reduce || (window.Sky && Sky.calm);
     if (pinned >= 0) pTarget = pinned;
     p += (pTarget - p) * (calm ? 1 : 1 - Math.exp(-real * 5));
+    const target=pinned>=0?0:fallTarget;
+    fall+=(target-fall)*(calm?1:1-Math.exp(-real*6));
+    if(target===0||Math.abs(target-fall)<.0005)fall=target;
+    drawHandoff(calm);
     if (Math.abs(pTarget - p) < 0.0005) p = pTarget;
     const S = F.S * dpr;
 
@@ -594,7 +632,7 @@
     const dimA = smooth(0.8, 1, p) * 0.46;
     dim.style.opacity = dimA.toFixed(3);
     if (cvR) cvR.style.opacity = (1 - dimA).toFixed(3);              // the top layer dims with the rest at the end
-    const fA = smooth(0.84, 0.92, p);
+    const fA = smooth(0.84, 0.92, p)*(1-smooth(.03,.65,fall));
     finale.style.opacity = fA.toFixed(3);
     finale.style.transform = `translate(-50%, ${-40 - fA * 10}%)`;
     updateLog();

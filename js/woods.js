@@ -968,7 +968,7 @@
     if (tick > 1) {
       tick = 0;
       const s = Wd.season();
-      if (s.name !== season.name) { season = s; applySeason(); toast(`${Wd.ICONS[s.name]} The season turns — ${s.name} in the woods.`, 3600); }
+      if (s.name !== season.name && !drag) { season = s; applySeason(); toast(`${Wd.ICONS[s.name]} The season turns — ${s.name} in the woods.`, 3600); }
       else Wd.seasonChip(document.getElementById("seasonChip"));
     }
   }
@@ -987,17 +987,26 @@
   // rocks, tufts, snow and needles can be dragged aside as well as tapped
   let drag = null, swallowClick = false;
   cv.addEventListener("pointerdown", (e) => {
+    if (drag || e.isPrimary === false || (e.button != null && e.button !== 0)) return;
+    // A suppressed click belongs only to the preceding drag, never the next tap.
+    swallowClick = false;
     const [x, y] = local(e), h = hitTest(x, y);
     if (!h || !h.coverHit) return;
-    drag = { c: h.coverHit, x0: x, off0: h.coverHit.off, moved: false };
+    drag = { c: h.coverHit, pointerId: e.pointerId, x0: x, y0: y,
+      off0: h.coverHit.off, target0: h.coverHit.target, moved: false, cancelled: false };
     drag.c.drag = true;
     try { cv.setPointerCapture(e.pointerId); } catch (err) {}
   });
   cv.addEventListener("pointermove", (e) => {
     const [x, y] = local(e);
     if (drag) {
-      const c = drag.c, [, by] = P(c.u, c.v), w = c.w * k * depthScale(by), dx = x - drag.x0;
-      if (Math.abs(dx) > 5) drag.moved = true;
+      if (e.pointerId !== drag.pointerId || drag.cancelled) return;
+      const c = drag.c, [, by] = P(c.u, c.v), w = c.w * k * depthScale(by), dx = x - drag.x0, dy = y - drag.y0;
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+        drag.cancelled = true; c.off = drag.off0; c.target = drag.target0;
+        return;
+      }
+      if (Math.abs(dx) > 5 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
       if (drag.moved) c.off = clamp(drag.off0 + (drag.off0 > 0.5 ? -1 : 1) * Math.abs(dx) / (c.kind === "rock" ? w * 1.1 : w * 0.6), 0, 1);
       cv.style.cursor = "grabbing";
       return;
@@ -1008,13 +1017,17 @@
     if (h && e.pointerType === "mouse") { tip.textContent = label(h); tip.style.left = x + "px"; tip.style.top = y + "px"; tip.classList.add("on"); }
     else tip.classList.remove("on");
   });
-  const endDrag = () => {
-    if (!drag) return;
+  const endDrag = (e, cancelled = false) => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
     const c = drag.c; c.drag = false;
-    if (drag.moved) { const open = c.off > 0.45; if (open !== c.target > 0.5) moveCover(c, open); else c.target = open ? 1 : 0; }
-    swallowClick = drag.moved; drag = null;
+    if (cancelled || drag.cancelled) { c.off = drag.off0; c.target = drag.target0; }
+    else if (drag.moved) { const open = c.off > 0.45; if (open !== (c.target > 0.5)) moveCover(c, open); else c.target = open ? 1 : 0; }
+    // A browser-cancelled touch has no compatibility click to suppress.
+    swallowClick = !cancelled && (drag.moved || drag.cancelled); drag = null;
   };
-  cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+  cv.addEventListener("pointerup", endDrag);
+  cv.addEventListener("pointercancel", e => endDrag(e, true));
+  cv.addEventListener("lostpointercapture", e => endDrag(e, true));
   cv.addEventListener("pointerleave", () => { hover = null; tip.classList.remove("on"); });
   cv.addEventListener("click", (e) => {
     if (swallowClick) { swallowClick = false; return; }
@@ -1028,6 +1041,17 @@
   document.getElementById("btnJournal").addEventListener("click", openJournal);
   document.getElementById("btnLook").addEventListener("click", lookAround);
   document.getElementById("btnMatcha").addEventListener("click", () => { toast(seasonNote(), 4200); pick("yuki"); });
+
+  function restoreSavedState() {
+    const latest = Wd.store.get("wild-woods", { basket: {}, seen: {} }) || {};
+    save.basket = latest.basket || {}; save.seen = latest.seen || {};
+    renderBasket();
+    const current = Wd.season();
+    if (current.name !== season.name && !drag) { season = current; applySeason(); }
+    else { fit(); Wd.seasonChip(document.getElementById("seasonChip")); }
+  }
+  addEventListener("pageshow", e => { if (e.persisted) restoreSavedState(); });
+  addEventListener("pagehide", () => { if (drag) endDrag({ pointerId: drag.pointerId }, true); });
 
   Wd.arrive("woods");
   renderBasket();

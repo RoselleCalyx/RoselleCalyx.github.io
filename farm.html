@@ -7,10 +7,11 @@
   <meta name="description" content="A small place for lovely lives: a snow leopard cat, an orchard through the seasons, and animals adopted by visitors." />
   <meta name="theme-color" content="#04060d" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css?v=20261009-orchard-shapes9" />
+  <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
+  <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
 </head>
 <body data-page="farm">
   <header id="site-header"></header>
@@ -23,7 +24,7 @@
         <h1 class="page-title">My Little Farm<span class="farm-title-star" aria-hidden="true">✧</span></h1>
         <p class="page-sub">A small place for lovely lives.</p>
       </div>
-      <p class="farm-welcome">Stay a little. Watch the seasons turn.<br />Good things grow slowly here.</p>
+      <p class="farm-welcome">Stay a little. Watch the seasons turn.</p>
     </div>
 
     <section class="farm-frame" aria-label="An interactive woodland farm">
@@ -40,7 +41,7 @@
         </div>
       </div>
       <div class="farm-scene-bottom">
-        <p class="farm-hint"><span aria-hidden="true">✧</span> Tap a little friend to say hello — and feed it something from your basket. Wander into the woods, or down to the pond.</p>
+        <p class="farm-hint"><span aria-hidden="true">✧</span> Tap a friend to feed it from your basket. Explore the woods or pond.</p>
         <span class="farm-pan-hint">← Explore the garden →</span>
       </div>
     </section>
@@ -51,7 +52,7 @@
       <button type="button" id="btnHarvest"><span class="farm-action-icon" data-icon="basket"></span><span><b>Harvest</b><small>Gather the season’s little gifts</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
       <button type="button" id="btnAnimals"><span class="farm-action-icon" data-icon="heart"></span><span><b>Meet the residents</b><small>Every little life has a story</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
       <button type="button" id="btnWoods" class="way"><span class="farm-action-icon" data-icon="sprout"></span><span><b>Into the woods</b><small>Wild bayberries, mushrooms, shoots</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
-      <button type="button" id="btnPond" class="way pondway"><span class="farm-action-icon" data-icon="drop"></span><span><b>Down to the pond</b><small>Rod, cast net and crab traps</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnPond" class="way pondway"><span class="farm-action-icon" data-icon="drop"></span><span><b>Down to the pond</b><small>Wooden rod, bamboo basket and fish traps</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
     </div>
 
     <div class="farm-keeper-note">
@@ -66,7 +67,7 @@
   <script>window.SKY_OPTIONS = { moon: false, milkyWay: false, meteors: 0.12 };</script>
   <script src="js/config.js"></script>
   <script src="js/sky.js"></script>
-  <script src="js/common.js"></script>
+  <script src="js/common.js?v=20261009-mobile4"></script>
   <script src="js/backend.js"></script>
   <script src="data/farm.js?v=20261009-orchard-shapes9"></script>
   <script src="js/farm-motion.js?v=20261009-orchard-shapes9"></script>
@@ -74,7 +75,7 @@
   <script src="js/orchard-sim.js?v=20261009-orchard-shapes9"></script>
   <script src="js/farm-fx.js?v=20261009-feed"></script>
   <script src="js/meadow-props.js?v=20261009-orchard-shapes9"></script>
-  <script src="js/animal-reactions.js?v=20261009-orchard-shapes9"></script>
-  <script src="js/farm.js?v=20261009-orchard-shapes9"></script>
+  <script src="js/animal-reactions.js?v=20261009-interactions10"></script>
+  <script src="js/farm.js?v=20261009-mobile4"></script>
 </body>
 </html>

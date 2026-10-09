@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta name="theme-color" content="#0a1119" />
+  <title>私密收件箱 · Message in a Bottle</title>
+  <link rel="stylesheet" href="css/inbox.css" />
+  <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
+  <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
+</head>
+<body>
+  <main class="inbox-shell">
+    <header class="inbox-heading">
+      <a href="message.html" class="return-link">← 返回 Message</a>
+      <p class="eyebrow">PRIVATE INBOX</p>
+      <h1>私密收件箱</h1>
+      <p class="intro">阅读访客发来的私信。</p>
+    </header>
+
+    <section class="setup-panel" id="setupPanel" hidden aria-labelledby="setupTitle">
+      <h2 id="setupTitle">连接收信服务</h2>
+      <p id="setupReason">尚未连接收信服务。当前页面不会假装收到或保存来信。</p>
+      <div id="setupCloudflare">
+        <p>使用 Cloudflare D1 保存私信，Telegram 在你关闭网页后继续提醒新信。</p>
+        <ol>
+          <li>创建 Cloudflare 账号，按说明部署收信服务和 D1 数据库。</li>
+          <li>在服务端设置主人登录邮箱、密码，以及 Telegram bot 和接收人的私聊 ID。</li>
+          <li>将服务的 HTTPS 根地址填入 <code>js/config.js</code> 的 <code>messageApi</code>。</li>
+        </ol>
+        <a href="docs/message-cloudflare-setup.md" class="text-link">查看 Cloudflare + Telegram 配置说明</a>
+      </div>
+      <div id="setupSupabase" hidden>
+        <ol>
+          <li>创建 Supabase 项目，运行 <a href="docs/message-inbox.sql">收件箱 SQL</a>。</li>
+          <li>创建自己的登录账号，把 UUID 加入 <code>message_hosts</code>。</li>
+          <li>在 <code>js/config.js</code> 填入项目 URL 和 publishable key（或旧 anon key）。</li>
+        </ol>
+        <a href="docs/message-inbox-setup.md" class="text-link">查看 Supabase 配置说明</a>
+      </div>
+    </section>
+
+    <section class="login-panel" id="loginPanel" hidden aria-labelledby="loginTitle">
+      <h2 id="loginTitle">主人登录</h2>
+      <p>使用主人账号查看私信。</p>
+      <form id="loginForm">
+        <label for="hostEmail">登录邮箱</label>
+        <input id="hostEmail" name="email" type="email" autocomplete="username" required />
+        <label for="hostPassword">密码</label>
+        <input id="hostPassword" name="password" type="password" autocomplete="current-password" required />
+        <button id="loginButton" type="submit">打开收件箱</button>
+      </form>
+    </section>
+
+    <section id="inboxPanel" hidden aria-label="来信">
+      <div class="inbox-toolbar">
+        <div><span id="hostIdentity"></span><p id="messageCount" class="muted"></p></div>
+        <div class="toolbar-actions">
+          <button id="refreshButton" type="button">刷新</button>
+          <button id="notifyButton" type="button">开启桌面通知</button>
+          <button id="logoutButton" type="button" class="quiet-button">退出</button>
+        </div>
+      </div>
+      <p class="polling-note" id="pollingNote">页面打开时每 20 秒检查新信。桌面通知需要你主动开启；关闭页面后不会继续推送。</p>
+      <div class="filters" role="group" aria-label="筛选来信">
+        <button type="button" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" data-filter="unread" aria-pressed="false">未读</button>
+      </div>
+      <p id="emptyInbox" class="empty-inbox" hidden>暂时没有来信。</p>
+      <ul id="messageList" class="message-list"></ul>
+      <button id="loadMoreButton" type="button" hidden>加载更早的来信</button>
+    </section>
+    <p id="inboxStatus" class="inbox-status" role="status" aria-live="polite"></p>
+    <footer class="inbox-footer">来信与联系方式只在这里阅读。收件箱没有公开发布功能。</footer>
+  </main>
+  <script src="js/config.js"></script>
+  <script src="js/inbox.js"></script>
+</body>
+</html>

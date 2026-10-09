@@ -7,11 +7,12 @@
   <meta name="description" content="A Lonely Voyager: follow Cassini through immense worlds and rings, then look beyond the known in a living, cinematic universe." />
   <title>A Lonely Voyager · The Cassini Odyssey</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=EB+Garamond:ital,wght@0,400;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css?v=20261009-voyager" />
   <link rel="stylesheet" href="css/voyager.css?v=20261009-v10" />
+  <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
+  <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
 </head>
 <body data-page="voyager">
   <a class="v-skip" href="#journeyControls">Skip to journey controls</a>
@@ -53,7 +54,7 @@
     <noscript><div class="v-noscript">Enable JavaScript to enter this living universe.<a href="https://science.nasa.gov/mission/cassini/">Read the Cassini story at NASA ↗</a></div></noscript>
   </main>
   <dialog class="v-map-dialog" id="vMap" aria-labelledby="vMapTitle">
-    <div class="v-dialog-heading"><div><p class="v-eyebrow">AN ATLAS OF SOLITUDE</p><h2 id="vMapTitle">The light we followed</h2><p>Choose a distant place. Continue your journey.</p></div><button type="button" class="v-close" data-close="vMap" aria-label="Close journey map">✕</button></div>
+    <div class="v-dialog-heading"><div><p class="v-eyebrow">AN ATLAS OF SOLITUDE</p><h2 id="vMapTitle">The light we followed</h2><p>Choose a place. Continue your journey.</p></div><button type="button" class="v-close" data-close="vMap" aria-label="Close journey map">✕</button></div>
     <div class="v-map-scroll"><div class="v-atlas" id="vAtlas"><svg viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true"><defs><radialGradient id="mapGlow"><stop stop-color="#dcc7a0" stop-opacity=".13"/><stop offset="1" stop-color="#dcc7a0" stop-opacity="0"/></radialGradient></defs><ellipse cx="630" cy="204" rx="245" ry="175" fill="url(#mapGlow)"/><g class="v-map-orbits"><ellipse cx="210" cy="210" rx="94" ry="61" transform="rotate(-23 210 210)"/><ellipse cx="210" cy="210" rx="188" ry="125" transform="rotate(-23 210 210)"/><ellipse cx="630" cy="204" rx="162" ry="105" transform="rotate(-23 630 204)"/><ellipse cx="630" cy="204" rx="201" ry="145" transform="rotate(-23 630 204)"/></g><path id="vMapPath"/><path id="vMapTravelled"/></svg><span class="v-map-sun">☼<small>SUN</small></span><span class="v-map-saturn">♄<small>SATURN SYSTEM</small></span></div></div>
     <div class="v-map-legend"><span><i></i> Visited</span><span><i></i> Still to discover</span><span>A story of a journey · Orbits are not to scale</span></div>
     <div class="v-chapters" id="vChapters"></div>
@@ -61,7 +62,7 @@
   <dialog class="v-journal-dialog" id="vJournal" aria-labelledby="vJournalTitle">
     <button type="button" class="v-close" data-close="vJournal" aria-label="Close field notes">✕</button>
     <p class="v-eyebrow" id="vJournalDate"></p><h2 id="vJournalTitle"></h2><p class="v-journal-poem" id="vJournalPoem"></p><div class="v-journal-rule"></div><p class="v-eyebrow">MISSION NOTES</p><p id="vFact"></p><a id="vSource" href="https://science.nasa.gov/mission/cassini/quick-facts/" target="_blank" rel="noopener noreferrer">NASA / ESA · Mission archive ↗</a>
-    <p class="v-art-note" id="vArtNote">The traveller and her shore belong to the imagination. Mission dates are in UTC; scale, viewpoints and motion are composed for the story.</p><p class="v-texture-credit">Original scene paintings, brought to life with gentle camera depth, drifting light and a moving Cassini. Celestial appearances follow the mission story; the traveller’s viewpoints are imagined.</p>
+    <p class="v-art-note" id="vArtNote">The traveller and her shore belong to the imagination. Mission dates are in UTC; scale, viewpoints and motion are composed for the story.</p>
   </dialog>
   <dialog class="v-panorama-dialog" id="vPanorama" aria-labelledby="vPanoramaTitle">
     <div class="v-panorama-head"><div><p class="v-eyebrow">AN IMAGINED OBSERVATORY</p><h2 id="vPanoramaTitle">Earth · Departure</h2></div><button type="button" class="v-close" data-close="vPanorama" aria-label="Close full scene">✕</button></div>
@@ -69,7 +70,7 @@
     <p id="vPanoramaCaption"></p>
   </dialog>
   <script src="js/config.js"></script>
-  <script src="js/common.js?v=20261009-voyager"></script>
+  <script src="js/common.js?v=20261009-mobile4"></script>
   <script src="data/voyager.js?v=20261009-v10"></script>
   <script src="js/cassini-art.js?v=20261009-v1"></script>
   <script src="js/voyager-scene.js?v=20261009-v10"></script>

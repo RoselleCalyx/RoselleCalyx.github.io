@@ -1,0 +1,50 @@
+:root{color-scheme:dark;--ink:#e0e8ee;--muted:#97aab8;--line:rgba(175,194,204,.2);--accent:#d5c6a1}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:radial-gradient(ellipse at 75% 0%,#1b2b3b 0,transparent 55%),#0a1119;color:var(--ink);font:15px/1.65 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+a{color:var(--accent);text-underline-offset:4px}
+button,input{font:inherit}
+button{cursor:pointer;border:1px solid var(--line);border-radius:5px;padding:10px 16px;background:#233342;color:var(--ink)}
+button:hover:not(:disabled){background:#2c4051}
+button:disabled{opacity:.5;cursor:wait}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.inbox-shell{max-width:930px;margin:0 auto;padding:40px 28px 64px}
+.return-link{font-size:13px;text-decoration:none}
+.eyebrow{font-size:10px;letter-spacing:.25em;color:var(--muted);margin:54px 0 8px}
+h1{font:400 clamp(30px,4vw,46px)/1.25 Georgia,"Songti SC",serif;margin:0;letter-spacing:.08em}
+h2{font-size:20px;font-weight:500;margin-top:0}
+.intro{color:var(--muted);margin:13px 0 34px;font-family:Georgia,"Songti SC",serif}
+.setup-panel,.login-panel{padding:28px;border:1px solid var(--line);border-radius:8px;background:rgba(19,31,42,.75);max-width:650px}
+.setup-panel p,.login-panel p{color:var(--muted)}
+.setup-panel ol{padding-left:22px}
+.setup-panel li{margin:10px 0}
+code{font-size:13px;color:#c7d8e1;overflow-wrap:anywhere}
+.login-panel{max-width:440px}
+.login-panel form{display:grid;gap:8px}
+.login-panel label{font-size:13px;color:var(--muted);margin-top:7px}
+.login-panel input{border:1px solid var(--line);border-radius:4px;background:#0e1822;color:var(--ink);padding:10px 12px;min-width:0}
+.login-panel button{margin-top:14px}
+.inbox-toolbar{display:flex;justify-content:space-between;gap:22px;align-items:center;border-bottom:1px solid var(--line);padding:0 0 20px}
+#hostIdentity{font-size:13px;overflow-wrap:anywhere}
+.muted{color:var(--muted);margin:4px 0;font-size:13px}
+.toolbar-actions{display:flex;flex-wrap:wrap;gap:8px}
+.toolbar-actions button{font-size:12px;padding:8px 12px}
+.quiet-button{background:transparent}
+.polling-note{font-size:12px;color:var(--muted);max-width:700px;margin:16px 0 22px}
+.filters{display:flex;gap:8px;margin-bottom:18px}
+.filters button{font-size:12px;padding:6px 13px;background:transparent}
+.filters [aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:rgba(213,198,161,.06)}
+.message-list{list-style:none;margin:0 0 24px;padding:0;display:grid;gap:14px}
+.message-card{padding:22px;border:1px solid var(--line);border-radius:6px;background:rgba(18,30,40,.72);overflow-wrap:anywhere}
+.message-card.is-unread{border-left:3px solid #c4af82}
+.message-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;font-size:12px;color:var(--muted)}
+.message-author{font-size:14px;color:var(--ink);font-weight:500}
+.unread-label{font-size:10px;color:var(--accent);margin-left:10px}
+.message-text{white-space:pre-wrap;line-height:1.85;margin:17px 0;font-family:Georgia,"Songti SC",serif;font-size:17px}
+.message-contact{font-size:12px;color:var(--muted);margin:0 0 15px;white-space:pre-wrap}
+.read-button{font-size:12px;padding:6px 11px;background:transparent}
+.empty-inbox{padding:48px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:6px}
+.inbox-status{min-height:1.6em;color:var(--muted);font-size:13px;white-space:pre-wrap}
+.inbox-status.is-error{color:#e0b19c}
+.inbox-footer{font-size:11px;color:#728592;margin-top:45px;letter-spacing:.02em}
+@media(max-width:600px){.inbox-shell{padding:28px 18px 42px}.eyebrow{margin-top:36px}.inbox-toolbar{display:block}.toolbar-actions{margin-top:16px}.message-meta{display:block}.message-meta time{display:block;margin-top:6px}.message-card{padding:18px}.setup-panel,.login-panel{padding:22px}}

@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "quiet-shore-messages",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-09",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGIN": "https://rosellecalyx.github.io",
+    "HOST_EMAIL": "chen.jia@tum.de",
+    "INBOX_URL": "https://rosellecalyx.github.io/inbox.html"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "message-inbox",
+      "database_id": "REPLACE_WITH_CREATED_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "observability": { "enabled": false }
+}

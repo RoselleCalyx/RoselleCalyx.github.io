@@ -1,100 +1,143 @@
-/* Message in a Bottle */
+/* Private messages, an explicit email route, and a quiet bottle landing. */
 (function () {
-  const { esc, ICON, store } = window.Site;
-  const $ = (id) => document.getElementById(id);
-  const form = $("bottleForm"), text = $("bText"), count = $("bCount"), status = $("bStatus");
-  const anon = $("bAnon"), nameIn = $("bName"), bottle = $("heroBottle");
-  const MAX = 500;
-  if (window.Backend) Backend.guard(form);
-
-  /* tabs */
-  const tabs = document.querySelectorAll(".letter-tabs button");
-  tabs.forEach((t) => t.addEventListener("click", () => {
-    tabs.forEach((x) => { x.classList.toggle("active", x === t); x.setAttribute("aria-selected", x === t); });
-    $("writePane").hidden = t.dataset.tab !== "write";
-    $("readPane").hidden = t.dataset.tab !== "read";
-    if (t.dataset.tab === "read") renderList();
-  }));
-
-  text.addEventListener("input", () => { count.textContent = `${text.value.length}/${MAX}`; });
-  anon.addEventListener("change", () => { nameIn.disabled = anon.checked; if (anon.checked) nameIn.value = ""; });
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const msg = text.value.trim();
-    if (msg.length < 2) { status.textContent = "The bottle is empty — write a few words first."; return; }
-    const problem = window.Backend ? Backend.check(form, "bottle") : "";
-    if (problem) { status.textContent = problem; return; }
-    const name = anon.checked ? "" : nameIn.value.trim();
-    const contact = $("bContact").value.trim();
-    const btn = form.querySelector("button[type=submit]");
-    btn.disabled = true;
-    status.textContent = "Corking the bottle…";
-    const res = await Site.send("Message in a Bottle", { name, contact, message: msg },
-      { table: "bottles", row: { name: name || null, contact: contact || null, text: msg } });
-    btn.disabled = false;
-    if (!res.ok) { status.textContent = "The tide is out. Please try again later."; return; }
-    if (window.Backend) Backend.stamp("bottle");
-    const mine = store.get("my-bottles", []);
-    mine.unshift({ from: name || "You", date: new Date().toISOString().slice(0, 10), text: msg, mine: true });
-    store.set("my-bottles", mine.slice(0, 20));
-    toss();
-    text.value = ""; count.textContent = `0/${MAX}`;
-    status.textContent = res.via === "mail"
-      ? "Your mail app has opened with the letter inside — press send to cast it into the sea."
-      : "Your bottle is drifting across the stars. It will reach me.";
+  const {esc, ICON} = window.Site;
+  const $ = id => document.getElementById(id);
+  const form = $('bottleForm'), text = $('bText'), count = $('bCount'), status = $('bStatus');
+  const bottle = $('heroBottle'), effects = $('seaEffects'), scene = $('nightSea');
+  const submit = form.querySelector('[type="submit"]');
+  const tabs = [...document.querySelectorAll('.shore-tabs [role="tab"]')];
+  let sending = false, casting = false;
+  let submission = null, turnstileToken = '', widgetId = null;
+  const needsChallenge = MessageDelivery.mode === 'cloudflare' && !!SITE.turnstileSiteKey;
+  Backend.guard(form);
+  function activate(tab, focus = false) {
+    tabs.forEach(x => { const active = x === tab; x.classList.toggle('active', active); x.setAttribute('aria-selected', String(active)); x.tabIndex = active ? 0 : -1; });
+    $('writePane').hidden = tab.dataset.tab !== 'write'; $('readPane').hidden = tab.dataset.tab !== 'read';
+    if (focus) tab.focus();
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => activate(t));
+    t.addEventListener('keydown', e => {
+      let index;
+      if (e.key === 'ArrowRight') index = (i + 1) % tabs.length;
+      if (e.key === 'ArrowLeft') index = (i + tabs.length - 1) % tabs.length;
+      if (e.key === 'Home') index = 0;
+      if (e.key === 'End') index = tabs.length - 1;
+      if (index !== undefined) { e.preventDefault(); activate(tabs[index], true); }
+    });
   });
-
-  function toss() {
-    if (!bottle) return;
-    bottle.classList.remove("back");
-    bottle.classList.add("toss");
-    for (let i = 0; i < 3; i++) setTimeout(() => window.Sky && Sky.meteor(), 600 + i * 500);
-    setTimeout(() => { bottle.classList.remove("toss"); bottle.classList.add("back"); }, 4200);
+  const delivery = () => form.elements.delivery.value;
+  function routeChanged() {
+    const mail = delivery() === 'email';
+    const anonymousLabel = form.querySelector('.shore-anon');
+    if (anonymousLabel) { anonymousLabel.hidden = mail; anonymousLabel.style.display = mail ? 'none' : ''; }
+    $('bName').disabled = !mail && $('bAnon').checked;
+    $('contactField').hidden = mail; $('bContact').disabled = mail || $('bAnon').checked;
+    $('bChallenge').hidden = mail || !needsChallenge;
+    $('sendLabel').textContent = mail ? 'Open mail app' : 'Send the bottle';
+    $('deliveryNote').textContent = mail ? 'Open the draft in your mail app, then press Send. Your email address will be visible to Chen.'
+      : MessageDelivery.enabled ? 'Messages are private and are not published here.' : 'Bottle delivery is not connected yet. Choose email to send a message.';
+    status.textContent = ''; status.dataset.error = 'false';
   }
-
-  /* drifting bottles */
-  let remote = [];
-  if (window.Backend && Backend.enabled) {
-    Backend.select("bottles", "select=name,text,reply,created_at&approved=eq.true&order=created_at.desc&limit=50")
-      .then((rows) => { remote = rows.map((r) => ({ from: r.name || "Anonymous", date: (r.created_at || "").slice(0, 10), text: r.text, reply: r.reply })); renderList(); })
-      .catch(() => {});
-  }
-  const all = () => [...store.get("my-bottles", []), ...remote, ...(window.BOTTLES || [])];
-  const list = $("bottleList");
-  function renderList() {
-    const b = all();
-    list.innerHTML = b.map((x, i) => `<li><button type="button" data-i="${i}">${ICON.bottle}
-      <span><span style="display:block">${esc(x.from || "Anonymous")}${x.mine ? " · <em>yours, drifting</em>" : ""}</span><span class="ex">${esc(x.text)}</span></span>
-      <small>${esc(x.date || "")}</small></button></li>`).join("") || `<li class="status">No bottles on the shore tonight.</li>`;
-  }
-  list.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) openBottle(all()[+b.dataset.i]); });
-  $("pickBottle").addEventListener("click", () => {
-    const b = all().filter((x) => !x.mine);
-    if (b.length) openBottle(b[(Math.random() * b.length) | 0]);
+  form.querySelectorAll('[name="delivery"]').forEach(x => x.addEventListener('change', routeChanged)); routeChanged();
+  text.addEventListener('input', () => { count.textContent = `${text.value.length} / 500`; });
+  $('bAnon').addEventListener('change', () => {
+    $('bName').disabled = $('bAnon').checked;
+    if ($('bAnon').checked) { $('bName').value = ''; $('bContact').value = ''; }
+    routeChanged();
   });
-  function openBottle(b) {
-    Site.modal(`<div class="letter-body unrolled">
-        <p class="kicker" style="color:#8a6a3a">A bottle washed ashore · ${esc(b.date || "")}</p>
-        <div>${esc(b.text)}</div>
-        <div class="sig">— ${esc(b.from || "Anonymous")}</div>
-        ${b.reply ? `<div class="reply"><b>Reply:</b> ${esc(b.reply)}</div>` : ""}
-      </div>`, { className: "letter" });
+  function say(message, error = false) { status.textContent = message; status.dataset.error = String(error); }
+  if (needsChallenge) {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; script.async = true;
+    script.onload = () => { widgetId = window.turnstile.render('#bChallenge', {
+      sitekey:SITE.turnstileSiteKey, theme:'dark', size:'flexible', action:'message',
+      callback:token => { turnstileToken = token; },
+      'expired-callback':() => { turnstileToken = ''; },
+      'error-callback':() => { turnstileToken = ''; say('Verification failed. Try again.', true); }
+    }); };
+    script.onerror = () => say('Verification could not load. Choose email or try again.', true);
+    document.head.appendChild(script);
   }
-
-  /* lanterns rising over the sea */
-  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    for (let i = 0; i < 9; i++) {
-      const l = document.createElement("div");
-      l.className = "lantern";
-      l.style.left = (8 + Math.random() * 60) + "vw";
-      l.style.bottom = (8 + Math.random() * 22) + "vh";
-      l.style.setProperty("--dx", (Math.random() * 80 - 20) + "px");
-      l.style.animationDuration = (18 + Math.random() * 16) + "s";
-      l.style.animationDelay = (-Math.random() * 30) + "s";
-      const k = 0.5 + Math.random() * 0.6;
-      l.style.width = 12 * k + "px"; l.style.height = 16 * k + "px";
-      document.body.appendChild(l);
+  form.addEventListener('submit', async e => {
+    e.preventDefault(); if (sending) return;
+    const rawText = text.value, msg = rawText.trim();
+    if (msg.length < 2) { say('Write at least two characters.', true); text.focus(); return; }
+    if (!$('bContact').disabled && $('bContact').value && !$('bContact').checkValidity()) { say('Please check your reply email, or leave it empty.', true); $('bContact').focus(); return; }
+    const name = delivery() === 'email' || !$('bAnon').checked ? $('bName').value.trim() : '';
+    if (delivery() === 'email') {
+      if (!SITE.email) { say('The email route is unavailable right now.', true); return; }
+      const subject = 'Message from ' + (name || 'a visitor');
+      const body = msg + '\n\n' + (name || 'a visitor');
+      location.href = 'mailto:' + SITE.email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+      say('Press Send in your mail app to finish.'); return;
+    }
+    if (!MessageDelivery.enabled) { say('Bottle delivery is not connected yet. Your text is still on this page. Choose email to send a message.', true); return; }
+    if (needsChallenge && !turnstileToken) { say('Please complete the small verification before sending.', true); return; }
+    const problem = Backend.check(form, 'bottle');
+    if (problem) { say(problem, true); return; }
+    sending = true; submit.disabled = true; say('Sending…');
+    try {
+      const contact = $('bContact').value.trim(), key = JSON.stringify({name,contact,text:msg});
+      if (!submission || submission.key !== key) submission = {key, id:crypto.randomUUID()};
+      const result = await MessageDelivery.submit({name, contact, text:msg, submissionId:submission.id,
+        website:form.querySelector('[name="website"]')?.value || '', turnstileToken});
+      if (!result.ok) { say('Delivery could not be confirmed. Your text is still on this page. Try again.', true); return; }
+      Backend.stamp('bottle'); submission = null;
+      const unchanged = text.value === rawText;
+      if (unchanged) { text.value = ''; count.textContent = '0 / 500'; }
+      else count.textContent = `${text.value.length} / 500`;
+      const delivered = result.transport === 'form' ? 'Message submitted.' : 'Message sent to Chen’s private inbox.';
+      say(unchanged ? delivered : delivered.replace(/^Message/, 'Previous message') + ' Your current text has not been sent.'); castBottle();
+    } catch (_) { say('Delivery could not be confirmed. Your text is still on this page. Try again.', true); }
+    finally {
+      sending = false; submit.disabled = false;
+      if (needsChallenge && widgetId !== null) { turnstileToken = ''; window.turnstile.reset(widgetId); }
+    }
+  });
+  function ripple(x, y) {
+    if (Sky.calm) return;
+    for (let i = 0; i < 3; i++) {
+      const r = document.createElement('i'); r.className = 'sea-ripple'; r.style.left = x + 'px'; r.style.top = y + 'px';
+      r.style.animationDelay = i * .24 + 's'; effects.appendChild(r); setTimeout(() => r.remove(), 3600);
     }
   }
+  async function castBottle() {
+    if (casting) return;
+    casting = true; $('previewToss').disabled = true;
+    const sr = scene.getBoundingClientRect();
+    if (sr.width <= 760 && scrollY > 20) window.scrollTo({top:0,behavior:Sky.calm ? 'instant' : 'smooth'});
+    const w = bottle.offsetWidth, h = bottle.offsetHeight;
+    const x = bottle.offsetLeft, y = bottle.offsetTop;
+    const landingX = sr.width * (sr.width <= 760 ? .64 : .37), landingY = sr.height * .77;
+    const ghost = document.createElement('img'); ghost.src = bottle.src; ghost.alt = ''; ghost.className = 'cast-bottle';
+    ghost.style.width = w + 'px'; ghost.style.left = x + 'px'; ghost.style.top = y + 'px'; effects.appendChild(ghost); bottle.style.opacity = '0';
+    try {
+      if (Sky.calm) { ghost.remove(); await new Promise(resolve => setTimeout(resolve, 180)); }
+      else {
+        const dx = landingX - x - w / 2, dy = landingY - y - h * .78;
+        const fly = ghost.animate([
+          {transform:'translate(0,0) rotate(-26deg) scale(1)', offset:0},
+          {transform:`translate(${dx * .42}px,${dy * .42 - sr.height * .15}px) rotate(19deg) scale(.68)`, offset:.43},
+          {transform:`translate(${dx}px,${dy}px) rotate(83deg) scale(.23)`, offset:1}
+        ], {duration:1750, easing:'cubic-bezier(.25,.35,.5,1)', fill:'forwards'});
+        await fly.finished; ripple(landingX, landingY);
+        const drift = ghost.animate([
+          {transform:`translate(${dx}px,${dy}px) rotate(83deg) scale(.23)`,opacity:.85},
+          {transform:`translate(${dx + sr.width * .045}px,${dy - 4}px) rotate(89deg) scale(.20)`,opacity:.6,offset:.45},
+          {transform:`translate(${dx + sr.width * .095}px,${dy - 10}px) rotate(85deg) scale(.15)`,opacity:0}
+        ], {duration:6200, easing:'ease-in-out',fill:'forwards'}); await drift.finished;
+      }
+    } catch (_) { /* resize/navigation can interrupt an animation */ }
+    finally { ghost.remove(); bottle.style.opacity = '1'; casting = false; $('previewToss').disabled = false; }
+  }
+  $('previewToss').addEventListener('click', () => { $('sceneStatus').textContent = 'A bottle drifts into the sea. This is a preview; no message is sent.'; castBottle(); });
+  const shared = window.BOTTLES || [];
+  $('bottleList').innerHTML = shared.map((b,i) => `<li><button type="button" data-i="${i}">${ICON.bottle}<span>${esc(b.from || 'A stranger')}<small>${esc(b.date || '')}</small><span class="ex">${esc(b.text)}</span></span></button></li>`).join('') || '<li>No bottles on the shore tonight.</li>';
+  function openBottle(b) {
+    if (!b) return;
+    Site.modal(`<div class="unrolled"><p class="kicker">Shared note · ${esc(b.date || '')}</p><div>${esc(b.text)}</div><div class="sig">${esc(b.from || 'A stranger')}</div>${b.reply ? `<div class="reply">${esc(b.reply)}</div>` : ''}</div>`,{className:'shore-modal'});
+  }
+  $('bottleList').addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) openBottle(shared[Number(b.dataset.i)]); });
+  $('pickBottle').addEventListener('click', () => openBottle(shared[Math.floor(Math.random() * shared.length)]));
 })();

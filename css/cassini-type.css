@@ -1,0 +1,136 @@
+/* Cinematic typography inspired by Cassini's Grand Finale.
+   A visual interpretation, not an identification of the film's typeface.
+   Local open fonts keep the same appearance without a third-party font request. */
+@font-face {
+  font-family: "Montserrat"; font-style: normal; font-weight: 300 600; font-display: swap;
+  src: url("../assets/fonts/montserrat-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Montserrat"; font-style: normal; font-weight: 300 600; font-display: swap;
+  src: url("../assets/fonts/montserrat-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url("../assets/fonts/inter-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url("../assets/fonts/inter-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+:root {
+  --display: "Montserrat", "Avenir Next", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* Legacy variable names are retained for the existing components. */
+  --serif: var(--display);
+  --text: "Inter", "Segoe UI", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ui: var(--text);
+}
+body { font-family: var(--text); font-size: 15px; line-height: 1.75; }
+.brand { font-size: 1.06rem; font-weight: 400; letter-spacing: .07em; }
+.nav a { font-family: var(--ui); font-size: .8rem; letter-spacing: .025em; }
+.kicker, .hero-kicker, .shore-kicker, .v-eyebrow { font-weight: 500; letter-spacing: .22em; }
+.page-title, .hero-title, .night-intro h1, .v-story h1 {
+  font-family: var(--display); font-weight: 300; font-style: normal;
+  letter-spacing: .065em; line-height: 1.2; text-transform: uppercase;
+}
+.page-title { font-size: clamp(2.1rem, 4.7vw, 3.3rem); }
+.page-sub { font-family: var(--text); font-size: .94rem; font-style: normal; line-height: 1.6; }
+.section-title { font-size: clamp(1.35rem, 2.5vw, 1.8rem); font-weight: 400; line-height: 1.4; letter-spacing: .015em; }
+.input, .textarea, .select { font-size: .94rem; }
+.input::placeholder, .textarea::placeholder { font-style: normal; }
+.modal-card h2 { font-size: 1.55rem; line-height: 1.35; letter-spacing: .025em; }
+.toast { font-family: var(--ui); font-size: .88rem; line-height: 1.5; }
+#site-footer { font-family: var(--text); font-size: .75rem; font-style: normal; }
+.t-title { font-size: 1rem; line-height: 1.5; }
+.t-sub { font-size: .87rem; line-height: 1.7; }
+.explore b { font-size: 1.3rem; font-weight: 400; }
+.explore > a > span:last-child { font-style: normal; font-size: .85rem; }
+
+/* Keep the existing composition and imagery. Only type scales change. */
+.hero-title { font-size: clamp(2.1rem, min(3.4vw, 6.3vh), 3.7rem); line-height: 1.25; }
+.hero-lede { font-family: var(--text); font-size: clamp(.94rem, 1.15vw, 1.08rem); line-height: 1.7; letter-spacing: .01em; }
+.social a { font-family: var(--ui); font-size: .75rem; }
+.hero-foot, .hero-foot .place, .scroll-cue { font-family: var(--ui); font-size: .75rem; }
+.hero-foot em { font-style: normal; }
+.mission-log { font-family: var(--display); font-style: normal; font-size: clamp(1rem, 1.5vw, 1.3rem); line-height: 1.6; letter-spacing: .025em; }
+.finale h2 { font-weight: 300; line-height: 1.3; letter-spacing: .04em; }
+.finale p:last-child, .coda p, .coda em { font-family: var(--text); font-style: normal; font-size: 1rem; line-height: 1.7; }
+
+.paper h3 { font-size: 1.2rem; line-height: 1.45; font-weight: 400; }
+.paper-authors { font-size: .85rem; }
+.paper-abs { font-size: .88rem; line-height: 1.75; }
+.album-story h2 { font-size: 1.45rem; line-height: 1.4; }
+.tile.note p { font-family: var(--text); font-size: 1.02rem; line-height: 1.5; font-style: normal; }
+.lb-side h3 { font-size: 1.45rem; line-height: 1.4; }
+.sm-info h2 { font-size: 1.7rem; line-height: 1.35; }
+.sm-info .tagline, .quiz-bar .q { font-family: var(--text); font-size: 1rem; font-style: normal; line-height: 1.6; }
+.sm-list button { font-family: var(--ui); font-size: .92rem; }
+
+.farm-head .page-title { font-size: clamp(2rem, 4.4vw, 3.45rem); letter-spacing: .055em; line-height: 1.2; }
+.farm-welcome, .farm-keeper-note > p { font-family: var(--text); font-size: .85rem; line-height: 1.8; }
+.farm-keeper-note em { font-style: normal; }
+.farm-hint { font-family: var(--text); font-size: .78rem; font-style: normal; line-height: 1.7; }
+.farm-actions b { font-family: var(--display); font-size: 1rem; font-weight: 400; line-height: 1.45; }
+.farm-keeper b { font-size: 1.05rem; line-height: 1.45; }
+.bubble h4, .catch-card h3 { font-size: 1.3rem; line-height: 1.35; }
+.tool { font-family: var(--ui); font-size: .9rem; line-height: 1.4; }
+.tool small, .catch-card .zh, .journal .zh, .cc-list .zh, .farm-zone-tip .zh { font-family: var(--text); }
+.journal-note, .reel-label { font-family: var(--text); font-style: normal; font-size: .84rem; }
+.wild-tip, .wild-float.say { font-family: var(--text); font-size: .85rem; font-style: normal; }
+
+.night-intro h1 { font-size: clamp(2.3rem, 4.6vw, 4.3rem); line-height: 1.25; letter-spacing: .065em; }
+.night-intro h1 em { font-style: normal; font-weight: 300; }
+.shore-kicker { font-size: .65rem; line-height: 1.6; }
+.shore-copy { font-size: .98rem; line-height: 1.8; letter-spacing: .01em; }
+.shore-tabs button { font-family: var(--ui); font-size: .85rem; }
+.delivery-choice span { font-size: .84rem; }
+.delivery-choice small { font-size: .65rem; }
+#bText { font-size: .94rem; background: transparent; line-height: 1.85; }
+.shore-writing-foot { justify-content: flex-end; font-size: .68rem; }
+.shore-writing-foot #bCount { font: 400 .68rem/1.5 var(--ui); }
+.shore-fields label { font-size: .72rem; }
+.shore-fields label span { font-size: .64rem; }
+.shore-fields input { font-size: .86rem; }
+.shore-fields input::placeholder { font-style: normal; }
+.shore-anon { font-family: var(--ui); font-size: .72rem; }
+.shore-anon[hidden] { display: none; }
+.cast-button { font-size: .74rem; white-space: nowrap; }
+.delivery-note { font-size: .69rem; line-height: 1.75; }
+.shore-status { font: 400 .79rem/1.6 var(--text); }
+.quiet-button, .keeper-link { font-size: .67rem; }
+.ashore-head p, .shore-bottles .ex { font: 400 .86rem/1.6 var(--text); }
+.shore-bottles small { font-size: .63rem; }
+
+.v-story h1 { font-size: clamp(30px, 3.1vw, 45px); line-height: 1.25; letter-spacing: .05em; }
+.v-story h1 em { font-style: normal; font-weight: 300; }
+.v-poem, .v-journal-poem { font-family: var(--text); font-size: .94rem; line-height: 1.8; font-style: normal; }
+.v-identity p { font-size: 16px; }
+.v-dialog-heading h2, .v-journal-dialog h2 { font-size: 28px; font-weight: 300; line-height: 1.45; letter-spacing: .035em; }
+.v-journal-dialog h2 { font-size: 22px; }
+.v-position time { font-family: var(--ui); }
+
+/* The host inbox is a separate, quieter view with the same type system. */
+.inbox-shell h1 { font: 300 clamp(28px, 4vw, 42px)/1.4 var(--display); letter-spacing: .06em; }
+.inbox-shell .intro, .message-text { font-family: var(--text); }
+.message-text { font-size: 15px; line-height: 1.85; }
+
+@media (min-width: 881px) and (max-width: 1120px) {
+  .nav { gap: 18px; }
+  .header-right { gap: 10px; }
+}
+@media (max-width: 760px) {
+  .hero-title { font-size: clamp(1.9rem, 6.5vw, 2.8rem); line-height: 1.3; }
+  .hero-lede { font-size: .87rem; }
+  .hero-foot, .hero-foot .place { font-size: .68rem; }
+  .hero-foot { max-width: calc(100% - 80px); padding-right: 0; gap: 5px 12px; }
+  .scroll-cue { font-size: 0; }
+  .page-title, .farm-head .page-title { font-size: clamp(1.8rem, 6.4vw, 2.6rem); }
+  .farm-welcome { font-size: .78rem; }
+  .night-intro h1 { font-size: clamp(2rem, 8.3vw, 3.15rem); }
+  .shore-kicker { font-size: .6rem; letter-spacing: .18em; }
+  .shore-copy { font-size: .88rem; }
+  .shore-fields label { font-size: .68rem; }
+  #previewToss { font-size: .65rem; }
+  .v-story h1 { font-size: clamp(27px, 7.5vw, 38px); line-height: 1.3; }
+}

@@ -6,7 +6,7 @@
    Three ways to fish:
      rod   cast, watch the float, strike on the bite, then hold to reel
            and keep the line's tension in the safe band
-     net   a cast net opens over the water and catches what is beneath
+     net   a woven bamboo basket lowers into the shallows, then comes up
      trap  a 地笼 set from a stake soaks for a while (even while you are
            away), then comes up with crabs, crayfish, shrimp and loach
    In winter the pond freezes: there is one hole, for ice fishing.
@@ -21,20 +21,20 @@
 
   /* ================= what lives here ================= */
   const CATCH = [
-    { id: "crucian", name: "Crucian carp", zh: "鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or net, any season." },
+    { id: "crucian", name: "Crucian carp", zh: "鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or basket, any season." },
     { id: "carp", name: "Common carp", zh: "鲤鱼", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
     { id: "koi", name: "Koi", zh: "锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "Rare, on the rod; most often in summer." },
     { id: "goldkoi", name: "Golden koi", zh: "金锦鲤", rarity: 5, len: [48, 72], fight: 0.85, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "A summer legend." },
     { id: "catfish", name: "Catfish", zh: "鲶鱼", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
     { id: "mandarin", name: "Mandarin fish", zh: "鳜鱼", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "桃花流水鳜鱼肥 — “peach blossoms on the stream, and the mandarin fish are fat.”", hint: "Rare; best in spring." },
-    { id: "bitterling", name: "Bitterling", zh: "鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "In the net." },
-    { id: "minnow", name: "Stone moroko", zh: "麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "In the net." },
-    { id: "loach", name: "Loach", zh: "泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Net or trap." },
-    { id: "shrimp", name: "River shrimp", zh: "河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Net or trap." },
+    { id: "bitterling", name: "Bitterling", zh: "鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "In the bamboo basket." },
+    { id: "minnow", name: "Stone moroko", zh: "麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "In the bamboo basket." },
+    { id: "loach", name: "Loach", zh: "泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Basket or trap." },
+    { id: "shrimp", name: "River shrimp", zh: "河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Basket or trap." },
     { id: "crayfish", name: "Crayfish", zh: "小龙虾", rarity: 1, len: [8, 14], fight: 0.1, kind: "crust", text: "Red-armoured and indignant, especially in summer.", hint: "In the trap, warm months." },
     { id: "crab", name: "Mitten crab", zh: "大闸蟹", rarity: 2, len: [6, 10], fight: 0.1, kind: "crust", text: "秋风起，蟹脚痒 — “when the autumn wind rises, the crabs’ legs itch.” Hairy claws, golden roe.", hint: "In the trap; best in autumn." },
     { id: "eel", name: "Rice-field eel", zh: "黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "Rare, in the trap." },
-    { id: "lotus", name: "Lotus seed pod", zh: "莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; the net brought one up with the fish.", hint: "Summer, in the net." },
+    { id: "lotus", name: "Lotus seed pod", zh: "莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; the basket brought one up with the fish.", hint: "Summer, in the basket." },
     { id: "boot", name: "Old boot", zh: "旧靴子", rarity: 1, len: [0, 0], kind: "junk", text: "Someone’s, once. It goes back on the bank to dry.", hint: "Everyone catches one eventually." },
     { id: "bottle", name: "Message in a bottle", zh: "漂流瓶", rarity: 4, len: [0, 0], kind: "junk", text: "There is a note inside: “Whoever finds this — write back.”", hint: "Drifts in now and then." }
   ];
@@ -345,6 +345,8 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     // the dock, boards running out over the water
     const y0 = H * DOCK.v0, xl0 = W * DOCK.u0 + W * 0.06, xr0 = W * 1.02, xl1 = W * DOCK.u0 - W * 0.04;
+    const paintedDock=window.PondEquipment?.draw(g,'dock',W*.615,H*.765,W*.43,H*.35);
+    if(!paintedDock){
     for (let i = 0; i < 7; i++) {                           // posts
       const t = i / 6, x = lerp(xl0, xl1, t), y = lerp(y0, H, t);
       g.fillStyle = "#1e1610"; g.fillRect(x - 5 * k * (0.6 + t), y - 4 * k, 10 * k * (0.6 + t), 34 * k * (0.6 + t));
@@ -365,9 +367,14 @@
     if (snow) { g.fillStyle = "rgba(238,244,252,.85)"; g.fillRect(0, y0 - 2, W, 8 * k); for (let i = 0; i < 12; i++) { g.beginPath(); g.ellipse(W * 0.7 + r() * W * 0.3, y0 + r() * (H - y0), 30 * k, 5 * k, 0, 0, TAU); g.fill(); } }
     g.restore();
     g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(xl0, y0, xr0 - xl0, 3 * k);
+    }else if(snow){
+      g.save();g.beginPath();g.moveTo(xl0,y0);g.lineTo(xr0,y0-H*.02);g.lineTo(xr0,H);g.lineTo(xl1,H);g.closePath();g.clip();
+      g.fillStyle='rgba(234,242,251,.5)';
+      for(let i=0;i<42;i++){const x=W*(.63+r()*.4),y=y0+r()*(H-y0);g.beginPath();g.ellipse(x,y,(6+r()*26)*k,1.5*k,0,0,TAU);g.fill();}g.restore();
+    }
     // a lantern on the dock
     const lx = W * 0.95, ly = y0 - 56 * k;
-    g.fillStyle = "#2a1e14"; g.fillRect(lx - 2 * k, ly, 4 * k, 54 * k);
+    if(!window.PondEquipment?.draw(g,'stake',lx-6*k,ly-20*k,12*k,82*k)){g.fillStyle = "#2a1e14"; g.fillRect(lx - 2 * k, ly, 4 * k, 54 * k);}
     // bank grass in the left corner
     if(!painting?.ready(season.name)){
     g.fillStyle = snow ? "#dfe7f3" : season.name === "autumn" ? "#4a3e22" : "#1c3020";
@@ -381,6 +388,7 @@
     vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(2,4,10,.5)");
     g.fillStyle = vg; g.fillRect(0, 0, W, H);
   }
+  addEventListener('pondgearready',()=>{if(W)paintForeground();});
 
   /* ================= living water ================= */
   let shadows = [], ripples = [], parts = [], reeds = [], pads = [], weather = [], flies = [], bubbles = [];
@@ -461,6 +469,8 @@
     if (rod.state === "nibble") { scare("Too early — the fish took fright."); return; }
     if (rod.state !== "bite") return;
     rod.state = "reeling"; rod.tension = 0.45; rod.progress = 0.12; rod.slack = 0; rod.surge = time + 0.6; rod.hookAt = { x: rod.bob.x, y: rod.bob.y };
+    // Set before the next press so a reeling thumb cannot start page scrolling.
+    cv.style.touchAction = "none";
     splash(rod.bob.x, rod.bob.y, 12, 0.8);
     reelEl.hidden = false;
     hint.textContent = "Hold to reel in · let go when the line grows tight.";
@@ -468,6 +478,7 @@
   function scare(msg) {
     if (rod.fish) { rod.fish.mode = "flee"; rod.fish.until = time + 2; if (rod.fish.hidden) shadows = shadows.filter((q) => q !== rod.fish); }
     rod.state = "idle"; rod.bob = null; rod.fish = null; reelEl.hidden = true; rod.hold = false;
+    cv.style.touchAction = "";
     Wd.float(stage, W * 0.5, H * 0.45, msg, "soft");
     hint.textContent = tools.rod.hint;
   }
@@ -512,18 +523,19 @@
   function land() {
     const f = rod.fish;
     reelEl.hidden = true; rod.state = "landed"; rod.hold = false;
+    cv.style.touchAction = "";
     splash(f.x, f.y, 22, 1.2);
     shadows = shadows.filter((s) => s !== f);
     setTimeout(() => { if (!frozen()) shadows.push(makeShadow(false)); }, 4000);
     showCatch([{ id: f.id, ...(sizeOf(f.id) || {}) }], "rod", f.x, f.y);
   }
 
-  /* ---------- the cast net ---------- */
+  /* ---------- the fishing bamboo basket (saved tool id stays "net") ---------- */
   function throwNet(x, y) {
     if (net || frozen()) return;
     const s = scaleAt(y);
-    net = { x, y, r: 96 * k * s, t0: time, phase: "fly", caught: [] };
-    hint.textContent = "The net opens like a flower over the water…";
+    net = { x, y, r: 60 * k * s, t0: time, phase: "fly", caught: [] };
+    hint.textContent = "Lowering the bamboo basket into the shallows…";
   }
   function updateNet() {
     if (!net) return;
@@ -546,25 +558,26 @@
   }
   function drawNet() {
     if (!net) return;
-    const t = time - net.t0, [bx, by] = [W * 0.86, H * 0.82];
-    let x = net.x, y = net.y, r = net.r, open = 1, a = 1, lift = 0;
-    if (net.phase === "fly") { const p = smooth(0, 0.8, t); x = lerp(bx, net.x, p); y = lerp(by, net.y, p) - Math.sin(p * Math.PI) * 120 * k; open = smooth(0.15, 0.85, p); a = 0.95; }
-    if (net.phase === "sink") a = 0.75 - 0.35 * smooth(0, 1.3, time - net.t1);
-    if (net.phase === "pull") { const p = smooth(0, 0.9, time - net.t2); open = 1 - p * 0.85; lift = p * 50 * k; a = 0.5 + p * 0.4; x = lerp(net.x, bx, p * 0.7); y = lerp(net.y, by, p * 0.7); if (Math.random() < 0.5) parts.push({ x: x + (Math.random() - 0.5) * r * open, y: y - lift, vx: 0, vy: 20, life: 0.5, age: 0, r: 1.2, col: "rgba(220,235,255,.8)" }); }
-    const rx = r * open, ry = r * 0.34 * open + (net.phase === "fly" ? r * 0.25 * (1 - open) : 0);
-    ctx.save(); ctx.globalAlpha = a;
-    ctx.strokeStyle = "rgba(235,228,205,.75)"; ctx.lineWidth = 0.8;
-    const top = [x, y - lift - (net.phase === "pull" ? 40 * k : 0)];
-    for (let i = 0; i < 16; i++) { const an = (i / 16) * TAU; ctx.beginPath(); ctx.moveTo(top[0], top[1]); ctx.lineTo(x + Math.cos(an) * rx, y - lift + Math.sin(an) * ry); ctx.stroke(); }
-    for (let ring = 1; ring <= 4; ring++) { ctx.beginPath(); ctx.ellipse(lerp(top[0], x, ring / 4), lerp(top[1], y - lift, ring / 4), rx * ring / 4, ry * ring / 4, 0, 0, TAU); ctx.stroke(); }
-    ctx.fillStyle = "#c8c0a8";
-    for (let i = 0; i < 20; i++) { const an = (i / 20) * TAU; ctx.beginPath(); ctx.arc(x + Math.cos(an) * rx, y - lift + Math.sin(an) * ry, 1.8 * k * scaleAt(y), 0, TAU); ctx.fill(); }
+    const t=time-net.t0,bx=W*.86,by=H*.82,sc=scaleAt(net.y),w=58*k*sc,h=w*1.02;
+    let x=net.x,y=net.y,depth=0,alpha=1;
+    if(net.phase==='fly'){const p=smooth(0,.8,t);x=lerp(bx,x,p);y=lerp(by,y,p)-Math.sin(p*Math.PI)*45*k;}
+    if(net.phase==='sink'){depth=smooth(0,1.3,time-net.t1);y+=depth*h*.55;alpha=1-depth*.62;}
+    if(net.phase==='pull'){const p=smooth(0,.9,time-net.t2);x=lerp(x,bx,p*.7);y=lerp(y,by,p*.7)-Math.sin(p*Math.PI)*35*k;alpha=.42+p*.58;if(Math.random()<.35)parts.push({x:x+(Math.random()-.5)*w*.6,y:y+6*k,vx:0,vy:35,life:.65,age:0,r:1.2,col:'rgba(220,235,255,.8)'});}
+    // A tether stays attached to the basket handle through lowering and hauling.
+    ctx.strokeStyle='rgba(219,195,154,.64)';ctx.lineWidth=1*k;ctx.beginPath();ctx.moveTo(bx,by-8*k);ctx.quadraticCurveTo((bx+x)/2,Math.max(by,y)-12*k,x,y-h*.9);ctx.stroke();
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(7,19,30,.24)';ctx.beginPath();ctx.ellipse(x,net.y,w*.55,w*.15,0,0,TAU);ctx.fill();
+    ctx.filter=depth?'brightness(.72) saturate(.68)':'brightness(.9)';
+    if(!window.PondEquipment?.draw(ctx,'basket',x-w/2,y-h,w,h)){ctx.fillStyle='#a27b43';ctx.beginPath();ctx.ellipse(x,y-h*.45,w*.4,h*.45,0,0,TAU);ctx.fill();}
+    ctx.filter='none';
+    if(net.phase==='sink'){ctx.strokeStyle='rgba(189,218,233,.25)';ctx.lineWidth=1;for(let i=0;i<4;i++){const yy=net.y+i*4*k;ctx.beginPath();ctx.ellipse(x,yy,w*.6+i*3*k,w*.12+i*k,0,0,TAU);ctx.stroke();}}
     ctx.restore();
   }
 
   /* ---------- the crab traps ---------- */
   const trapState = (i) => { const tr = save.traps[i]; if (!tr) return "free"; return Date.now() >= tr.t0 + tr.dur ? "ready" : "soaking"; };
   function setTrap(i) {
+    if (busyCard || haul || trapState(i) !== "free") return;
     if (frozen()) { toast("The pond is frozen — traps can wait for spring.", 2800); return; }
     save.traps[i] = { t0: Date.now(), dur: (40 + Math.random() * 30) * 1000, splash: time };
     persist();
@@ -575,6 +588,7 @@
     hint.textContent = "The trap is soaking. It keeps working even if you wander off.";
   }
   function haulTrap(i) {
+    if (busy() || trapState(i) !== "ready") return;
     const [x, y] = trapFloat(i);
     save.traps[i] = null; persist();
     haul = { i, t0: time, x, y };
@@ -587,14 +601,18 @@
   function drawTraps() {
     STAKES.forEach((s, i) => {
       const [x, y] = P(s.u, s.v), sc = scaleAt(y), st = trapState(i);
-      ctx.fillStyle = "#3a2a1a"; ctx.fillRect(x - 3 * k * sc, y - 46 * k * sc, 6 * k * sc, 52 * k * sc);
-      ctx.fillStyle = "#5a4028"; ctx.fillRect(x - 4 * k * sc, y - 48 * k * sc, 8 * k * sc, 5 * k * sc);
+      if(!window.PondEquipment?.draw(ctx,'stake',x-7*k*sc,y-51*k*sc,14*k*sc,65*k*sc)){ctx.fillStyle = "#3a2a1a"; ctx.fillRect(x - 3 * k * sc, y - 46 * k * sc, 6 * k * sc, 52 * k * sc);}
+      ctx.fillStyle='rgba(52,75,104,.38)';ctx.beginPath();ctx.ellipse(x,y+7*k*sc,8*k*sc,9*k*sc,0,0,TAU);ctx.fill();
+      ctx.strokeStyle='rgba(205,224,237,.28)';ctx.lineWidth=.7;ctx.beginPath();ctx.ellipse(x,y+5*k*sc,10*k*sc,2.3*k*sc,0,0,TAU);ctx.stroke();
       if (st === "free") {
         if (hoverTrap === i || (tool === "trap" && !frozen())) { ctx.globalCompositeOperation = "lighter"; glow(ctx, x, y - 30 * k * sc, 30 * k * sc, "255,230,170", hoverTrap === i ? 0.4 : 0.15 + 0.1 * Math.sin(time * 3)); ctx.globalCompositeOperation = "source-over"; }
         return;
       }
       const [fx, fy] = trapFloat(i), bob = Math.sin(time * 2 + i) * 2 * k * sc + (st === "ready" ? Math.sin(time * 8) * 2 * k : 0);
       if (haul && haul.i === i) return;
+      ctx.save();ctx.filter='brightness(.56) saturate(.65)';
+      window.PondEquipment?.draw(ctx,'trap',fx-48*k*sc,fy-6*k*sc+bob,96*k*sc,42*k*sc,.33);
+      ctx.restore();
       ctx.strokeStyle = "rgba(220,200,160,.7)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - 40 * k * sc); ctx.quadraticCurveTo((x + fx) / 2, fy + 6 * k, fx, fy + bob); ctx.stroke();
       ctx.fillStyle = "#e8642a"; ctx.beginPath(); ctx.ellipse(fx, fy + bob, 6 * k * sc, 4 * k * sc, 0, 0, TAU); ctx.fill();
       ctx.fillStyle = "#fff4e0"; ctx.beginPath(); ctx.ellipse(fx, fy + bob - 2 * k * sc, 6 * k * sc, 1.6 * k * sc, 0, 0, TAU); ctx.fill();
@@ -611,10 +629,13 @@
       const x = lerp(haul.x, sx, p * 0.6), y = lerp(haul.y, sy - 30 * k * sc, p) - Math.sin(p * Math.PI) * 30 * k;
       ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2);
       const L = 110 * k * sc, R = 14 * k * sc;
+      const paintedTrap=window.PondEquipment?.draw(ctx,'trap',-L/2,-R*2,L,R*4);
+      if(!paintedTrap){
       ctx.fillStyle = "rgba(40,70,50,.55)"; ctx.fillRect(-L / 2, -R, L, R * 2);
       ctx.strokeStyle = "rgba(170,210,170,.8)"; ctx.lineWidth = 1.4;
       for (let h = 0; h <= 6; h++) { ctx.beginPath(); ctx.ellipse(-L / 2 + (L * h) / 6, 0, R * 0.35, R, 0, 0, TAU); ctx.stroke(); }
       ctx.lineWidth = 0.6; for (let l = -2; l <= 2; l++) { ctx.beginPath(); ctx.moveTo(-L / 2, (l * R) / 2.2); ctx.lineTo(L / 2, (l * R) / 2.2); ctx.stroke(); }
+      }
       ctx.restore();
       if (Math.random() < 0.6) parts.push({ x: x + (Math.random() - 0.5) * 100 * k * sc, y: y + 10 * k, vx: 0, vy: 30, life: 0.5, age: 0, r: 1.3, col: "rgba(220,235,255,.85)" });
     }
@@ -742,8 +763,7 @@
     // the rod: a tapering curve that bends under load
     const mx = lerp(bx, tipP.x, 0.55) + Math.sin(tipP.ang) * tipP.bend * tipP.len * 0.25, my = lerp(by, tipP.y, 0.55) - Math.cos(tipP.ang) * tipP.bend * tipP.len * 0.25 * -1;
     ctx.lineCap = "round";
-    for (let i = 0; i < 3; i++) { ctx.strokeStyle = ["#2a1a10", "#5a3a20", "#8a6038"][i]; ctx.lineWidth = [7, 4.5, 2][i] * k; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(mx, my, tipP.x, tipP.y); ctx.stroke(); }
-    ctx.fillStyle = "#c8a060"; ctx.beginPath(); ctx.arc(lerp(bx, mx, 0.25), lerp(by, my, 0.25), 6 * k, 0, TAU); ctx.fill();
+    if(!window.PondEquipment?.rod(ctx,{x:bx,y:by},{x:mx,y:my},tipP,k))for (let i = 0; i < 3; i++) { ctx.strokeStyle = ["#2a1a10", "#5a3a20", "#8a6038"][i]; ctx.lineWidth = [7, 4.5, 2][i] * k; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(mx, my, tipP.x, tipP.y); ctx.stroke(); }
     // the line and the float
     let end = null;
     if (rod.state === "casting") {
@@ -798,7 +818,9 @@
     // dock lantern
     const lx = W * 0.95, ly = H * DOCK.v0 - 62 * k, fl = 0.85 + 0.15 * Math.sin(time * 7) * Math.sin(time * 3.1);
     ctx.globalCompositeOperation = "lighter"; glow(ctx, lx, ly, 80 * k * fl, "255,190,110", 0.32); glow(ctx, lx, ly, 14 * k, "255,232,180", 0.9); ctx.globalCompositeOperation = "source-over";
-    ctx.strokeStyle = "rgba(40,28,18,.9)"; ctx.lineWidth = 1.2; ctx.strokeRect(lx - 5 * k, ly - 7 * k, 10 * k, 14 * k);
+    if(!window.PondEquipment?.draw(ctx,'lantern',lx-17*k,ly-26*k,34*k,55*k)){ctx.strokeStyle = "rgba(40,28,18,.9)"; ctx.lineWidth = 1.2; ctx.strokeRect(lx - 5 * k, ly - 7 * k, 10 * k, 14 * k);}
+    if(!net)window.PondEquipment?.draw(ctx,'basket',W*.85,H*.94,34*k,36*k,.9);
+    window.PondEquipment?.draw(ctx,'trap',W*.87,H*.83,60*k,34*k,.85);
     // Matcha
     if (yuki.complete && yuki.naturalWidth) {
       const b = yukiBox();
@@ -828,7 +850,7 @@
     });
     if (hover === "water" && !busy()) {                        // where the cast will land
       ctx.strokeStyle = "rgba(244,226,180,.55)"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
-      const s = scaleAt(hoverAt[1]), r = (tool === "net" ? 96 : 12) * k * s;
+      const s = scaleAt(hoverAt[1]), r = (tool === "net" ? 60 : 12) * k * s;
       ctx.beginPath(); ctx.ellipse(hoverAt[0], hoverAt[1], r, r * 0.34, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
     }
   }
@@ -842,14 +864,14 @@
     const stats = (c) => (c.cm ? `${c.cm} cm${c.kg ? ` · ${c.kg < 1 ? Math.max(1, Math.round(c.kg * 1000)) + " g" : c.kg.toFixed(1) + " kg"}` : ""}` : "");
     cardEl.innerHTML = single ? `
       <div class="cc-art"><img src="${iconOf(c0.id)}" alt="" width="160" height="160"></div>
-      <p class="cc-kicker">${firsts.length ? "New in your log!" : how === "rod" ? "On the line" : how === "net" ? "In the net" : "In the trap"}</p>
+      <p class="cc-kicker">${firsts.length ? "New in your log!" : how === "rod" ? "On the line" : how === "net" ? "In the basket" : "In the trap"}</p>
       <h3>${esc(info.name)} <span class="zh">${esc(info.zh)}</span></h3>
       <p class="cc-stats">${stats(c0)}${stats(c0) ? " · " : ""}<span class="stars">${"★".repeat(info.rarity)}</span></p>
       <p class="cc-text">${esc(info.text)}</p>
       <div class="cc-actions">${c0.id === "bottle" ? `<a class="btn sm primary" href="message.html">Read the bottles →</a>` : ""}<button class="btn sm primary" type="button" data-keep>${info.kind === "junk" ? "Keep it" : "Into the creel"}</button>${info.kind === "fish" || info.kind === "crust" ? `<button class="btn sm" type="button" data-release>Let it go</button>` : ""}</div>`
       : `
-      <p class="cc-kicker">${how === "net" ? "The net comes up" : "The trap comes up"}${firsts.length ? " · something new!" : ""}</p>
-      <h3>${list.length} in the ${how === "net" ? "net" : "trap"}</h3>
+      <p class="cc-kicker">${how === "net" ? "The basket comes up" : "The trap comes up"}${firsts.length ? " · something new!" : ""}</p>
+      <h3>${list.length} in the ${how === "net" ? "basket" : "trap"}</h3>
       <ul class="cc-list">${list.map((c) => `<li class="${firsts.includes(c.id) ? "new" : ""}"><img src="${iconOf(c.id)}" alt="" width="56" height="56"><b>${esc(BY[c.id].name)}</b><span class="zh">${esc(BY[c.id].zh)}</span><small>${stats(c)}</small></li>`).join("")}</ul>
       <div class="cc-actions"><button class="btn sm primary" type="button" data-keep>Keep them all</button><button class="btn sm" type="button" data-release>Let them go</button></div>`;
     cardEl.hidden = false;
@@ -858,9 +880,13 @@
     list.forEach((c) => { save.seen[c.id] = (save.seen[c.id] || 0) + 1; if (c.cm && (!save.best[c.id] || c.cm > save.best[c.id])) save.best[c.id] = c.cm; });
     persist();
     if (firsts.length) document.getElementById("btnLog").classList.add("glint");
+    let resolved = false;
     const done = (keep) => {
-      cardEl.classList.remove("show"); setTimeout(() => (cardEl.hidden = true), 260);
-      busyCard = false; rod.state = "idle"; rod.bob = null; rod.fish = null;
+      if (resolved) return;
+      resolved = true;
+      cardEl.querySelectorAll(".cc-actions button").forEach(b => { b.disabled = true; });
+      cardEl.classList.remove("show"); setTimeout(() => { cardEl.hidden = true; busyCard = false; }, 260);
+      rod.state = "idle"; rod.bob = null; rod.fish = null;
       hint.textContent = tools[tool].hint;
       if (keep) {
         const r = cv.getBoundingClientRect();
@@ -875,15 +901,16 @@
     const rel = cardEl.querySelector("[data-release]"); if (rel) rel.onclick = () => done(false);
     setTimeout(() => { const b = cardEl.querySelector("[data-keep]"); if (b) b.focus({ preventScroll: true }); }, 50);
   }
-  const busy = () => busyCard || rod.state !== "idle" || !!net;
+  const busy = () => busyCard || rod.state !== "idle" || !!net || !!haul;
 
   /* ================= HUD & tools ================= */
   const tools = {
     rod: { hint: "Tap the water to cast. Strike when the float goes under, then hold to reel." },
-    net: { hint: "Tap where the fish shadows gather to throw the cast net." },
+    net: { hint: "Tap the shallows to lower your bamboo basket, then lift your catch." },
     trap: { hint: "Tap a stake to set a 地笼 trap. It soaks for about a minute — even if you leave." }
   };
   function setTool(t) {
+    cancelGesture();
     if (frozen() && t !== "rod") { toast("The pond is frozen — only ice fishing today.", 2600); return; }
     tool = t;
     document.querySelectorAll("[data-tool]").forEach((b) => { b.classList.toggle("active", b.dataset.tool === t); b.setAttribute("aria-pressed", b.dataset.tool === t ? "true" : "false"); });
@@ -909,6 +936,15 @@
 
   /* ================= input ================= */
   let hoverAt = [0, 0];
+  let tap = null, holdPointer = null;
+  function cancelGesture() {
+    const captured = holdPointer != null ? holdPointer : tap && tap.pointerId;
+    if (holdPointer != null) rod.hold = false;
+    tap = null; holdPointer = null;
+    if (captured != null) {
+      try { if (cv.hasPointerCapture(captured)) cv.releasePointerCapture(captured); } catch (_) {}
+    }
+  }
   const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function whatIsAt(x, y) {
     const yb = yukiBox();
@@ -922,6 +958,7 @@
   }
   cv.addEventListener("pointermove", (e) => {
     const [x, y] = local(e), w = whatIsAt(x, y);
+    if (tap && e.pointerId === tap.pointerId && Math.hypot(x - tap.x, y - tap.y) > 10) tap.moved = true;
     hoverAt = [x, y]; hoverTrap = w && w.kind === "trap" ? w.i : -1;
     hover = w ? (w.kind === "water" ? ((tool === "rod" && rod.state === "idle") || (tool === "net" && !net) ? "water" : null) : w.kind) : null;
     cv.style.cursor = hover || hoverTrap >= 0 ? "pointer" : rod.state === "reeling" ? "grabbing" : "default";
@@ -933,11 +970,28 @@
   });
   cv.addEventListener("pointerleave", () => { hover = null; hoverTrap = -1; tip.classList.remove("on"); });
   cv.addEventListener("pointerdown", (e) => {
-    if (busyCard) return;
-    if (rod.state === "reeling") { rod.hold = true; cv.setPointerCapture(e.pointerId); return; }
+    if (busyCard || haul || tap || holdPointer != null || e.isPrimary === false || (e.button != null && e.button !== 0)) return;
+    if (rod.state === "reeling") {
+      holdPointer = e.pointerId; rod.hold = true;
+      try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
     if (rod.state === "bite" || rod.state === "nibble") { strike(); return; }
     const [x, y] = local(e), w = whatIsAt(x, y);
     if (!w) return;
+    // Idle actions are taps. A finger used to scroll must not cast or collect.
+    tap = { pointerId: e.pointerId, x, y, target: w, tool, rodState: rod.state, moved: false };
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  cv.addEventListener("pointerup", (e) => {
+    if (e.pointerId === holdPointer) { holdPointer = null; rod.hold = false; return; }
+    if (!tap || e.pointerId !== tap.pointerId) return;
+    const candidate = tap; tap = null;
+    const [x, y] = local(e), w = whatIsAt(x, y);
+    const stillWaiting = ["waiting", "approach"].includes(candidate.rodState) && ["waiting", "approach"].includes(rod.state);
+    if (candidate.moved || Math.hypot(x - candidate.x, y - candidate.y) > 10 || busyCard || haul || tool !== candidate.tool
+      || (rod.state !== candidate.rodState && !stillWaiting) || !w || w.kind !== candidate.target.kind
+      || (w.kind === "trap" && w.i !== candidate.target.i)) return;
     if (w.kind === "yuki") { const b = yukiBox(); Wd.float(stage, b.cx, b.y + 6, YUKI[(Math.random() * YUKI.length) | 0], "say"); sparkle(b.cx, b.y + b.h * 0.3, 8, "220,230,255"); return; }
     if (w.kind === "trap") { const st = trapState(w.i); if (st === "free") setTrap(w.i); else if (st === "ready") haulTrap(w.i); else Wd.float(stage, x, y - 20, `Soaking… ${Math.ceil((save.traps[w.i].t0 + save.traps[w.i].dur - Date.now()) / 1000)}s`, "soft"); return; }
     if (tool === "rod" && rod.state === "idle") castTo(x, y);
@@ -945,10 +999,10 @@
     else if (tool === "net") throwNet(x, y);
     else if (tool === "trap") Wd.float(stage, x, y - 16, "Tap one of the wooden stakes", "soft");
   });
-  const release = () => { rod.hold = false; };
-  cv.addEventListener("pointerup", release); cv.addEventListener("pointercancel", release);
+  const cancelPointer = e => { if (e.pointerId === holdPointer || (tap && e.pointerId === tap.pointerId)) cancelGesture(); };
+  cv.addEventListener("pointercancel", cancelPointer); cv.addEventListener("lostpointercapture", cancelPointer);
   addEventListener("keydown", (e) => {
-    if (e.code !== "Space" || busyCard || e.target.closest("input, textarea, button, a")) return;
+    if (e.code !== "Space" || busyCard || haul || e.target.closest("input, textarea, button, a")) return;
     e.preventDefault();
     if (rod.state === "reeling") rod.hold = true;
     else if (rod.state === "bite" || rod.state === "nibble") strike();
@@ -961,7 +1015,19 @@
   document.getElementById("btnBack2").addEventListener("click", () => Wd.back("pond"));
   document.getElementById("btnLog").addEventListener("click", openLog);
   document.getElementById("btnBait").addEventListener("click", scatterBait);
-  document.getElementById("btnTips").addEventListener("click", () => toast("Rod: wait until the float goes right under, then strike. While reeling, hold to pull and let go before the needle reaches the red. Space works too. Net: throw it where shadows gather. Traps: set one at a stake and come back in a minute.", 6000));
+  document.getElementById("btnTips").addEventListener("click", () => toast("Rod: wait until the float goes right under, then strike. While reeling, hold to pull and let go before the needle reaches the red. Space works too. Basket: lower it into the shallows where shadows gather. Traps: set one at a stake and come back in a minute.", 6000));
+
+  function restoreSavedState() {
+    const latest = Wd.store.get("wild-pond", { creel: {}, seen: {}, best: {}, traps: [null, null, null] }) || {};
+    save.creel = latest.creel || {}; save.seen = latest.seen || {}; save.best = latest.best || {};
+    save.traps = Array.isArray(latest.traps) ? latest.traps : [null, null, null];
+    renderCreel();
+    const current = Wd.season();
+    if (current.name !== season.name && !busy()) { season = current; applySeason(); }
+    else { fit(); Wd.seasonChip(document.getElementById("seasonChip")); }
+  }
+  addEventListener("pageshow", e => { if (e.persisted) restoreSavedState(); });
+  addEventListener("pagehide", cancelGesture);
 
   /* ================= sizing & loop ================= */
   function fit() {
@@ -996,7 +1062,7 @@
     if (tick > 1) {
       tick = 0;
       const s = Wd.season();
-      if (s.name !== season.name && rod.state === "idle" && !net && !busyCard) { season = s; applySeason(); toast(`${Wd.ICONS[s.name]} The season turns — ${s.name} by the pond.`, 3600); }
+      if (s.name !== season.name && !busy()) { season = s; applySeason(); toast(`${Wd.ICONS[s.name]} The season turns — ${s.name} by the pond.`, 3600); }
       else Wd.seasonChip(document.getElementById("seasonChip"));
     }
   }

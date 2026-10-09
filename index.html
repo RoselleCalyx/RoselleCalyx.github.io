@@ -4,13 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chen Jia · A Lonely Voyager</title>
-  <meta name="description" content="Chen Jia — PhD researcher in medical AI at TUM & relAI. Papers, footprints, and a small farm under the stars." />
+  <meta name="description" content="Chen Jia. PhD researcher in medical AI at TUM & relAI. Papers, footprints, and a small farm under the stars." />
   <meta name="theme-color" content="#04060d" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20261009-scene2" />
+  <link rel="stylesheet" href="css/style.css?v=20261009-interactions10" />
+  <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
+  <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
 </head>
 <body data-page="home">
   <header id="site-header"></header>
@@ -36,10 +37,8 @@
             <p class="hero-kicker" data-site="tagline">A Lonely Voyager</p>
             <h1 class="hero-title">Exploring<br />the Unknown.</h1>
             <p class="hero-lede">
-              The universe is vast,<br />
-              but so are our questions.<br />
-              A PhD student wandering between<br />
-              data, stars, and the beautiful unknown.
+              A PhD researcher exploring<br />
+              data, stars, and the unknown.
             </p>
             <span class="hero-rule"></span>
             <nav class="social" aria-label="Elsewhere">
@@ -50,15 +49,11 @@
             </nav>
           </div>
 
-          <blockquote class="hero-quote">
-            “Somewhere, something incredible<br />is waiting to be known.”
-            <cite><span class="dash"></span>Carl Sagan</cite>
-          </blockquote>
 
           <div class="hero-foot">
             <span class="place" data-icon="pin"><span data-site="location">Munich, Germany</span></span>
             <span class="dots"></span>
-            <em>Same sky. Different places.</em><em>We are all stardust.</em>
+            <em>Same sky. Different places.</em>
           </div>
           <a class="scroll-cue" href="#about" aria-label="Scroll to explore"><span class="mouse"></span>Scroll to explore<span class="line"></span></a>
         </div>
@@ -67,10 +62,11 @@
         <div class="finale" id="finale" aria-hidden="true">
           <p class="kicker">15 September 2017</p>
           <h2>Cassini became part of Saturn.</h2>
-          <p>Thirteen years of looking — and then, becoming the sky.</p>
+          <p>Thirteen years of looking, then becoming the sky.</p>
         </div>
       </div>
     </section>
+    <canvas id="starFall" aria-hidden="true"></canvas>
 
     <div class="home-sections">
       <div class="coda reveal">
@@ -86,20 +82,18 @@
         </div>
         <div>
           <p class="kicker">About</p>
-          <h2 class="section-title">I’m <span data-site="name">Chen Jia</span> — a PhD researcher in medical AI.</h2>
+          <h2 class="section-title">I’m <span data-site="name">Chen Jia</span>. A PhD researcher in medical AI.</h2>
           <p>
-            I am a PhD researcher at the Technical University of Munich and relAI, working on
-            medical image analysis, trustworthy and reliable AI, multi-view learning, and clinically
-            meaningful AI systems.
+            I work on medical image analysis, reliable AI, and multi-view learning at the
+            Technical University of Munich and relAI.
           </p>
           <p>
-            I care about AI methods that are not only accurate, but also robust, interpretable,
-            and genuinely useful inside real clinical workflows. Previously I worked on medical report
-            generation, retrieval-augmented methods, and multi-view anatomical correspondence learning
-            for coronary stenosis reporting.
+            My focus is on robust, interpretable methods that fit clinical workflows. Previous work
+            includes medical report generation, retrieval-augmented methods, and multi-view anatomical
+            correspondence learning for coronary stenosis reporting.
           </p>
           <p>
-            Outside research I look for forests, flowers and dark skies — quiet places that keep me
+            Outside research, I look for forests, flowers and dark skies. They keep me
             balanced and curious.
           </p>
           <div class="chips" aria-label="Research interests">
@@ -124,19 +118,19 @@
           <h2 class="section-title">Education</h2>
           <ul class="timeline">
             <li>
-              <div class="t-date">2026 — now</div>
+              <div class="t-date">2026 to present</div>
               <div class="t-title">PhD Researcher</div>
-              <div class="t-sub">Technical University of Munich · relAI — reliable, clinically grounded machine learning.</div>
+              <div class="t-sub">Technical University of Munich · relAI. Reliable, clinically grounded machine learning.</div>
             </li>
             <li>
-              <div class="t-date">2023 — 2026</div>
+              <div class="t-date">2023 to 2026</div>
               <div class="t-title">M.Sc. Data Engineering and Analytics</div>
-              <div class="t-sub">Technical University of Munich — machine learning, medical image analysis, report generation.</div>
+              <div class="t-sub">Technical University of Munich. Machine learning, medical image analysis, report generation.</div>
             </li>
             <li>
-              <div class="t-date">2018 — 2022</div>
+              <div class="t-date">2018 to 2022</div>
               <div class="t-title">B.Sc. Computer Science</div>
-              <div class="t-sub">Your University Name — add a short note here.</div>
+              <div class="t-sub">Your University Name. Add a short note here.</div>
             </li>
           </ul>
         </section>
@@ -159,7 +153,7 @@
           <a class="glass" href="papers.html"><span data-icon="book"></span><b>Papers</b><span>Publications, code and data.</span></a>
           <a class="glass" href="gallery.html"><span data-icon="image"></span><b>Gallery</b><span>Footprints on Earth, under the same sky.</span></a>
           <a class="glass" href="message.html"><span data-icon="bottle"></span><b>Message</b><span>Send me a letter in a bottle.</span></a>
-          <a class="glass" href="starmap.html"><span data-icon="constel"></span><b>Starmap</b><span>Click a star, meet a story.</span></a>
+          <a class="glass" href="starmap.html"><span data-icon="constel"></span><b>Starmap</b><span>Choose a star. Meet its story.</span></a>
           <a class="glass" href="voyager.html"><span data-icon="planet"></span><b>A Lonely Voyager</b><span>Walk with Cassini. Keep looking beyond.</span></a>
           <a class="glass" href="farm.html"><span data-icon="paw"></span><b>Farm</b><span>A small place for lovely lives.</span></a>
         </div>
@@ -172,7 +166,7 @@
   <script>
     // The hero is laid out in the coordinates of the painting (1672 × 941, anchored to the bottom).
     window.HOME_FRAME = function (vw, vh) {
-      const IW = 1672, IH = 941, S = Math.max(vw / IW, vh / IH);
+      const IW = 1672, IH = 941, S = Math.max(vw / IW, vh / IH) * 1.02;
       const focus = vw < 760 ? 640 : IW / 2;
       const left = Math.min(0, Math.max(vw - IW * S, vw / 2 - focus * S));
       return { S, left, top: vh - IH * S, IW, IH };
@@ -189,8 +183,8 @@
   </script>
   <script src="js/config.js"></script>
   <script src="js/sky.js"></script>
-  <script src="js/common.js"></script>
+  <script src="js/common.js?v=20261009-mobile4"></script>
   <script src="js/cassini-art.js?v=20261009-scene2"></script>
-  <script src="js/saturn.js?v=20261009-rings3"></script>
+  <script src="js/saturn.js?v=20261009-interactions10"></script>
 </body>
 </html>

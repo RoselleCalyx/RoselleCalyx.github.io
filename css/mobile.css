@@ -1,0 +1,84 @@
+/* Phone controls and short viewports. Scene artwork stays in its existing layout. */
+.wild-stage { touch-action: pan-y; }
+.gallery-map-marker { display: grid; place-items: center; background: transparent; border: 0; border-radius: 50%; cursor: pointer; }
+.gallery-map-marker .star-marker { display: block; margin: 0; pointer-events: none; }
+.gallery-map-marker:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+@media (max-width: 880px) {
+  .nav {
+    visibility: hidden;
+    max-height: calc(100dvh - var(--header-h) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .nav.open { visibility: visible; }
+  .icon-btn { min-width: 44px; min-height: 44px; }
+}
+@media (max-width: 900px) {
+  .bubble.mobile-sheet, .bubble.mobile-sheet.below {
+    position: fixed;
+    z-index: 2800;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-height: calc(100dvh - var(--header-h) - 32px - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: none;
+    padding: 20px 20px 18px;
+    box-shadow: 0 12px 48px #0007;
+  }
+  .bubble.mobile-sheet::after { display: none; }
+  .bubble.mobile-sheet h4 { padding-right: 36px; }
+  .bubble.mobile-sheet .x { top: 8px; right: 8px; width: 44px; height: 44px; }
+  .bubble.mobile-sheet .bubble-actions button,
+  .bubble.mobile-sheet .feed-tray button { min-height: 44px; }
+}
+@media (max-width: 760px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea, select, .search .input, .shore-fields input, #bText, .login-panel input {
+    font-size: 16px;
+  }
+  .btn, .chip, .view-switch button, .sm-modes button, .sm-list button,
+  .tool, .quiet-button, .keeper-link, .shore-anon, .cast-button,
+  .v-tool, .v-text-button, .v-view-switch button, .v-chapter button { min-height: 44px; }
+  .chart-ctrl button, .v-close, .v-navigation button, .modal-close, .lb-close { min-width: 44px; min-height: 44px; }
+  .v-navigation #vPlay { width: 86px; }
+  .v-dock-foot button { min-height: 44px; }
+  .modal-card { max-height: calc(100dvh - 32px); }
+  .modal-card, .lb-side { overscroll-behavior: contain; }
+}
+@media (max-width: 700px) {
+  .voyager { display: grid; grid-template-rows: 1fr auto auto; gap: 8px; padding: 0 6% calc(18px + env(safe-area-inset-bottom, 0px)); }
+  .v-tools { grid-row: 2; position: relative; left: auto; right: auto; bottom: auto; }
+  .v-dock { grid-row: 3; position: relative; left: auto; right: auto; bottom: auto; min-width: 0; }
+  body.v-immersive .v-tools { position: absolute; left: 6%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-height: 540px) {
+  .hero-title { font-size: clamp(24px, 8vh, 32px); line-height: 1.2; margin-bottom: 10px; }
+  .hero-lede { font-size: .82rem; line-height: 1.45; margin-bottom: 10px; }
+  .hero-rule { margin-bottom: 10px; }
+}
+@media (max-height: 500px) and (max-width: 960px) {
+  .voyager {
+    height: auto;
+    min-height: 100svh;
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    gap: 12px;
+    padding: calc(var(--header-h) + 12px) 4.5% calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .v-topline, .v-story, .v-tools, .v-dock { position: relative; top: auto; left: auto; right: auto; bottom: auto; min-width: 0; }
+  .v-topline { grid-row: 1; }
+  .v-story { grid-row: 2; max-width: 540px; }
+  .v-story h1 { font-size: 28px; line-height: 1.25; }
+  .v-story .v-eyebrow { margin-bottom: 8px; }
+  .v-story > .v-text-button { margin-top: 6px; }
+  .v-tools { grid-row: 3; }
+  .v-dock { grid-row: 4; }
+  .v-scene-caption { display: none; }
+  .v-tool, .v-view-switch button, .v-navigation button, .v-dock-foot button { min-height: 44px; }
+  .v-navigation button { min-width: 44px; }
+  body.v-immersive .voyager { height: 100svh; padding: 0; }
+  body.v-immersive .v-tools { position: fixed; left: 4.5%; bottom: 20px; }
+}

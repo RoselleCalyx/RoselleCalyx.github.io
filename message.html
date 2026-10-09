@@ -4,139 +4,74 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Message in a Bottle · Chen Jia</title>
-  <meta name="description" content="Send your thoughts across the stars. Maybe it will reach me." />
-  <meta name="theme-color" content="#04060d" />
+  <meta name="description" content="Send Chen a private message or an email from a quiet shore under the stars." />
+  <meta name="theme-color" content="#0c151e" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="preload" as="image" href="assets/message/night-sea-v2.webp" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/message.css" />
+  <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
+  <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
 </head>
 <body data-page="message">
-  <header id="site-header"></header>
-
-  <!-- night sea: a lighthouse on the cliff, lanterns on the water -->
-  <div class="scene sea" aria-hidden="true">
-    <svg viewBox="0 -110 1600 530" preserveAspectRatio="xMidYMax slice">
-      <defs>
-        <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#16224a" />
-          <stop offset=".45" stop-color="#0a1231" />
-          <stop offset="1" stop-color="#03050d" />
-        </linearGradient>
-        <linearGradient id="beamG" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#fff2c4" stop-opacity=".55" />
-          <stop offset="1" stop-color="#fff2c4" stop-opacity="0" />
-        </linearGradient>
-        <radialGradient id="lamp"><stop offset="0" stop-color="#fff6d8" /><stop offset=".35" stop-color="#ffd27a" stop-opacity=".7" /><stop offset="1" stop-color="#ffb340" stop-opacity="0" /></radialGradient>
-        <radialGradient id="lantern"><stop offset="0" stop-color="#fff0c0" /><stop offset=".4" stop-color="#f6a54c" stop-opacity=".8" /><stop offset="1" stop-color="#f08a2c" stop-opacity="0" /></radialGradient>
-        <filter id="soft" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="7" /></filter>
-        <linearGradient id="glitter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4e6bc" stop-opacity=".5" /><stop offset="1" stop-color="#f4e6bc" stop-opacity="0" /></linearGradient>
-      </defs>
-      <rect x="0" y="120" width="1600" height="300" fill="url(#water)" />
-      <!-- moon glitter -->
-      <g fill="url(#glitter)">
-        <rect x="900" y="130" width="40" height="1.6" /><rect x="880" y="146" width="80" height="1.6" /><rect x="905" y="164" width="34" height="1.6" />
-        <rect x="860" y="184" width="120" height="1.8" /><rect x="890" y="210" width="60" height="1.8" /><rect x="850" y="240" width="140" height="2" />
-      </g>
-      <!-- cliff, town and lighthouse -->
-      <path fill="#05070f" d="M180 124 C230 96 280 70 330 62 L380 40 L470 34 L540 42 L600 70 L680 96 L760 118 L800 126 Z" />
-      <g fill="#ffc96e">
-        <rect x="300" y="78" width="4" height="4" /><rect x="320" y="70" width="3" height="3" opacity=".7" /><rect x="352" y="62" width="4" height="4" />
-        <rect x="610" y="82" width="4" height="4" /><rect x="640" y="94" width="3" height="3" opacity=".7" /><rect x="580" y="70" width="3" height="3" />
-      </g>
-      <path class="beam" style="transform-origin:470px -38px" filter="url(#soft)" fill="url(#beamG)" d="M470 -38 L1100 -110 L1100 30 Z" />
-      <path fill="#0b0f1d" d="M462 34 L466 -28 L474 -28 L478 34 Z" />
-      <rect x="463" y="-42" width="14" height="14" fill="#141a2c" />
-      <path fill="#0b0f1d" d="M460 -42 L470 -54 L480 -42 Z" />
-      <circle cx="470" cy="-35" r="34" fill="url(#lamp)" />
-      <!-- lanterns floating on the sea -->
-      <g>
-        <g class="floaty"><circle cx="260" cy="196" r="16" fill="url(#lantern)" /><rect x="257" y="192" width="6" height="8" rx="1.5" fill="#ffd690" /></g>
-        <g class="floaty" style="animation-delay:-2s"><circle cx="720" cy="176" r="12" fill="url(#lantern)" /><rect x="718" y="173" width="4" height="6" rx="1" fill="#ffd690" /></g>
-        <g class="floaty" style="animation-delay:-4s"><circle cx="1060" cy="186" r="13" fill="url(#lantern)" /><rect x="1058" y="183" width="4" height="6" rx="1" fill="#ffd690" /></g>
-        <g class="floaty" style="animation-delay:-1s"><circle cx="1380" cy="210" r="18" fill="url(#lantern)" /><rect x="1377" y="206" width="6" height="8" rx="1.5" fill="#ffd690" /></g>
-        <g class="floaty" style="animation-delay:-3s"><circle cx="560" cy="250" r="20" fill="url(#lantern)" /><rect x="556" y="245" width="8" height="10" rx="2" fill="#ffd690" /></g>
-      </g>
-      <!-- waves -->
-      <path class="wave" fill="none" stroke="#2a3b6e" stroke-opacity=".5" stroke-width="1.5" d="M0 260 q100 -10 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0" />
-      <path class="wave w2" fill="none" stroke="#33477e" stroke-opacity=".45" stroke-width="1.5" d="M0 300 q100 -12 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0" />
-      <path class="wave w3" fill="none" stroke="#6b80b8" stroke-opacity=".35" stroke-width="2" d="M0 346 q100 -14 200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0 t200 0" />
-      <!-- shore -->
-      <path fill="#07080f" d="M0 360 C180 340 380 352 560 372 C700 388 760 400 820 420 L0 420 Z" />
-      <path fill="#d9c9a0" opacity=".08" d="M0 362 C180 342 380 354 560 374 L560 380 C380 360 180 350 0 370 Z" />
-    </svg>
+  <div class="night-sea" id="nightSea" aria-hidden="true">
+    <img class="night-background" src="assets/message/night-sea-v2.webp" alt="" fetchpriority="high" />
+    <div class="night-shade"></div><div class="sea-mist"></div><div class="sea-breath"></div>
+    <div id="seaEffects" class="sea-effects"></div>
+    <img class="shore-bottle" id="heroBottle" src="assets/message/bottle-v1.webp" alt="" />
   </div>
-
-  <!-- the bottle on the sand -->
-  <svg class="hero-bottle" id="heroBottle" viewBox="0 0 400 240" aria-hidden="true">
-    <defs>
-      <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#e8f4f2" stop-opacity=".55" />
-        <stop offset=".45" stop-color="#9fc7c4" stop-opacity=".22" />
-        <stop offset="1" stop-color="#3b6a72" stop-opacity=".5" />
-      </linearGradient>
-      <radialGradient id="starGlow"><stop offset="0" stop-color="#fffbe6" /><stop offset=".25" stop-color="#ffd977" stop-opacity=".9" /><stop offset="1" stop-color="#ffb43c" stop-opacity="0" /></radialGradient>
-    </defs>
-    <g transform="rotate(-24 200 120)">
-      <ellipse cx="200" cy="200" rx="150" ry="10" fill="#000" opacity=".35" />
-      <rect x="60" y="80" width="230" height="96" rx="44" fill="url(#glass)" stroke="#d8eeea" stroke-opacity=".55" stroke-width="2" />
-      <path d="M288 104 L330 110 L330 146 L288 152 Z" fill="url(#glass)" stroke="#d8eeea" stroke-opacity=".55" stroke-width="2" />
-      <rect x="328" y="106" width="30" height="44" rx="6" fill="#9b6b3c" />
-      <rect x="328" y="106" width="30" height="10" rx="4" fill="#b98652" />
-      <rect x="110" y="112" width="120" height="34" rx="16" fill="#efe1bd" opacity=".85" />
-      <path d="M120 120 h96 M120 128 h80 M120 136 h90" stroke="#a88a5a" stroke-width="2" opacity=".6" />
-      <circle cx="170" cy="128" r="70" fill="url(#starGlow)" />
-      <path fill="#fffbea" d="M170 104 l6 16 17 2 -13 11 4 17 -14 -9 -14 9 4 -17 -13 -11 17 -2z" />
-      <path d="M78 96 C110 86 200 84 268 92" stroke="#fff" stroke-opacity=".6" stroke-width="3" fill="none" stroke-linecap="round" />
-    </g>
-  </svg>
-
-  <main class="page bottle-page">
-    <div class="page-head" style="align-self:start">
-      <h1 class="page-title">Message in a Bottle</h1>
-      <p class="page-sub">Send your thoughts across the stars.<br />Maybe it will reach me.</p>
-    </div>
-
-    <section class="letter" aria-label="Letters">
-      <div class="letter-tabs" role="tablist">
-        <button type="button" class="active" role="tab" aria-selected="true" data-tab="write">Write a Message</button>
-        <button type="button" role="tab" aria-selected="false" data-tab="read">Drifting Bottles</button>
+  <header id="site-header"></header>
+  <main class="page night-layout">
+    <section class="night-intro" aria-labelledby="messageTitle">
+      <p class="shore-kicker"><span></span> Under the same sky</p>
+      <h1 id="messageTitle">Message<br /><em>in a Bottle.</em></h1>
+      <p class="shore-copy">A thought, a question, a story.<br />Leave a little of your world here.</p>
+    </section>
+    <section class="night-letter" aria-label="Letters at the shore">
+      <div class="shore-tabs" role="tablist" aria-label="Letters">
+        <button type="button" id="writeTab" class="active" role="tab" aria-selected="true" aria-controls="writePane" data-tab="write">Write</button>
+        <button type="button" id="readTab" role="tab" aria-selected="false" aria-controls="readPane" tabindex="-1" data-tab="read">Shared notes <span aria-hidden="true">↗</span></button>
       </div>
-
-      <div class="letter-body" id="writePane">
+      <div class="shore-pane" id="writePane" role="tabpanel" aria-labelledby="writeTab">
         <form id="bottleForm" novalidate>
+          <fieldset class="delivery-choice">
+            <legend class="sr-only">How would you like to send your letter?</legend>
+            <label><input type="radio" name="delivery" value="bottle" checked /><span>Send a bottle</span><small>No email required</small></label>
+            <label><input type="radio" name="delivery" value="email" /><span>Write an email</span><small>Use your mail app</small></label>
+          </fieldset>
           <label class="sr-only" for="bText">Your message</label>
-          <textarea class="textarea" id="bText" maxlength="500" placeholder="Write something…&#10;A thought, a question, a story…&#10;to the universe, or to me."></textarea>
-          <div class="counter" id="bCount">0/500</div>
-          <div class="letter-row">
-            <div><label class="label" for="bName">Your name</label><input class="input" id="bName" maxlength="60" placeholder="optional" autocomplete="name" /></div>
-            <div><label class="label" for="bContact">Email for a reply</label><input class="input" id="bContact" type="email" maxlength="120" placeholder="optional, never shown" autocomplete="email" /></div>
+          <textarea id="bText" maxlength="500" rows="6" placeholder="What would you like to share?" aria-describedby="bCount deliveryNote" required></textarea>
+          <div class="shore-writing-foot"><span id="bCount">0 / 500</span></div>
+          <div class="shore-fields">
+            <div><label for="bName">Your name <span>optional</span></label><input id="bName" maxlength="60" placeholder="A stranger" autocomplete="name" /></div>
+            <div id="contactField"><label for="bContact">Email for a reply <span>optional</span></label><input id="bContact" type="email" maxlength="120" placeholder="you@example.com" autocomplete="email" /></div>
           </div>
-          <div class="letter-foot">
-            <label class="check"><input type="checkbox" id="bAnon" /> Stay anonymous</label>
-            <button class="btn ink" type="submit">Send <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/></svg></button>
+          <div id="bChallenge" class="shore-challenge" hidden></div>
+          <div class="shore-letter-foot">
+            <label class="shore-anon"><input type="checkbox" id="bAnon" /> Leave out my details</label>
+            <button class="cast-button" type="submit"><span id="sendLabel">Send the bottle</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M10 3h4m-3.5 0v4L8 11v8a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-8l-2.5-4V3M8 15h8" /></svg></button>
           </div>
-          <p class="status" id="bStatus" role="status"></p>
+          <p class="delivery-note" id="deliveryNote">Messages are private and are not published here.</p>
+          <p id="bStatus" class="shore-status" role="status" aria-live="polite"></p>
         </form>
       </div>
-
-      <div class="letter-body" id="readPane" hidden>
-        <div class="letter-foot" style="margin:0 0 10px">
-          <span style="font-style:italic;color:#5a4a35">Letters that washed ashore, shared with care.</span>
-          <button class="btn ink sm" type="button" id="pickBottle">Pick up a bottle</button>
-        </div>
-        <ul class="bottle-list" id="bottleList"></ul>
+      <div class="shore-pane" id="readPane" role="tabpanel" aria-labelledby="readTab" hidden>
+        <div class="ashore-head"><p>A few words the sea has kept.</p><button type="button" class="quiet-button" id="pickBottle">Read a note ↗</button></div>
+        <ul class="shore-bottles" id="bottleList"></ul>
+        <p class="delivery-note">These notes are shared with permission. New messages stay private.</p>
       </div>
     </section>
+    <div class="shore-bottom"><button type="button" id="previewToss" class="quiet-button">Preview bottle animation <span aria-hidden="true">↗</span></button><a href="inbox.html" class="keeper-link">Host inbox <span aria-hidden="true">↗</span></a></div>
+    <p id="sceneStatus" class="sr-only" role="status"></p>
   </main>
-
-  <script>window.SKY_OPTIONS = { moon: [0.58, 0.12], moonSize: 14 };</script>
   <script src="js/config.js"></script>
-  <script src="js/sky.js"></script>
-  <script src="js/common.js"></script>
+  <script src="js/message-sea.js"></script>
+  <script src="js/common.js?v=20261009-mobile4"></script>
   <script src="js/backend.js"></script>
+  <script src="js/message-delivery.js"></script>
   <script src="data/bottles.js"></script>
-  <script src="js/message.js"></script>
+  <script src="js/message.js?v=20261009-mobile4"></script>
 </body>
 </html>

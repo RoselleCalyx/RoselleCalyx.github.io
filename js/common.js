@@ -163,6 +163,90 @@
     toastEl._t = setTimeout(() => toastEl.classList.remove("show"), ms);
   }
 
+  /* ---------- modal / lightbox focus and page scroll ---------- */
+  const overlays = [];
+  let pageScroll;
+  const focus = (el) => {
+    if (!el || el.isConnected === false || typeof el.focus !== "function") return;
+    try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  };
+  function lockPageScroll() {
+    if (pageScroll) return;
+    const body = document.body, html = document.documentElement;
+    const properties = ["position", "top", "left", "right", "width", "overflow", "padding-right"];
+    const saved = properties.map((key) => [key, body.style.getPropertyValue(key), body.style.getPropertyPriority(key)]);
+    const gap = Math.max(0, window.innerWidth - html.clientWidth);
+    pageScroll = { x: window.scrollX, y: window.scrollY, saved,
+      overflow: html.style.getPropertyValue("overflow"), overflowPriority: html.style.getPropertyPriority("overflow") };
+    body.style.setProperty("position", "fixed");
+    body.style.setProperty("top", `-${pageScroll.y}px`);
+    body.style.setProperty("left", `-${pageScroll.x}px`);
+    body.style.setProperty("right", "auto");
+    body.style.setProperty("width", "100%");
+    body.style.setProperty("overflow", "hidden");
+    if (gap) body.style.setProperty("padding-right", `${(parseFloat(getComputedStyle(body).paddingRight) || 0) + gap}px`);
+    html.style.setProperty("overflow", "hidden");
+  }
+  function unlockPageScroll() {
+    if (!pageScroll) return;
+    const saved = pageScroll, html = document.documentElement;
+    pageScroll = null;
+    saved.saved.forEach(([key, value, priority]) => {
+      if (value) document.body.style.setProperty(key, value, priority); else document.body.style.removeProperty(key);
+    });
+    if (saved.overflow) html.style.setProperty("overflow", saved.overflow, saved.overflowPriority); else html.style.removeProperty("overflow");
+    // The site uses smooth scrolling; returning from a dialog should keep the exact page position.
+    const behavior = html.style.getPropertyValue("scroll-behavior"), priority = html.style.getPropertyPriority("scroll-behavior");
+    html.style.setProperty("scroll-behavior", "auto");
+    window.scrollTo(saved.x, saved.y);
+    if (behavior) html.style.setProperty("scroll-behavior", behavior, priority); else html.style.removeProperty("scroll-behavior");
+  }
+  function overlaySession(el, close, navigate) {
+    const session = { el, previous: document.activeElement };
+    let released = false;
+    const current = () => !released && overlays[overlays.length - 1] === session;
+    const closeButton = () => el.querySelector(".modal-close, .lb-close");
+    const initialFocus = () => { if (current()) focus(closeButton() || el); };
+    const focusable = () => Array.from(el.querySelectorAll('a[href], button, input, textarea, select, [tabindex], [contenteditable="true"]'))
+      .filter((node) => !node.disabled && !node.hidden && node.tabIndex >= 0 && node.getClientRects().length);
+    const onKey = (e) => {
+      if (!current()) return;
+      if (e.key === "Escape") {
+        e.preventDefault(); e.stopPropagation(); close();
+      } else if (e.key === "Tab") {
+        const nodes = focusable(), first = nodes[0], last = nodes[nodes.length - 1], active = document.activeElement;
+        if (!first || !el.contains(active) || (e.shiftKey ? active === first : active === last)) {
+          e.preventDefault(); focus(e.shiftKey ? last || closeButton() : first || closeButton());
+        }
+      } else if (navigate && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        e.preventDefault(); e.stopPropagation(); navigate(e.key === "ArrowLeft" ? -1 : 1);
+      }
+    };
+    const onFocus = (e) => { if (current() && !el.contains(e.target)) initialFocus(); };
+    el.setAttribute("tabindex", "-1");
+    lockPageScroll(); overlays.push(session);
+    addEventListener("keydown", onKey, true);
+    addEventListener("focusin", onFocus, true);
+    return {
+      focus: initialFocus,
+      release() {
+        if (released) return;
+        const wasCurrent = current();
+        released = true;
+        overlays.splice(overlays.indexOf(session), 1);
+        overlays.forEach((other) => { if (el.contains(other.previous)) other.previous = session.previous; });
+        removeEventListener("keydown", onKey, true);
+        removeEventListener("focusin", onFocus, true);
+        const top = overlays[overlays.length - 1];
+        if (!top) unlockPageScroll();
+        if (wasCurrent) {
+          if (!top || top.el.contains(session.previous)) focus(session.previous);
+          else focus(top.el.querySelector(".modal-close, .lb-close"));
+        }
+      }
+    };
+  }
+
   /* ---------- modal ---------- */
   function modal(html, { onOpen, className = "" } = {}) {
     const wrap = document.createElement("div");
@@ -170,21 +254,21 @@
     wrap.innerHTML = `<div class="modal-card ${className}" role="dialog" aria-modal="true">
       <button class="icon-btn modal-close" type="button" aria-label="Close">${ICON.close}</button>${html}</div>`;
     document.body.appendChild(wrap);
-    const prev = document.activeElement;
+    let closed = false;
     const close = () => {
+      if (closed) return;
+      closed = true;
       wrap.classList.remove("open");
-      removeEventListener("keydown", onKey);
+      overlay.release();
       setTimeout(() => wrap.remove(), 260);
-      if (prev && prev.focus) prev.focus();
     };
-    const onKey = (e) => { if (e.key === "Escape") close(); };
-    addEventListener("keydown", onKey);
+    const overlay = overlaySession(wrap, close);
     wrap.addEventListener("click", (e) => { if (e.target === wrap) close(); });
     wrap.querySelector(".modal-close").addEventListener("click", close);
     requestAnimationFrame(() => {
+      if (closed) return;
       wrap.classList.add("open");
-      const f = wrap.querySelector("input, textarea, button:not(.modal-close)");
-      if (f) f.focus({ preventScroll: true });
+      overlay.focus();
     });
     const api = { el: wrap, card: wrap.querySelector(".modal-card"), close };
     if (onOpen) onOpen(api);
@@ -206,26 +290,38 @@
       <aside class="lb-side"><h3></h3><div class="lb-meta"></div><div class="lb-text"></div></aside>`;
     document.body.appendChild(el);
     const img = el.querySelector("img");
-    let i = index;
+    let i = index, generation = 0, closed = false;
     const show = () => {
+      const version = ++generation;
       const it = items[i];
-      Promise.resolve(typeof it.src === "function" ? it.src() : it.src).then((src) => { img.src = src; });
+      Promise.resolve().then(() => typeof it.src === "function" ? it.src() : it.src).then((src) => {
+        if (!closed && version === generation) img.src = src;
+      }).catch(() => {
+        if (closed || version !== generation) return;
+        img.removeAttribute("src");
+        img.alt = "The image could not load.";
+        el.querySelector(".lb-text").textContent = [it.text, "The image could not load."].filter(Boolean).join("\n\n");
+        el.querySelector(".lb-side").style.display = "";
+      });
       img.alt = it.title || "";
       el.querySelector("h3").textContent = it.title || "";
       el.querySelector(".lb-meta").textContent = it.meta || "";
       el.querySelector(".lb-text").textContent = it.text || "";
       el.querySelector(".lb-side").style.display = it.title || it.text ? "" : "none";
     };
-    const close = () => { el.classList.remove("open"); removeEventListener("keydown", key); setTimeout(() => el.remove(), 300); };
-    const go = (d) => { i = (i + d + items.length) % items.length; show(); };
-    const key = (e) => { if (e.key === "Escape") close(); if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1); };
-    addEventListener("keydown", key);
+    const close = () => {
+      if (closed) return;
+      closed = true; generation += 1;
+      el.classList.remove("open"); overlay.release(); setTimeout(() => el.remove(), 300);
+    };
+    const go = (d) => { if (closed) return; i = (i + d + items.length) % items.length; show(); };
+    const overlay = overlaySession(el, close, go);
     el.querySelector(".lb-close").onclick = close;
     el.addEventListener("click", (e) => { if (e.target === el || e.target.classList.contains("lb-stage")) close(); });
     const p = el.querySelector(".prev"), n = el.querySelector(".next");
     if (p) { p.onclick = () => go(-1); n.onclick = () => go(1); }
     show();
-    requestAnimationFrame(() => el.classList.add("open"));
+    requestAnimationFrame(() => { if (!closed) { el.classList.add("open"); overlay.focus(); } });
   }
 
   /* ---------- deliver a letter (bottle / adoption request) ---------- */

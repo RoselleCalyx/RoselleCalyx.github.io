@@ -291,7 +291,13 @@
       L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
         attribution: "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors", maxZoom: 16
       }).addTo(map);
-      const icon = L.divIcon({ className: "", html: '<div class="star-marker"></div>', iconSize: [0, 0] });
+      const icon = L.divIcon({
+        className: "gallery-map-marker",
+        html: '<span class="star-marker" aria-hidden="true"></span>',
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
+        popupAnchor: [0, -12]
+      });
       const pts = [];
       albums.forEach((a) => {
         if (!a.coords) return;

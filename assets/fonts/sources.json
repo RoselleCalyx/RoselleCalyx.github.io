@@ -1,0 +1,26 @@
+{
+  "reference": "https://www.youtube.com/watch?v=xrGAQCq9BMU",
+  "note": "Visual inspiration only. These are compatible open fonts, not a verified identification of the film typeface.",
+  "fonts": [
+    {
+      "family": "Inter",
+      "subset": "latin-ext",
+      "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2"
+    },
+    {
+      "family": "Inter",
+      "subset": "latin",
+      "source": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"
+    },
+    {
+      "family": "Montserrat",
+      "subset": "latin-ext",
+      "source": "https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2"
+    },
+    {
+      "family": "Montserrat",
+      "subset": "latin",
+      "source": "https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2"
+    }
+  ]
+}

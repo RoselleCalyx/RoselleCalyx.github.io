@@ -497,7 +497,7 @@
     }
     for (const t of S.texts) {
       c.globalAlpha = clamp(t.life / 0.5, 0, 1);
-      c.font = `600 ${Math.round(16 * scale + 8)}px "Cormorant Garamond", Georgia, serif`;
+      c.font = `600 ${Math.round(16 * scale + 8)}px "Montserrat", "Segoe UI", sans-serif`;
       c.textAlign = "center"; c.lineWidth = 3; c.strokeStyle = "rgba(40,30,10,.55)"; c.strokeText(t.text, t.x, t.y);
       c.fillStyle = "#ffe08a"; c.fillText(t.text, t.x, t.y);
     }

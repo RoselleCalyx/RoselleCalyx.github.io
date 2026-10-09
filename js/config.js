@@ -24,6 +24,13 @@ window.SITE = {
   //           "https://formspree.io/f/abcdwxyz". Letters then arrive in your inbox silently.
   formEndpoint: "",
 
+  // Private Message inbox: deploy services/message-worker to Cloudflare first,
+  // then paste its HTTPS root URL here. Visitors need no email or account.
+  // Keep empty until deployed; see docs/message-cloudflare-setup.md.
+  // Tokens and the host password belong in Worker secrets, never this file.
+  messageApi: "",
+  turnstileSiteKey: "", // Optional PUBLIC Turnstile sitekey; pair with Worker secret.
+
   // Optional shared database (free tier is plenty). When set, bottles and adoption
   // requests are stored there and only appear publicly after you approve them, and the
   // farm keeps a shared harvest record for all visitors. Setup steps: README.md.

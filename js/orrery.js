@@ -96,13 +96,13 @@
     ["1997-10-15", "Launch · Cape Canaveral", "Too heavy to fly straight to Saturn, Cassini borrows speed from planets."],
     ["1998-04-26", "Venus flyby 1", "Swinging past Venus to gain energy."],
     ["1999-06-24", "Venus flyby 2", "A second pass, 600 km above the clouds of Venus."],
-    ["1999-08-18", "Earth flyby", "Home, one last time — 1,171 km over the Pacific."],
+    ["1999-08-18", "Earth flyby", "Home, one last time, 1,171 km over the Pacific."],
     ["2000-12-30", "Jupiter flyby", "Photographing Jupiter together with the Galileo orbiter."],
     ["2004-06-11", "Phoebe flyby", "First close look at Saturn's dark outer moon."],
     ["2004-07-01", "Saturn orbit insertion", "Through the gap between the F and G rings, into orbit."],
     ["2004-12-25", "Huygens released", "The European probe leaves for Titan."],
     ["2005-01-14", "Huygens lands on Titan", "The first landing in the outer solar system."],
-    ["2005-07-14", "Enceladus", "Geysers of ice spray from its south pole — an ocean below."],
+    ["2005-07-14", "Enceladus", "Geysers of ice spray from its south pole, an ocean below."],
     ["2006-07-22", "Lakes on Titan", "Seas of liquid methane and ethane."],
     ["2008-07-01", "Equinox mission", "The first extension: sunlight edge-on to the rings."],
     ["2010-09-27", "Solstice mission", "Seven more years, to watch the seasons turn."],
@@ -159,7 +159,7 @@
       tags.sort((a, b) => b.pri - a.pri);
       ctx.textAlign = "left";
       for (const t of tags) {
-        ctx.font = t.serif ? `italic ${t.size}px "Cormorant Garamond", Georgia, serif` : `${t.size}px "Inter", sans-serif`;
+        ctx.font = t.serif ? `${t.size}px "Montserrat", "Segoe UI", sans-serif` : `${t.size}px "Inter", sans-serif`;
         const tw = ctx.measureText(t.text).width, th = t.size * 0.82, r = t.r + 4, { x, y } = t;
         const spots = [[x + r, y + th / 2], [x - r - tw, y + th / 2], [x + r * 0.7, y - r * 0.7], [x + r * 0.7, y + r * 0.7 + th],
           [x - tw / 2, y + r + th], [x - tw / 2, y - r - 1], [x - r * 0.7 - tw, y - r * 0.7], [x - r * 0.7 - tw, y + r * 0.7 + th]];
@@ -405,9 +405,9 @@
     function drawEndCard(a) {
       ctx.fillStyle = `rgba(3,5,12,${0.55 * a})`; ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = a; ctx.textAlign = "center";
-      ctx.font = `400 ${Math.round(R * 0.11)}px "Cormorant Garamond", Georgia, serif`; ctx.fillStyle = "#f4e2b4";
+      ctx.font = `400 ${Math.round(R * 0.11)}px "Montserrat", "Segoe UI", sans-serif`; ctx.fillStyle = "#f4e2b4";
       ctx.fillText("Cassini · 1997 – 2017", cx, cy - R * 0.12);
-      ctx.font = `italic ${Math.round(R * 0.055)}px "Cormorant Garamond", Georgia, serif`; ctx.fillStyle = "rgba(236,230,214,.85)";
+      ctx.font = `${Math.round(R * 0.055)}px "Montserrat", "Segoe UI", sans-serif`; ctx.fillStyle = "rgba(236,230,214,.85)";
       ctx.fillText("7.9 billion km · 294 orbits of Saturn · 453,048 images", cx, cy + R * 0.0);
       ctx.fillText("It became part of the world it loved.", cx, cy + R * 0.1);
       ctx.globalAlpha = 1;

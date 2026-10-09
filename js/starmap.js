@@ -12,6 +12,7 @@
   const canvas = $("chart"), ctx = canvas.getContext("2d"), wrap = canvas.parentElement;
   const zc = $("zoomChart"), zctx = zc.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileMap = matchMedia("(max-width: 760px)");
 
   /* ---------- time & sky geometry ---------- */
   const now = new Date();
@@ -100,7 +101,7 @@
   let target = null, mode = "const", selected = { type: "const", id: "ori" }, hover = null;
   let favs = store.get("sky-favs", []);
   let bg = null, time = 0, last = performance.now();
-  const quiz = { on: false, round: 0, score: 0, order: [], flash: null, lock: false };
+  const quiz = { on: false, round: 0, score: 0, order: [], flash: null, lock: false, timer: 0, generation: 0 };
 
   const sx = (p) => cx + view.x + p.x * Rc * view.k;
   const sy = (p) => cy + view.y + p.y * Rc * view.k;
@@ -207,6 +208,8 @@
 
     // constellations
     const dimOthers = selected && selected.type === "const" && view.k > 1.4;
+    const compactLabels = mobileMap.matches && view.k <= 1.4;
+    const labels = [];
     CONS.forEach((c) => {
       const isSel = selected && selected.type === "const" && selected.id === c.id;
       const isHov = hover && hover.type === "const" && hover.id === c.id;
@@ -229,16 +232,20 @@
       ctx.globalCompositeOperation = "source-over";
       if (!quiz.on && (mode !== "deep" || isSel)) {
         const m = centroid(pts);
-        ctx.font = `italic ${isSel ? 17 : 14}px "Cormorant Garamond", Georgia, serif`;
-        ctx.fillStyle = isSel || isHov ? "#f4e2b4" : "rgba(220,215,200,.62)";
-        ctx.textAlign = "center";
-        ctx.fillText(c.name, m[0], isSel ? Math.min(...pts.map((q) => q[1])) - 16 : m[1] - 14);
+        const label = {
+          text: c.name, x: m[0], y: isSel ? Math.min(...pts.map((q) => q[1])) - 16 : m[1] - 14,
+          font: `${isSel ? 17 : 14}px "Montserrat", "Segoe UI", sans-serif`,
+          color: isSel || isHov ? "#f4e2b4" : "rgba(220,215,200,.62)",
+          priority: isSel ? 2 : isHov ? 1 : 0
+        };
+        if (compactLabels) labels.push(label); else drawConstellationLabel(label);
         if (isSel && view.k > 1.6) {
           ctx.font = '11px "Inter", sans-serif'; ctx.fillStyle = "rgba(244,226,180,.75)";
           c.stars.forEach((s, i) => { if (s[3] < 2.6) ctx.fillText(s[0], pts[i][0], pts[i][1] + 16); });
         }
       }
     });
+    if (compactLabels) drawCompactLabels(labels);
 
     // deep sky
     if (mode === "deep" || mode === "fav") {
@@ -269,7 +276,7 @@
         ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
         if (p.id === "saturn") { ctx.strokeStyle = p.color; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(x, y, r * 2.3, r * 0.8, -0.35, 0, 7); ctx.stroke(); }
         if (isSel) { ctx.strokeStyle = "#f4e2b4"; ctx.beginPath(); ctx.arc(x, y, r + 6 + Math.sin(time * 3) * 1.5, 0, 7); ctx.stroke(); }
-        ctx.font = 'italic 14px "Cormorant Garamond", Georgia, serif'; ctx.fillStyle = "#f4e2b4"; ctx.textAlign = "left";
+        ctx.font = '14px "Montserrat", "Segoe UI", sans-serif'; ctx.fillStyle = "#f4e2b4"; ctx.textAlign = "left";
         ctx.fillText(p.name, x + r + 6, y + 4);
       });
     }
@@ -286,6 +293,28 @@
       const x = ox + (p.x / len) * (R + 17), y = oy + (p.y / len) * (R + 17) + 3;
       if (x > 0 && x < size && y > 0 && y < size) ctx.fillText(h + "h", x, y);
     }
+  }
+  function drawConstellationLabel(label) {
+    ctx.font = label.font; ctx.fillStyle = label.color; ctx.textAlign = "center";
+    ctx.fillText(label.text, label.x, label.y);
+  }
+  function drawCompactLabels(labels) {
+    const occupied = [];
+    labels.sort((a, b) => b.priority - a.priority).forEach((label) => {
+      ctx.font = label.font;
+      const metrics = ctx.measureText(label.text);
+      const bounds = {
+        left: label.x - metrics.width / 2 - 4, right: label.x + metrics.width / 2 + 4,
+        top: label.y - (metrics.actualBoundingBoxAscent || parseFloat(label.font)) - 3,
+        bottom: label.y + (metrics.actualBoundingBoxDescent || 3) + 3
+      };
+      const overlaps = occupied.some((other) => bounds.left < other.right && bounds.right > other.left
+        && bounds.top < other.bottom && bounds.bottom > other.top);
+      // The active objects remain named even if they overlap one another.
+      if (!label.priority && overlaps) return;
+      drawConstellationLabel(label);
+      occupied.push(bounds);
+    });
   }
   function centroid(pts) {
     let x = 0, y = 0; pts.forEach((p) => { x += p[0]; y += p[1]; });
@@ -342,12 +371,18 @@
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
     if (pointers.size === 1) drag = { start: local(e), vx: view.x, vy: view.y, moved: false };
-    if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      if (drag) drag.moved = true;
+    }
   });
   canvas.addEventListener("pointermove", (e) => {
     const p = local(e);
     if (pointers.has(e.pointerId)) pointers.set(e.pointerId, p);
-    if (pointers.size === 2) {
+    else if (pointers.size) return;
+    if (pointers.size > 1) {
+      if (pointers.size !== 2) return;
       const [a, b] = [...pointers.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
       if (pinch) zoomAt(d / pinch, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
       pinch = d; if (drag) drag.moved = true; return;
@@ -362,9 +397,16 @@
     canvas.classList.toggle("hovering", !!hover);
   });
   const end = (e) => {
+    if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = 0;
-    if (drag && !drag.moved && pointers.size === 0) click(local(e));
+    if (e.type === "pointerup" && drag && !drag.moved && pointers.size === 0) click(local(e));
+    if (pointers.size === 1) {
+      drag = { start: [...pointers.values()][0], vx: view.x, vy: view.y, moved: true };
+    } else if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    }
     if (pointers.size === 0) { drag = null; canvas.classList.remove("dragging"); }
   };
   canvas.addEventListener("pointerup", end);
@@ -415,7 +457,12 @@
     const items = listItems();
     listEl.innerHTML = items.length ? items.map((it, i) => `<li><button type="button" data-i="${i}" class="${selected && selected.type === it.key.type && selected.id === it.key.id ? "active" : ""}"><span>${esc(it.name)}</span><span class="zh">${esc(it.zh)}</span></button></li>`).join("")
       : `<li class="muted" style="padding:6px 12px;font-style:italic">Tap ☆ on a constellation to keep it here.</li>`;
-    listEl.onclick = (e) => { const b = e.target.closest("button"); if (b) select(items[+b.dataset.i].key, true); };
+    listEl.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      const key = items[+b.dataset.i].key;
+      if (quiz.on) answer(key); else select(key, true);
+    };
   }
 
   /* ---------- info panel ---------- */
@@ -526,16 +573,22 @@
   /* ---------- quiz ---------- */
   const qbar = $("quizBar");
   $("playQuiz").addEventListener("click", () => (quiz.on ? stopQuiz() : startQuiz()));
+  function cancelNextRound() {
+    clearTimeout(quiz.timer); quiz.timer = 0; quiz.generation++;
+    quiz.flash = null; quiz.lock = false;
+  }
   function startQuiz() {
+    cancelNextRound();
     mode = "const";
     document.querySelectorAll(".sm-modes button").forEach((x) => x.classList.toggle("active", x.dataset.mode === "const"));
     quiz.on = true; quiz.round = 0; quiz.score = 0; quiz.lock = false;
     quiz.order = CONS.map((c) => c.id).sort(() => Math.random() - 0.5).slice(0, 8);
-    selected = null; resetView();
+    selected = null; closeStage(); showOrrery(false); resetView(); renderList();
     $("playQuiz").innerHTML = ICON.close + "Stop the game";
     ask();
   }
   function stopQuiz() {
+    cancelNextRound();
     quiz.on = false; qbar.classList.remove("on", "right", "wrong");
     $("playQuiz").innerHTML = ICON.target + "Find the constellation";
     selected = { type: "const", id: "ori" }; renderInfo(); renderList();
@@ -546,7 +599,7 @@
     qbar.innerHTML = `<div class="q">Find <b>${esc(c.zh)} · ${esc(c.name)}</b></div><small>Round ${quiz.round + 1} / ${quiz.order.length} · Score ${quiz.score}</small>`;
   }
   function answer(h) {
-    if (quiz.lock || !h || h.type !== "const") return;
+    if (!quiz.on || quiz.lock || !h || h.type !== "const") return;
     const want = quiz.order[quiz.round];
     const ok = h.id === want;
     quiz.lock = true;
@@ -554,7 +607,10 @@
     quiz.flash = { id: want, color: ok ? "rgba(140,230,160,.95)" : "rgba(244,140,120,.95)" };
     qbar.classList.add(ok ? "right" : "wrong");
     if (!ok) { selected = { type: "const", id: want }; focus(selected); }
-    setTimeout(() => {
+    const generation = quiz.generation;
+    quiz.timer = setTimeout(() => {
+      if (!quiz.on || quiz.generation !== generation) return;
+      quiz.timer = 0;
       quiz.flash = null; quiz.lock = false; quiz.round++;
       selected = null; resetView();
       if (quiz.round < quiz.order.length) ask(); else finish();
@@ -564,7 +620,7 @@
     const best = Math.max(store.get("sky-best", 0), quiz.score);
     store.set("sky-best", best);
     qbar.className = "quiz-bar glass on";
-    const lines = ["The sky is still a stranger — but it's patient.", "A few old friends already.", "You could navigate by night.", "The stars know your name."];
+    const lines = ["The sky is still a stranger, but it's patient.", "A few old friends already.", "You could navigate by night.", "The stars know your name."];
     qbar.innerHTML = `<div class="q">You found <b>${quiz.score} / ${quiz.order.length}</b></div><small>${lines[Math.min(3, Math.floor(quiz.score / 2.1))]} · Best ${best}</small>`;
     quiz.on = false;
     $("playQuiz").innerHTML = ICON.target + "Play again";

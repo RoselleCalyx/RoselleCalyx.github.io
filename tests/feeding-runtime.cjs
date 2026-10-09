@@ -13,9 +13,10 @@ const root=path.resolve(__dirname,'..'),out='/tmp/feeding-qa',base='http://127.0
    localStorage.setItem('wild-pond',JSON.stringify({creel:{shrimp:20,carp:20}}));
   });
   await p.goto(base+'/farm.html?season=spring&p=.5');
-  await p.waitForFunction(()=>window.__feed&&AnimalReactions.ready);
+  try{await p.waitForFunction(()=>window.__feed&&AnimalReactions.ready);}catch(e){console.error('Startup diagnostics',errors,await p.evaluate(()=>({farm:!!window.__feed,reactions:!!window.AnimalReactions,ready:window.AnimalReactions?.ready})));throw e;}
   await p.evaluate(()=>{for(const sp of ['hedgehog','penguin'])__feed.addAnimal({species:sp,name:sp});});
   await p.waitForFunction(()=>document.querySelectorAll('.actor.walk-ready.jump-ready').length===__feed.animals.length);
+  if(process.argv.includes('--calm'))await p.evaluate(()=>Sky.setCalm(true));
   const foods={snowcat:'River shrimp',rabbit:'Apple',panda:'Bamboo shoot',fox:'Wild bayberry',shiba:'Apple',hedgehog:'Wild strawberry',duckling:'River shrimp',penguin:'River shrimp'},result=[];
   for(const [sp,food] of Object.entries(foods)){
    await p.evaluate(sp=>{
@@ -50,7 +51,7 @@ const root=path.resolve(__dirname,'..'),out='/tmp/feeding-qa',base='http://127.0
   await p.locator('[data-feed]').click();await p.getByRole('button',{name:'Offer Carp',exact:true}).click();
   await p.waitForFunction(()=>__feed.animals.find(a=>a.def.species==='shiba').reaction?.kind==='munch');
   await p.waitForFunction(()=>!__feed.animals.find(a=>a.def.species==='shiba').feeding);
-  assert.match(await p.locator('.feed-line').innerText(),/munches/);
+  assert.match(await p.locator('.feed-line').innerText(),/enjoys/);
   await p.evaluate(()=>__feed.openAnimal(__feed.animals.find(a=>a.keeper)));
   await p.locator('[data-feed]').click();
   const apples=await p.evaluate(()=>Site.store.get('farm-basket',{}).apple);
