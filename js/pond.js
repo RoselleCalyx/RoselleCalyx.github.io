@@ -909,14 +909,14 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(fg, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // The carried cover stays above the boards throughout lift, carry and land.
+    window.PondEquipment?.draw(ctx,'trap',W*.87,H*.83,60*k,34*k,.85);
+    // The carried cover stays above the boards and the resting trap throughout lift, carry and land.
     // Its last airborne pose and its resting pose share the same anchor/size.
     drawNet();
     // dock lantern
     const lx = W * 0.95, ly = H * DOCK.v0 - 62 * k, fl = 0.85 + 0.15 * Math.sin(time * 7) * Math.sin(time * 3.1);
     ctx.globalCompositeOperation = "lighter"; glow(ctx, lx, ly, 80 * k * fl, "255,190,110", 0.32); glow(ctx, lx, ly, 14 * k, "255,232,180", 0.9); ctx.globalCompositeOperation = "source-over";
     if(!window.PondEquipment?.draw(ctx,'lantern',lx-17*k,ly-26*k,34*k,55*k)){ctx.strokeStyle = "rgba(40,28,18,.9)"; ctx.lineWidth = 1.2; ctx.strokeRect(lx - 5 * k, ly - 7 * k, 10 * k, 14 * k);}
-    window.PondEquipment?.draw(ctx,'trap',W*.87,H*.83,60*k,34*k,.85);
     // Matcha
     if (yuki.complete && yuki.naturalWidth) {
       const b = yukiBox();

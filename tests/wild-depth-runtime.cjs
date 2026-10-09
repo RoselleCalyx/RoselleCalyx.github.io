@@ -9,19 +9,20 @@ const root=path.resolve(__dirname,'..'),base='http://127.0.0.1:4173',out='/tmp/w
     const p=await browser.newPage({viewport:{width:1440,height:1100},reducedMotion:'reduce'}),errors=[];
     p.on('pageerror',e=>errors.push(e.message));
     await p.addInitScript(()=>{
-      window.__drawOrder=[];window.__coverFrames=[];window.__dockDrawn=false;
+      window.__drawOrder=[];window.__coverFrames=[];window.__dockDrawn=false;window.__restTrapDrawn=false;
       const draw=CanvasRenderingContext2D.prototype.drawImage;
       CanvasRenderingContext2D.prototype.drawImage=function(source,...args){
         const scene=this.canvas.id==='scene',state=window.__woodDepth||window.__pondDepth;
         if(scene&&state){
-          if(source===state.bg){__drawOrder=[];__dockDrawn=false;}
+          if(source===state.bg){__drawOrder=[];__dockDrawn=false;__restTrapDrawn=false;}
           if(source===state.fg){__drawOrder.push('foreground');__dockDrawn=true;}
+          if(source.src?.endsWith('/trap.webp')&&__dockDrawn)__restTrapDrawn=true;
           if(source.src)__drawOrder.push(source.src.split('/').pop());
         }
         const result=draw.call(this,source,...args);
         if(scene&&source.src?.endsWith('/fish-cover-v2.webp')){
           const [left,top,w,h]=args;
-          __coverFrames.push({x:left+w/2,y:top+h,w,h,phase:window.__pondDepth?.phase||'rest',aboveDock:__dockDrawn});
+          __coverFrames.push({x:left+w/2,y:top+h,w,h,phase:window.__pondDepth?.phase||'rest',aboveDock:__dockDrawn,aboveRestTrap:__restTrapDrawn});
         }
         return result;
       };
@@ -70,6 +71,7 @@ const root=path.resolve(__dirname,'..'),base='http://127.0.0.1:4173',out='/tmp/w
       await p.waitForFunction(()=>__pondDepth.shots.rest);
       const frames=await p.evaluate(()=>__coverFrames),lastPull=frames.findLastIndex(f=>f.phase==='pull'),landed=frames[lastPull+1];
       assert.ok(frames.filter(f=>['fly','sink','pull'].includes(f.phase)).every(f=>f.aboveDock),'the moving cover must not pass underneath the dock layer');
+      assert.ok(frames.filter(f=>f.phase==='pull').every(f=>f.aboveRestTrap),'the retrieved cover must be drawn above the resting trap');
       assert.equal(landed.phase,'rest');
       for(const property of ['x','y','w','h'])assert.ok(Math.abs(frames[lastPull][property]-landed[property])<2,`no ${property} jump when the cover lands`);
       const shots=await p.evaluate(()=>__pondDepth.shots);
