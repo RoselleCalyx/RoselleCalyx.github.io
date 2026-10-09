@@ -969,3 +969,53 @@ body[data-wild="pond"].wild-arriving .wild-stage::after { background: radial-gra
 @media (max-width: 900px) { .farm-actions.with-ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .farm-sign .snowcap { opacity: 0; transition: opacity 1.5s; }
 .farm-world[data-season="winter"] .farm-sign .snowcap { opacity: 1; }
+
+/* =================== the farm: feeding and how each friend says thank you =================== */
+.feed-tray { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.feed-tray[hidden] { display: none; }
+.treat { position: relative; display: grid; place-items: center; height: 42px; padding: 0; border-radius: 10px; border: 1px solid #e0d8c0; background: rgba(255, 255, 255, .6); cursor: pointer; transition: transform .15s, background .15s, box-shadow .15s; }
+.treat:hover, .treat:focus-visible { transform: translateY(-2px); background: #fff; box-shadow: 0 4px 10px rgba(80, 60, 30, .15); }
+.treat img, .treat svg { width: 26px; height: 26px; object-fit: contain; }
+.treat .emo { font-size: 20px; line-height: 1; }
+.treat b { position: absolute; right: 4px; bottom: 1px; font: 600 .6rem var(--ui); color: #6b5a3a; }
+.treat i { position: absolute; left: 4px; top: 1px; font-style: normal; font-size: .62rem; line-height: 1.2; color: #8a7a5a; }
+.treat.love { border-color: #e8b0a6; background: #fff3ef; }
+.treat.love i { color: #d0503e; }
+.treat.like i { color: #5a8a4a; }
+.treat.meh { opacity: .55; }
+.feed-line { margin: 8px 0 0; min-height: 1.2em; font-style: italic; color: #5a6a4e; }
+.feed-line:empty { display: none; }
+.feed-empty { grid-column: 1 / -1; margin: 0; font-size: .92rem; }
+.feed-empty a { color: #6a7d4e; text-decoration: underline; text-underline-offset: 2px; }
+.fly-treat { position: fixed; z-index: 3000; display: grid; place-items: center; width: 28px; height: 28px; pointer-events: none; font-size: 20px; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .35)); }
+.fly-treat img, .fly-treat svg { width: 28px; height: 28px; object-fit: contain; }
+.basket .wild-count { color: inherit; text-decoration: none; opacity: .9; }
+.basket .wild-count:hover { opacity: 1; text-decoration: underline; }
+.actor.react .bob { animation: var(--ra, react-munch) 1.6s cubic-bezier(.4, 0, .3, 1) 1 both !important; transform-origin: 50% 92%; }
+.actor.react-knead { --ra: react-knead; }
+.actor.react-binky { --ra: react-binky; }
+.actor.react-roll { --ra: react-roll; }
+.actor.react-roll .bob { transform-origin: 50% 60%; }
+.actor.react-pounce { --ra: react-pounce; }
+.actor.react-spin { --ra: react-spin; }
+.actor.react-curl { --ra: react-curl; }
+.actor.react-flap { --ra: react-flap; }
+.actor.react-slide { --ra: react-slide; }
+.actor.react-munch { --ra: react-munch; }
+.actor.react-shake { --ra: react-shake; }
+.actor.react-nap .bob { animation: react-nap 9s ease-in-out 1 both !important; }
+@keyframes react-munch { 0%, 100% { transform: none; } 10%, 30%, 50%, 70% { transform: translateY(2%) rotate(-2deg); } 20%, 40%, 60%, 80% { transform: translateY(-1%) rotate(2deg); } }
+@keyframes react-knead { 0%, 100% { transform: none; } 12%, 36%, 60% { transform: scale(1.05, .93); } 24%, 48%, 72% { transform: scale(.98, 1.04); } 86% { transform: translateY(-9%); } }
+@keyframes react-binky { 0%, 100% { transform: none; } 18% { transform: translateY(-18%) rotate(-14deg); } 36% { transform: scale(1.06, .92); } 56% { transform: translateY(-22%) rotate(16deg) scaleX(-1); } 78% { transform: scale(1.05, .94); } }
+@keyframes react-roll { 0% { transform: none; } 15% { transform: rotate(-12deg); } 60% { transform: translateY(-6%) rotate(360deg); } 75% { transform: rotate(372deg) scale(1.04, .95); } 100% { transform: rotate(360deg); } }
+@keyframes react-pounce { 0%, 100% { transform: none; } 22% { transform: scale(1.08, .84) translateY(5%); } 50% { transform: translate(10%, -20%) rotate(-10deg); } 72% { transform: translate(12%, 0) scale(1.06, .9); } 86% { transform: translate(4%, -6%); } }
+@keyframes react-spin { 0%, 100% { transform: none; } 20% { transform: scaleX(-1) translateY(-6%); } 40% { transform: none; } 60% { transform: scaleX(-1) translateY(-6%); } 80% { transform: rotate(4deg); } 90% { transform: rotate(-4deg); } }
+@keyframes react-curl { 0%, 100% { transform: none; } 28% { transform: scale(.7) translateY(14%); } 55% { transform: scale(.7) translateY(14%) rotate(25deg); } 78% { transform: scale(1.12, .9); } 90% { transform: translateY(-6%); } }
+@keyframes react-flap { 0%, 100% { transform: none; } 12%, 36%, 60% { transform: translateY(-12%) scale(1.06, .96); } 24%, 48%, 72% { transform: scale(.96, 1.04); } 86% { transform: rotate(-6deg); } }
+@keyframes react-slide { 0%, 100% { transform: none; } 22% { transform: rotate(-36deg) translateY(10%); } 70% { transform: rotate(-36deg) translate(18%, 10%); } 86% { transform: translateX(10%) rotate(4deg); } }
+@keyframes react-shake { 0%, 100% { transform: none; } 20%, 60% { transform: translateX(-4%) rotate(-4deg); } 40%, 80% { transform: translateX(4%) rotate(4deg); } }
+@keyframes react-nap { 0% { transform: none; } 12%, 88% { transform: translateY(5%) scale(1.02, .94); } 50% { transform: translateY(5%) scale(1.04, .92); } 100% { transform: none; } }
+
+.bubble.below { transform: translate(-50%, 12px); }
+.bubble.below::after { top: -8px; bottom: auto; border-top: 0; border-bottom: 8px solid rgba(250, 244, 228, .97); }
+body[data-page="farm"] .bubble.below::after { border-bottom-color: #f6f0e3; }

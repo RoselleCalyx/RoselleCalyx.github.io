@@ -268,7 +268,11 @@
     const min = vr.left - w.left + half + 12, max = vr.right - w.left - half - 12;
     const left = Math.max(min, Math.min(max, r.left + r.width / 2 - w.left));
     bubble.el.style.left = left + "px";
-    bubble.el.style.top = Math.max(250, r.top - w.top + 6) + "px";
+    // open upward when there is room, otherwise below the animal so nothing is clipped by the frame
+    const hgt = bubble.el.offsetHeight + 16, above = r.top - w.top + 6, roomBelow = w.height - (r.bottom - w.top);
+    const below = above - hgt < 0 && roomBelow > above;
+    bubble.el.classList.toggle("below", below);
+    bubble.el.style.top = (below ? r.bottom - w.top - 6 : Math.max(Math.min(250, hgt), above)) + "px";
   }
   world.addEventListener("click", closeBubble);
   // a touch on empty ground: a little sparkle, a ripple on the pond, a puff of snow in winter
@@ -282,6 +286,106 @@
     const b = worldPoint(el);
     FarmFX.burst(b.x + b.w / 2, b.y + b.h * (kind === "heart" ? 0.25 : 0.5), kind, text);
   };
+  /* ================= feeding: orchard fruit, finds from the woods, fish from the pond ================= */
+  const FOOD = {
+    apple: ["Apple", "苹果", "farm"], peach: ["Peach", "桃子", "farm"], orange: ["Orange", "橙子", "farm"], cherry: ["Cherries", "樱桃", "farm"],
+    bayberry: ["Wild bayberry", "野杨梅", "woods"], strawberry: ["Wild strawberry", "野草莓", "woods"], shoot: ["Bamboo shoot", "竹笋", "woods"], rosehip: ["Rose hip", "野蔷薇果", "woods"],
+    morel: ["Morel", "羊肚菌", "woods"], chanterelle: ["Chanterelle", "鸡油菌", "woods"], porcini: ["Porcini", "牛肝菌", "woods"], shiitake: ["Shiitake", "香菇", "woods"], matsutake: ["Matsutake", "松茸", "woods"], pinecone: ["Pine cone", "松果", "woods"],
+    crucian: ["Crucian carp", "鲫鱼", "pond"], carp: ["Carp", "鲤鱼", "pond"], koi: ["Koi", "锦鲤", "pond"], goldkoi: ["Golden koi", "金锦鲤", "pond"], catfish: ["Catfish", "鲶鱼", "pond"], mandarin: ["Mandarin fish", "鳜鱼", "pond"],
+    bitterling: ["Bitterling", "鳑鲏", "pond"], minnow: ["Stone moroko", "麦穗鱼", "pond"], loach: ["Loach", "泥鳅", "pond"], eel: ["Rice-field eel", "黄鳝", "pond"], shrimp: ["River shrimp", "河虾", "pond"], crayfish: ["Crayfish", "小龙虾", "pond"], crab: ["Mitten crab", "大闸蟹", "pond"], lotus: ["Lotus seed pod", "莲蓬", "pond"]
+  };
+  const FISH = ["crucian", "carp", "koi", "goldkoi", "catfish", "mandarin", "bitterling", "minnow", "loach", "eel"];
+  // what each friend loves, likes, and how it shows its joy
+  const DIET = {
+    snowcat: { love: FISH.concat(["shrimp"]), like: ["crab", "crayfish"], act: "knead", does: "kneads the grass and purrs like a small engine" },
+    rabbit: { love: ["strawberry", "apple"], like: ["peach", "cherry", "rosehip"], act: "binky", does: "does a happy binky, a twisting leap" },
+    panda: { love: ["shoot"], like: ["apple", "peach", "lotus"], act: "roll", does: "rolls right over with delight" },
+    fox: { love: ["bayberry", "cherry", "crucian", "minnow"], like: ["apple", "strawberry", "rosehip", "shrimp", "loach"], act: "pounce", does: "pounces round in a joyful little circle" },
+    shiba: { love: ["apple", "peach"], like: ["crucian", "carp", "porcini", "shiitake"], act: "spin", does: "spins and spins, tail going wild" },
+    hedgehog: { love: ["strawberry", "chanterelle"], like: ["apple", "bayberry", "porcini", "morel"], act: "curl", does: "curls into a ball, then pops out beaming" },
+    duckling: { love: ["shrimp", "minnow", "bitterling"], like: ["lotus", "strawberry", "loach"], act: "flap", does: "flaps its tiny wings and peeps" },
+    penguin: { love: ["crucian", "minnow", "bitterling", "shrimp", "mandarin"], like: ["crab", "crayfish", "loach", "carp"], act: "slide", does: "toboggans across the grass on its tummy" }
+  };
+  const EMOJI = { farm: "🍎", woods: "🍄", pond: "🐟" };
+  function pantry() {
+    const woods = store.get("wild-woods", {}).basket || {}, pond = store.get("wild-pond", {}).creel || {}, icons = store.get("wild-icons", {});
+    const list = [];
+    Object.entries(FOOD).forEach(([id, [name, zh, from]]) => {
+      const n = from === "farm" ? basket[id] || 0 : from === "woods" ? woods[id] || 0 : pond[id] || 0;
+      if (n > 0) list.push({ id, name, zh, from, n, icon: from === "farm" ? fruitIcon(id) : icons[id] ? `<img src="${icons[id]}" alt="">` : `<span class="emo">${EMOJI[from]}</span>` });
+    });
+    return list;
+  }
+  function useFood(f) {
+    if (f.from === "farm") { basket[f.id] = Math.max(0, (basket[f.id] || 0) - 1); if (!basket[f.id]) delete basket[f.id]; store.set("farm-basket", basket); }
+    else {
+      const key = f.from === "woods" ? "wild-woods" : "wild-pond", bag = f.from === "woods" ? "basket" : "creel", st = store.get(key, {});
+      st[bag] = st[bag] || {}; st[bag][f.id] = Math.max(0, (st[bag][f.id] || 0) - 1); if (!st[bag][f.id]) delete st[bag][f.id];
+      store.set(key, st);
+    }
+    renderBasket();
+  }
+  const fed = {};                                              // recent snacks, to know when someone is full
+  function react(a, kind) {
+    [...a.el.classList].filter((c) => c.startsWith("react")).forEach((c) => a.el.classList.remove(c));
+    void a.el.offsetWidth;
+    a.el.classList.add("react", "react-" + kind);
+    a.held = true; a.state = "idle"; place(a);
+    clearTimeout(a.reactT);
+    a.reactT = setTimeout(() => { a.el.classList.remove("react", "react-" + kind); if (!bubble || bubble.a !== a) a.held = false; }, kind === "nap" ? 9000 : 1800);
+  }
+  function flyTreat(fromEl, toEl, f) {
+    const r = fromEl.getBoundingClientRect(), t = toEl.getBoundingClientRect();
+    const d = document.createElement("div");
+    d.className = "fly-treat"; d.innerHTML = f.icon;
+    d.style.left = r.left + r.width / 2 - 14 + "px"; d.style.top = r.top + r.height / 2 - 14 + "px";
+    document.body.appendChild(d);
+    const dx = t.left + t.width / 2 - (r.left + r.width / 2), dy = t.top + t.height * 0.45 - (r.top + r.height / 2);
+    d.animate([{ transform: "translate(0,0) scale(1)" }, { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 50}px) scale(1.15)`, offset: 0.5 }, { transform: `translate(${dx}px, ${dy}px) scale(.4)`, opacity: 0.3 }],
+      { duration: reduce ? 1 : 620, easing: "cubic-bezier(.4,0,.3,1)", fill: "forwards" });
+    setTimeout(() => d.remove(), 700);
+  }
+  function feed(a, f, line, fromEl) {
+    const d = DIET[a.def.species] || { love: [], like: [], act: "munch", does: "" };
+    const key = a.def.species + ":" + a.def.name, now = Date.now(), name = a.def.name, food = f.name.toLowerCase();
+    const known = store.get("farm-diet", {}); known[a.def.species] = known[a.def.species] || {};
+    fed[key] = (fed[key] || []).filter((t) => now - t < 4 * 60 * 1000);
+    if (fed[key].length >= 3) { react(a, "nap"); emote(a, "z z"); line.textContent = `${name} is too full for another bite — time for a little nap.`; return; }
+    if (f.id === "pinecone") {                                // not food, but a wonderful toy
+      useFood(f); react(a, "pounce"); emote(a, "!");
+      known[a.def.species].pinecone = "play"; store.set("farm-diet", known);
+      line.textContent = `${name} isn’t hungry for a pine cone — but what a toy! Off it rolls into the grass.`;
+      return;
+    }
+    const kind = d.love.includes(f.id) ? "love" : d.like.includes(f.id) ? "like" : "meh";
+    known[a.def.species][f.id] = kind; store.set("farm-diet", known);
+    if (kind === "meh") { react(a, "shake"); emote(a, "…"); line.textContent = `${name} sniffs the ${food}… and politely declines.`; return; }
+    useFood(f); fed[key].push(now);
+    if (fromEl) flyTreat(fromEl, a.el, f);
+    const hearts = store.get("farm-hearts", {});
+    hearts[key] = (hearts[key] || 0) + (kind === "love" ? 3 : 1); store.set("farm-hearts", hearts);
+    setTimeout(() => {
+      if (kind === "love") { react(a, d.act); emote(a, "♥"); fxAt(a.el, "heart"); setTimeout(() => fxAt(a.el, "heart"), 380); line.textContent = `${name} loves ${food} — ${d.does}! ♥`; }
+      else { react(a, "munch"); emote(a, "♪"); line.textContent = `${name} munches the ${food} happily.`; }
+      const hb = bubble && bubble.a === a && bubble.el.querySelector("[data-heart] span"); if (hb) hb.textContent = hearts[key];
+    }, fromEl && !reduce ? 620 : 0);
+  }
+  function openTray(a, el) {
+    const tray = el.querySelector(".feed-tray"), line = el.querySelector(".feed-line");
+    const list = pantry(), known = store.get("farm-diet", {})[a.def.species] || {};
+    tray.hidden = false;
+    if (!list.length) { tray.innerHTML = `<p class="feed-empty">Nothing to offer yet. Pick ripe fruit in the orchard, forage in <a href="woods.html">the woods</a>, or fish at <a href="pond.html">the pond</a>.</p>`; positionBubble(); return; }
+    const mark = { love: "♥", like: "♪", meh: "✕", play: "✦" };
+    tray.innerHTML = list.map((f, i) => `<button type="button" class="treat ${known[f.id] || ""}" data-i="${i}" title="${esc(f.name)} · ${esc(f.zh)}" aria-label="Offer ${esc(f.name)}">${f.icon}<b>${f.n}</b>${known[f.id] ? `<i>${mark[known[f.id]]}</i>` : ""}</button>`).join("");
+    tray.onclick = (e) => {
+      const b = e.target.closest(".treat"); if (!b) return;
+      e.stopPropagation();
+      feed(a, list[+b.dataset.i], line, b);
+      openTray(a, el);
+    };
+    positionBubble();
+  }
+
   function openAnimal(a) {
     const d = a.def, hearts = store.get("farm-hearts", {}), key = d.species + ":" + d.name;
     const el = showBubble(`
@@ -290,7 +394,9 @@
       ${a.keeper ? `<p class="by">${esc(d.title || "Keeper of the Farm")}</p>` : d.adoptedBy ? `<p class="by">Adopted by ${esc(d.adoptedBy)}${d.since ? " · since " + esc(d.since) : ""}</p>` : ""}
       ${d.note ? `<p>${esc(d.note)}</p>` : ""}
       ${a.pending ? `<p class="by">Your request is on its way to the keeper. Until then, ${esc(d.name)} is visiting just for you.</p>` : ""}
-      <div class="bubble-actions"><button class="btn sm" type="button" data-heart>${ICON.heart} <span>${hearts[key] || 0}</span></button><button class="btn sm" type="button" data-pet>Pet</button></div>`, a.el, a);
+      <div class="bubble-actions"><button class="btn sm" type="button" data-heart>${ICON.heart} <span>${hearts[key] || 0}</span></button><button class="btn sm" type="button" data-pet>Pet</button><button class="btn sm" type="button" data-feed>${ICON.basket} Feed</button></div>
+      <div class="feed-tray" hidden></div><p class="feed-line" aria-live="polite"></p>`, a.el, a);
+    el.querySelector("[data-feed]").onclick = () => openTray(a, el);
     el.querySelector("[data-heart]").onclick = (e) => {
       hearts[key] = (hearts[key] || 0) + 1; store.set("farm-hearts", hearts);
       e.currentTarget.querySelector("span").textContent = hearts[key];
@@ -400,6 +506,10 @@
   let sharedTotal = null;
   function renderBasket() {
     const parts = Object.keys(TREES).filter((k) => basket[k]).map((k) => `<span class="fi">${fruitIcon(k)}${basket[k]}</span>`);
+    const sum = (bag) => Object.entries(bag || {}).filter(([id]) => FOOD[id]).reduce((n, [, v]) => n + v, 0);
+    const wn = sum(store.get("wild-woods", {}).basket), pn = sum(store.get("wild-pond", {}).creel);
+    if (wn) parts.push(`<a class="fi wild-count" href="woods.html" title="Finds from the woods">🍄${wn}</a>`);
+    if (pn) parts.push(`<a class="fi wild-count" href="pond.html" title="Catch from the pond">🐟${pn}</a>`);
     basketEl.innerHTML = `${ICON.basket}<span>${parts.length ? parts.join("") : "Your basket is empty"}</span>${sharedTotal != null ? `<span class="muted">· all visitors: ${sharedTotal}</span>` : ""}`;
   }
   function addToBasket(type, n) {
