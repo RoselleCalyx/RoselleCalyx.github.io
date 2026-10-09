@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=20261008-home" />
+  <link rel="stylesheet" href="css/style.css?v=20261009-feed3" />
 </head>
 <body data-page="home">
   <header id="site-header"></header>
@@ -20,6 +20,7 @@
     <section class="story" id="top">
       <div class="hero" id="hero">
         <div class="hero-cosmos" id="heroCosmos" aria-hidden="true"></div>
+        <div class="hero-veil" id="heroVeil" aria-hidden="true"></div>
         <canvas id="saturn" aria-hidden="true"></canvas>
         <canvas class="hero-land" id="heroLand" aria-hidden="true"></canvas>
         <noscript><img class="hero-fallback" src="assets/home-landscape.webp" alt="A traveller and a cat watching a golden horizon." /></noscript>
@@ -27,6 +28,7 @@
         <div class="hero-shade"></div>
         <div class="hero-dim" id="heroDim"></div>
         <div class="hero-horizon" aria-hidden="true"></div>
+        <canvas id="rings" aria-hidden="true"></canvas>
 
         <div class="hero-ui" id="heroUI">
           <div class="hero-text">
@@ -70,9 +72,16 @@
     </section>
 
     <div class="home-sections">
+      <div class="coda reveal">
+        <span class="coda-trail" aria-hidden="true"><i></i></span>
+        <p>For thirteen years, Cassini looked outward.<br /><em>Down here, on a small blue world, I am still looking up.</em></p>
+      </div>
+
       <section class="about glass reveal" id="about">
         <div class="avatar-frame">
+          <span class="avatar-orbit back" aria-hidden="true"></span>
           <img src="assets/avatar.jpg" alt="Portrait of Chen Jia" loading="lazy" />
+          <span class="avatar-orbit front" aria-hidden="true"><i></i></span>
         </div>
         <div>
           <p class="kicker">About</p>
@@ -179,6 +188,6 @@
   <script src="js/config.js"></script>
   <script src="js/sky.js"></script>
   <script src="js/common.js"></script>
-  <script src="js/saturn.js?v=20261008-home"></script>
+  <script src="js/saturn.js?v=20261009-home5"></script>
 </body>
 </html>

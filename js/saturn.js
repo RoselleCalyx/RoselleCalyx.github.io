@@ -19,10 +19,12 @@
   const hero = document.getElementById("hero");
   const cvS = document.getElementById("saturn"), cS = cvS && cvS.getContext("2d");
   const cvF = document.getElementById("fx"), cF = cvF && cvF.getContext("2d");
+  const cvR = document.getElementById("rings"), cR = cvR ? cvR.getContext("2d") : cF;   // the front rings, above every other layer
   if (!story || !cS || !cF) return;
   const land = document.getElementById("heroLand");
   const ui = document.getElementById("heroUI");
   const cosmos = document.getElementById("heroCosmos");
+  const veil = document.getElementById("heroVeil");
   const dim = document.getElementById("heroDim");
   const finale = document.getElementById("finale");
   const logEl = document.getElementById("missionLog");
@@ -119,6 +121,8 @@
     const c2 = cv.getContext("2d");
     const img = c2.createImageData(w, h), D = img.data;
     const front = c2.createImageData(w, h), FD = front.data;
+    const inner = c2.createImageData(w, h), ID = inner.data;     // B and C rings, inside the Cassini division
+    const CASSINI_DIV = 1.951;
     const ox = w / 2, oy = h / 2, edge = 1 + 3 / Rp;
     const rc = [0, 0, 0];
     function ring(x, y) {
@@ -185,14 +189,17 @@
               aa = cov + aa * (1 - cov);
             }
           }
-          if (ro > 0 && (front || d2 >= edge)) {
+          const seen = ro > 0 && (front || d2 >= edge);
+          const isInner = seen && Math.sqrt(x * x + y * y + zr * zr) < CASSINI_DIV;
+          if (seen && !isInner) {
             ar = rr0 * ro + ar * (1 - ro); ag = rg0 * ro + ag * (1 - ro); ab = rb0 * ro + ab * (1 - ro);
             aa = ro + aa * (1 - ro);
           }
+          const k = (py * w + px) * 4;
+          if (isInner) { ID[k] = rr0; ID[k + 1] = rg0; ID[k + 2] = rb0; ID[k + 3] = ro * 255; }   // drawn above every other layer
           if (aa > 0) {
-            const k = (py * w + px) * 4;
             D[k] = ar / aa; D[k + 1] = ag / aa; D[k + 2] = ab / aa; D[k + 3] = aa * 255;
-            if (zr > 0 && d2 > 1.015 && ro > 0) {
+            if (!isInner && zr > 0 && d2 > 1.015 && ro > 0) {
               FD[k] = rr0; FD[k + 1] = rg0; FD[k + 2] = rb0; FD[k + 3] = ro * 255;
               D[k + 3] = 0;
             }
@@ -204,7 +211,9 @@
         c2.putImageData(img, 0, 0);
         const rings = document.createElement("canvas"); rings.width = w; rings.height = h;
         rings.getContext("2d").putImageData(front, 0, 0);
-        cv.frontRings = rings; done(cv);
+        const inn = document.createElement("canvas"); inn.width = w; inn.height = h;
+        inn.getContext("2d").putImageData(inner, 0, 0);
+        cv.frontRings = rings; cv.innerRings = inn; done(cv);
       }
     }
     chunk();
@@ -238,6 +247,17 @@
     c.putImageData(im, 0, 0); return cv;
   }
 
+  // The painted clouds give way wherever they overlap Saturn's inner rings, or rise above them:
+  // everything above the lower edge of the inner rings' near arc fades out, softly, and less toward the ring tips.
+  function ringCut(px, py) {
+    const A = 1.951 * SAT.R, Bm = A * Math.sin(B), ct = Math.cos(TILT), st = Math.sin(TILT);
+    const dx = px - SAT.x, dy = py - SAT.y, u = dx * ct + dy * st, v = -dx * st + dy * ct;
+    const q = Math.min(1, Math.abs(u) / A), edge = Bm * Math.sqrt(Math.max(0, 1 - q * q));
+    const keep = smooth(edge - 56, edge + 4, v);                 // 0 above the ring line, 1 below it
+    const reach = 1 - smooth(0.86 * A, 1.04 * A, Math.abs(u));   // no cut beyond the ring tips
+    return 1 - (1 - keep) * reach;
+  }
+
   // Feather the original cutout in canvas while keeping the traveller and cat opaque.
   const landscape = new Image();
   landscape.onload = () => {
@@ -255,7 +275,7 @@
         const edgeFade = smooth(0, 100, y - edge);
         const feather = edgeFade + protection * (1 - edgeFade);
         const bottom = 1 - smooth(land.height - 155, land.height, y);
-        d[k + 3] *= feather * bottom;
+        d[k + 3] *= feather * bottom * ringCut(x, y + LAND_Y0);
       }
     }
     c.putImageData(im, 0, 0);
@@ -276,6 +296,7 @@
     dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
     cvS.width = cvF.width = Math.round(vw * dpr);
     cvS.height = cvF.height = Math.round(vh * dpr);
+    if (cvR) { cvR.width = cvS.width; cvR.height = cvS.height; }
     F = window.HOME_FRAME(vw, vh);
     if (land) {
       land.style.width = F.IW * F.S + "px";
@@ -292,6 +313,11 @@
       } else full();
     }
     moons = MOONS.map((m, i) => moonSprite(m.r * F.S * dpr, i * 17 + 3));
+    if (veil) {                                             // deep space wrapped around the planet and its rings
+      const R = SAT.R * F.S, w = R * 6.1, h = R * 3.5;
+      veil.style.width = w + "px"; veil.style.height = h + "px";
+      veil.style.transform = `translate(${F.left + SAT.x * F.S - w / 2}px, ${F.top + SAT.y * F.S - h / 2}px) rotate(${TILT}rad)`;
+    }
   }
 
   /* ---------- Cassini, drawn as in the painting: boom forward, dish behind ---------- */
@@ -468,44 +494,26 @@
     c.globalAlpha=1; c.globalCompositeOperation="source-over";
   }
 
-  const ringLayer = document.createElement("canvas");
-  function drawRingDust(target, S, motionTime) {
-    if (ringLayer.width !== cvF.width || ringLayer.height !== cvF.height) {
-      ringLayer.width = cvF.width; ringLayer.height = cvF.height;
-    }
-    const c = ringLayer.getContext("2d"); c.clearRect(0, 0, ringLayer.width, ringLayer.height);
-    c.save();
-    const [px,py]=P(SAT.x,SAT.y);
-    if(planet && planet.frontRings) {
-      const k=SAT.R*S/Rpx;
-      c.save(); c.translate(px,py); c.rotate(TILT); c.scale(k,k);
-      c.drawImage(planet.frontRings,-planet.width/2,-planet.height/2); c.restore();
-    }
-    const ct=Math.cos(TILT), st=Math.sin(TILT);
-    for(let i=0;i<(lowPower?100:240);i++) {
-      const radius=SAT.R*(1.55+h1(i+50)*.75), a=h1(i+110)*Math.PI+motionTime*.009/(radius/SAT.R);
-      const dx=Math.cos(a)*radius, dy=Math.sin(a)*radius*Math.sin(B);
-      const x=px+(dx*ct-dy*st)*S, y=py+(dx*st+dy*ct)*S;
-      const dist=Math.hypot(dx,dy);
-      if(dist<SAT.R*1.035) continue;
-      c.fillStyle="rgba(235,218,190,"+(.16+h1(i+310)*.36)+")";
-      const size=(.35+h1(i+410)*1.15)*S;
-      c.beginPath();c.ellipse(x,y,size,size*.58,TILT,0,Math.PI*2);c.fill();
-    }
-
-    // A soft occlusion envelope keeps every ring and particle behind the entire subject.
-    c.globalCompositeOperation="destination-out";
-    const [hx,hy]=P(580,650);
-    c.translate(hx,hy); c.scale(220*S,240*S);
-    const mask=c.createRadialGradient(0,0,0,0,0,1);
-    mask.addColorStop(0,"rgba(0,0,0,1)"); mask.addColorStop(.65,"rgba(0,0,0,1)");
-    mask.addColorStop(1,"rgba(0,0,0,0)");
-    c.fillStyle=mask; c.fillRect(-1,-1,2,2);
-    c.restore();
-    target.drawImage(ringLayer,0,0);
+  function drawRingImage(c, S, image) {
+    if (!planet || !image) return;
+    const [px, py] = P(SAT.x, SAT.y), k = SAT.R * S / Rpx;
+    c.save(); c.translate(px, py); c.rotate(TILT); c.scale(k, k);
+    c.drawImage(image, -planet.width / 2, -planet.height / 2); c.restore();
   }
-
-
+  function drawRingDust(c, S, motionTime) {
+    const [px, py] = P(SAT.x, SAT.y);
+    drawRingImage(c, S, planet && planet.innerRings);
+    const ct = Math.cos(TILT), st = Math.sin(TILT);
+    for (let i = 0; i < (lowPower ? 100 : 240); i++) {
+      const radius = SAT.R * (1.55 + h1(i + 50) * .75), a = h1(i + 110) * Math.PI + motionTime * .009 / (radius / SAT.R);
+      const dx = Math.cos(a) * radius, dy = Math.sin(a) * radius * Math.sin(B);
+      const x = px + (dx * ct - dy * st) * S, y = py + (dx * st + dy * ct) * S;
+      if (Math.hypot(dx, dy) < SAT.R * 1.035) continue;
+      c.fillStyle = "rgba(235,218,190," + (.16 + h1(i + 310) * .36) + ")";
+      const size = (.35 + h1(i + 410) * 1.15) * S;
+      c.beginPath(); c.ellipse(x, y, size, size * .58, TILT, 0, Math.PI * 2); c.fill();
+    }
+  }
 
   /* ---------- scroll progress ---------- */
   let pTarget = 0, p = 0;
@@ -514,6 +522,17 @@
     const r = story.getBoundingClientRect();
     const total = story.offsetHeight - (vh || innerHeight);
     pTarget = total > 0 ? clamp(-r.top / total, 0, 1) : 0;
+    leaving(r);
+  }
+  let leaveLast = -1;
+  function leaving(r) {
+    const H = innerHeight, k = clamp((H - r.bottom) / (H * 0.7), 0, 1), e = k * k * (3 - 2 * k);
+    if (Math.abs(e - leaveLast) < 0.002) return;
+    leaveLast = e;
+    hero.classList.toggle("leaving", e > 0);
+    hero.style.setProperty("--leave", e.toFixed(3));
+    hero.style.opacity = (1 - e * 0.85).toFixed(3);
+    document.body.style.setProperty("--home-sky", (0.48 + e * 0.37).toFixed(3));
   }
   addEventListener("scroll", readScroll, { passive: true });
 
@@ -599,7 +618,9 @@
     // Front ring arc, ice particles, then the spacecraft.
     cF.clearRect(0, 0, cvF.width, cvF.height);
     const motionTime = calm ? 0 : time;
-    drawRingDust(cF, S, motionTime);
+    if (cR !== cF) cR.clearRect(0, 0, cvR.width, cvR.height);
+    drawRingImage(cF, S, planet && planet.frontRings);          // the outer ring's near arc, just above the landscape
+    drawRingDust(cR, S, motionTime);                           // the inner rings and the ice, above everything
     drawArrival(cF, p, S, motionTime);
     if (cosmos) cosmos.style.transform = calm ? "none" : `translate3d(${Math.sin(time*.025)*.35}%, ${-p*1.5}%, 0) scale(1.02)`;
 
@@ -607,7 +628,9 @@
     const uiA = 1 - smooth(0.02, 0.1, p);
     ui.style.opacity = uiA.toFixed(3);
     ui.style.visibility = uiA < 0.01 ? "hidden" : "";
-    dim.style.opacity = (smooth(0.8, 1, p) * 0.46).toFixed(3);
+    const dimA = smooth(0.8, 1, p) * 0.46;
+    dim.style.opacity = dimA.toFixed(3);
+    if (cvR) cvR.style.opacity = (1 - dimA).toFixed(3);              // the top layer dims with the rest at the end
     const fA = smooth(0.84, 0.92, p);
     finale.style.opacity = fA.toFixed(3);
     finale.style.transform = `translate(-50%, ${-40 - fA * 10}%)`;

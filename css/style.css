@@ -166,12 +166,16 @@ button { font: inherit; color: inherit; }
    ===================================================================== */
 .story { position: relative; height: 330vh; }
 .hero { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 560px; overflow: hidden; }
-#saturn, #fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+#saturn, #fx, #rings { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .hero-land { position: absolute; max-width: none; pointer-events: none; user-select: none; }
-.hero-cosmos { position: absolute; inset: -3%; background: url("../assets/home-galaxy.webp") center / cover no-repeat; opacity: .88; will-change: transform; }
+.hero-cosmos { position: absolute; inset: -3%; background: url("../assets/home-galaxy.webp") center / cover no-repeat; opacity: .86; will-change: transform; filter: saturate(.78) brightness(.9) contrast(.92); -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 46%, rgba(0,0,0,.45) 62%, rgba(0,0,0,.08) 74%, transparent 82%); mask-image: linear-gradient(180deg, #000 0%, #000 46%, rgba(0,0,0,.45) 62%, rgba(0,0,0,.08) 74%, transparent 82%); }
+/* a veil of deep space behind Saturn and its rings, so the Milky Way fades out before it reaches them */
+.hero-veil { position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(4, 6, 14, .9) 0%, rgba(4, 6, 14, .82) 52%, rgba(6, 8, 18, .5) 74%, rgba(8, 10, 22, .18) 90%, rgba(8, 10, 22, 0) 100%); }
 .hero-fallback { position: absolute; width: 100%; bottom: 0; }
 .hero-horizon { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, transparent 64%, rgba(4,6,13,.12) 76%, rgba(4,6,13,.65) 91%, var(--bg) 100%); }
-body[data-page="home"] #sky { opacity: .48; }
+body[data-page="home"] #sky { opacity: var(--home-sky, .48); }
+/* as the story ends, the hero dissolves into the same night sky that continues behind the page */
+.hero.leaving { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - var(--leave, 0) * 70%), transparent 100%); mask-image: linear-gradient(180deg, #000 calc(100% - var(--leave, 0) * 70%), transparent 100%); }
 body[data-home-sky="impressionist"] #sky { opacity: 1; }
 body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
 .hero-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(3, 4, 10, .66) 0%, rgba(3, 4, 10, .25) 28%, rgba(3, 4, 10, 0) 46%), linear-gradient(180deg, rgba(3, 4, 10, .55) 0%, rgba(3, 4, 10, 0) 14%); }
@@ -226,12 +230,28 @@ body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
 }
 
 .home-sections { position: relative; max-width: 1180px; margin: 0 auto; padding: 92px var(--gutter) 40px; display: grid; gap: 28px; }
-.home-sections::before { content: ""; position: absolute; left: 50%; top: -90px; width: 100vw; height: 500px; transform: translateX(-50%); background: linear-gradient(var(--bg), rgba(4,6,13,.85) 35%, transparent 85%), radial-gradient(ellipse at 50% 45%, rgba(170,121,88,.09), transparent 65%); pointer-events: none; z-index: -1; }
+.home-sections::before { content: ""; position: absolute; left: 50%; top: -60px; width: 100vw; height: 640px; transform: translateX(-50%); background: radial-gradient(ellipse 60% 55% at 50% 42%, rgba(170, 121, 88, .08), transparent 70%); pointer-events: none; z-index: -1; }
+.home-sections { padding-top: 40px; }
+/* the coda: Cassini looked outward; the page turns to the person still looking up */
+.coda { text-align: center; max-width: 660px; margin: 0 auto 4px; }
+.coda-trail { position: relative; display: block; width: 1px; height: clamp(90px, 14vh, 150px); margin: 0 auto 26px; background: linear-gradient(rgba(244, 226, 180, 0), rgba(244, 226, 180, .45)); }
+.coda-trail i { position: absolute; left: 50%; top: 0; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #fff4d6; box-shadow: 0 0 10px 3px rgba(255, 214, 150, .65), 0 -14px 12px -4px rgba(255, 214, 150, .35); animation: coda-fall 4.2s cubic-bezier(.5, 0, .7, 1) infinite; }
+@keyframes coda-fall { 0% { top: 0; opacity: 0; } 18% { opacity: 1; } 82% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.coda p { margin: 0; font-family: var(--serif); font-size: clamp(1.15rem, 1.7vw, 1.45rem); line-height: 1.55; color: var(--ink-2); letter-spacing: .01em; }
+.coda em { color: var(--gold-2); }
+.coda + .about { margin-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .coda-trail i { animation: none; top: 100%; } }
 body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,32,.72), rgba(7,11,22,.54)); border-color: rgba(226,192,124,.13); box-shadow: 0 24px 80px rgba(0,0,0,.2); scroll-margin-top: 90px; }
 @media (prefers-reduced-motion: reduce) { .hero-cosmos { will-change: auto; } html { scroll-behavior: auto; } .reveal { transition: none; } }
 .section-title { font-family: var(--serif); font-weight: 400; font-size: clamp(1.9rem, 3.4vw, 2.5rem); margin: 0 0 18px; line-height: 1.1; }
 .about { display: grid; grid-template-columns: 240px 1fr; gap: 38px; padding: 34px; align-items: start; }
-.avatar-frame { position: relative; }
+.avatar-frame { position: relative; isolation: isolate; }
+.avatar-frame img { position: relative; z-index: 1; }
+/* a faint ring around the portrait, tilted like Saturn’s: behind at the top, in front at the bottom */
+.avatar-orbit { position: absolute; left: -11%; right: -11%; top: 56%; height: 26%; border: 1px solid rgba(244, 226, 180, .32); border-radius: 50%; transform: rotate(-12deg); pointer-events: none; }
+.avatar-orbit.back { z-index: 0; }
+.avatar-orbit.front { z-index: 2; border-color: rgba(244, 226, 180, .55); clip-path: inset(50% 0 0 0); box-shadow: 0 6px 14px -8px rgba(255, 214, 150, .4); }
+.avatar-orbit i { position: absolute; left: 76%; bottom: -3px; width: 5px; height: 5px; border-radius: 50%; background: #fff4d6; box-shadow: 0 0 8px 2px rgba(255, 214, 150, .7); }
 .avatar-frame img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px; filter: saturate(.92) contrast(1.02); }
 .avatar-frame::after { content: ""; position: absolute; inset: -8px; border: 1px solid var(--line-2); border-radius: 16px; pointer-events: none; }
 .about p { margin: 0 0 14px; color: var(--ink-2); font-size: 1.08rem; }
