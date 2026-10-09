@@ -1,10 +1,11 @@
 /* Transparent material studies, with live water and light supplied by pond.js. */
 (function(){
   const images={};let loaded=0;
-  for(const name of ['dock','basket','trap','lantern','stake','rod']){
+  const files={dock:'dock.webp',fishCover:'fish-cover-v2.webp',trap:'trap.webp',lantern:'lantern.webp',stake:'stake.webp',rod:'rod.webp'};
+  for(const [name,file] of Object.entries(files)){
     const img=new Image();img.decoding='async';
     img.onload=async()=>{try{await img.decode();images[name]=img;loaded++;dispatchEvent(new Event('pondgearready'));}catch{}};
-    img.src=`assets/wild/equipment/${name}.webp`;
+    img.src=`assets/wild/equipment/${file}`;
   }
   function draw(g,name,x,y,w,h,alpha=1){
     const img=images[name];if(!img)return false;

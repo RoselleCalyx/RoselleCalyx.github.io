@@ -6,7 +6,7 @@
    Three ways to fish:
      rod   cast, watch the float, strike on the bite, then hold to reel
            and keep the line's tension in the safe band
-     net   a woven bamboo basket lowers into the shallows, then comes up
+     net   an open-bottom bamboo cover encloses fish against the shallow bed
      trap  a 地笼 set from a stake soaks for a while (even while you are
            away), then comes up with crabs, crayfish, shrimp and loach
    In winter the pond freezes: there is one hole, for ice fishing.
@@ -21,20 +21,20 @@
 
   /* ================= what lives here ================= */
   const CATCH = [
-    { id: "crucian", name: "Crucian carp", zh: "鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or basket, any season." },
+    { id: "crucian", name: "Crucian carp", zh: "鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or bamboo cover, any season." },
     { id: "carp", name: "Common carp", zh: "鲤鱼", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
     { id: "koi", name: "Koi", zh: "锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "Rare, on the rod; most often in summer." },
     { id: "goldkoi", name: "Golden koi", zh: "金锦鲤", rarity: 5, len: [48, 72], fight: 0.85, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "A summer legend." },
     { id: "catfish", name: "Catfish", zh: "鲶鱼", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
     { id: "mandarin", name: "Mandarin fish", zh: "鳜鱼", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "桃花流水鳜鱼肥 — “peach blossoms on the stream, and the mandarin fish are fat.”", hint: "Rare; best in spring." },
-    { id: "bitterling", name: "Bitterling", zh: "鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "In the bamboo basket." },
-    { id: "minnow", name: "Stone moroko", zh: "麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "In the bamboo basket." },
-    { id: "loach", name: "Loach", zh: "泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Basket or trap." },
-    { id: "shrimp", name: "River shrimp", zh: "河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Basket or trap." },
+    { id: "bitterling", name: "Bitterling", zh: "鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "Under the bamboo cover." },
+    { id: "minnow", name: "Stone moroko", zh: "麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "Under the bamboo cover." },
+    { id: "loach", name: "Loach", zh: "泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Bamboo cover or trap." },
+    { id: "shrimp", name: "River shrimp", zh: "河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Bamboo cover or trap." },
     { id: "crayfish", name: "Crayfish", zh: "小龙虾", rarity: 1, len: [8, 14], fight: 0.1, kind: "crust", text: "Red-armoured and indignant, especially in summer.", hint: "In the trap, warm months." },
     { id: "crab", name: "Mitten crab", zh: "大闸蟹", rarity: 2, len: [6, 10], fight: 0.1, kind: "crust", text: "秋风起，蟹脚痒 — “when the autumn wind rises, the crabs’ legs itch.” Hairy claws, golden roe.", hint: "In the trap; best in autumn." },
     { id: "eel", name: "Rice-field eel", zh: "黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "Rare, in the trap." },
-    { id: "lotus", name: "Lotus seed pod", zh: "莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; the basket brought one up with the fish.", hint: "Summer, in the basket." },
+    { id: "lotus", name: "Lotus seed pod", zh: "莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; found beside the bamboo cover among the fish.", hint: "Summer, with the bamboo cover." },
     { id: "boot", name: "Old boot", zh: "旧靴子", rarity: 1, len: [0, 0], kind: "junk", text: "Someone’s, once. It goes back on the bank to dry.", hint: "Everyone catches one eventually." },
     { id: "bottle", name: "Message in a bottle", zh: "漂流瓶", rarity: 4, len: [0, 0], kind: "junk", text: "There is a note inside: “Whoever finds this — write back.”", hint: "Drifts in now and then." }
   ];
@@ -530,23 +530,29 @@
     showCatch([{ id: f.id, ...(sizeOf(f.id) || {}) }], "rod", f.x, f.y);
   }
 
-  /* ---------- the fishing bamboo basket (saved tool id stays "net") ---------- */
+  /* ---------- the open-bottom fishing cover (saved tool id stays "net") ---------- */
+  const COVER_FLY = 1.1, COVER_PULL = 1.9;
+  const coverRestPose = () => ({x:W*.875,y:H*.975,w:36*k});
   function throwNet(x, y) {
     if (net || frozen()) return;
     const s = scaleAt(y);
-    net = { x, y, r: 60 * k * s, t0: time, phase: "fly", caught: [] };
-    hint.textContent = "Lowering the bamboo basket into the shallows…";
+    net = { x, y, r: 36 * k * s, t0: time, phase: "fly", caught: [] };
+    hint.textContent = "Pressing the open bamboo cover into the shallows…";
   }
   function updateNet() {
     if (!net) return;
     const t = time - net.t0;
-    if (net.phase === "fly" && t > 0.8) {
+    if (net.phase === "fly" && t > COVER_FLY) {
       net.phase = "sink"; net.t1 = time;
       splash(net.x, net.y, 18, 0.9); ripple(net.x, net.y, net.r / (40 * k), 1);
       shadows.forEach((s) => { if (((s.x - net.x) / net.r) ** 2 + ((s.y - net.y) / (net.r * 0.34)) ** 2 < 1) { s.mode = "trapped"; net.caught.push(s); } });
     }
-    if (net.phase === "sink" && time - net.t1 > 1.3) { net.phase = "pull"; net.t2 = time; }
-    if (net.phase === "pull" && time - net.t2 > 0.9) {
+    if (net.phase === "sink" && time - net.t1 > .55 && !net.gathering) {
+      net.gathering = true;
+      hint.textContent = "The wide rim rests on the bed. Gathering fish through the top opening…";
+    }
+    if (net.phase === "sink" && time - net.t1 > 1.3) { net.phase = "pull"; net.t2 = time; hint.textContent = "Lifting the bamboo cover clear of the water…"; }
+    if (net.phase === "pull" && time - net.t2 > COVER_PULL) {
       const got = net.caught.map((s) => ({ id: BY[s.id].len[1] > 40 && Math.random() < 0.5 ? "crucian" : s.id }));
       net.caught.forEach((s) => { shadows = shadows.filter((q) => q !== s); setTimeout(() => shadows.push(makeShadow(false)), 5000 + Math.random() * 4000); });
       const n = 2 + ((Math.random() * 3) | 0) + (time < bait.until ? 1 : 0);
@@ -556,21 +562,57 @@
       showCatch(got.map((g) => ({ ...g, ...(sizeOf(g.id) || {}) })), "net", at.x, at.y);
     }
   }
+  function drawFishCover(g,x,y,w,h) {
+    if(window.PondEquipment?.draw(g,'fishCover',x-w/2,y-h,w,h))return;
+    // An open cage also remains usable if the material image cannot load.
+    g.save();g.lineWidth=Math.max(.7,w/65);
+    for(let i=0;i<32;i++){
+      const a=i/32*TAU,c=Math.cos(a),s=Math.sin(a);
+      g.strokeStyle=s>0?'#a78a50':'#594932';g.beginPath();
+      g.moveTo(x+c*w*.18,y-h+s*w*.03);g.lineTo(x+c*w*.47,y+s*w*.09);g.stroke();
+    }
+    g.strokeStyle='#bba467';g.lineWidth=Math.max(1,w/45);
+    for(let i=0;i<=5;i++){const p=i/5;g.beginPath();g.ellipse(x,y-h+h*p,w*(.18+p*.29),w*(.03+p*.06),0,0,TAU);g.stroke();}
+    g.restore();
+  }
+  function coverPose() {
+    const rest=coverRestPose();
+    if(!net)return {...rest,h:rest.w*640/343,waterY:rest.y,wet:false};
+    const waterW=72*k*scaleAt(net.y),waterH=waterW*640/343;
+    let x=net.x,y=net.y,w=waterW,waterY=net.y,wet=false;
+    const carryY=Math.min(rest.y-75*k,yukiBox().y-12*k);
+    if(net.phase==='fly'){
+      const age=time-net.t0,lift=smooth(0,.25,age),carry=smooth(.2,.85,age),lower=smooth(.85,COVER_FLY,age);
+      x=lerp(rest.x,x,carry);waterY=lerp(rest.y,net.y,carry);w=lerp(rest.w,waterW,carry);
+      y=lerp(rest.y,lerp(carryY,net.y-25*k,carry),lift);y=lerp(y,net.y,lower);
+    }
+    if(net.phase==='sink'){y+=smooth(0,.55,time-net.t1)*waterH*.28;wet=true;}
+    if(net.phase==='pull'){
+      const age=time-net.t2,lift=smooth(0,.4,age),carry=smooth(.3,1.15,age),land=smooth(1.15,COVER_PULL,age);
+      // Lift clear first, carry above the boards, then lower onto the deck.
+      const clearanceY=Math.min(net.y-25*k,H*DOCK.v0-25*k);
+      x=lerp(net.x,rest.x,carry);w=lerp(waterW,rest.w,carry);
+      waterY=lerp(net.y,rest.y,carry);
+      y=lerp(net.y+waterH*.28,lerp(clearanceY,carryY,carry),lift);
+      y=lerp(y,rest.y,land);wet=carry===0&&y>net.y;
+    }
+    return {x,y,w,h:w*640/343,waterY,wet};
+  }
   function drawNet() {
-    if (!net) return;
-    const t=time-net.t0,bx=W*.86,by=H*.82,sc=scaleAt(net.y),w=58*k*sc,h=w*1.02;
-    let x=net.x,y=net.y,depth=0,alpha=1;
-    if(net.phase==='fly'){const p=smooth(0,.8,t);x=lerp(bx,x,p);y=lerp(by,y,p)-Math.sin(p*Math.PI)*45*k;}
-    if(net.phase==='sink'){depth=smooth(0,1.3,time-net.t1);y+=depth*h*.55;alpha=1-depth*.62;}
-    if(net.phase==='pull'){const p=smooth(0,.9,time-net.t2);x=lerp(x,bx,p*.7);y=lerp(y,by,p*.7)-Math.sin(p*Math.PI)*35*k;alpha=.42+p*.58;if(Math.random()<.35)parts.push({x:x+(Math.random()-.5)*w*.6,y:y+6*k,vx:0,vy:35,life:.65,age:0,r:1.2,col:'rgba(220,235,255,.8)'});}
-    // A tether stays attached to the basket handle through lowering and hauling.
-    ctx.strokeStyle='rgba(219,195,154,.64)';ctx.lineWidth=1*k;ctx.beginPath();ctx.moveTo(bx,by-8*k);ctx.quadraticCurveTo((bx+x)/2,Math.max(by,y)-12*k,x,y-h*.9);ctx.stroke();
-    ctx.save();ctx.globalAlpha=alpha;
-    ctx.fillStyle='rgba(7,19,30,.24)';ctx.beginPath();ctx.ellipse(x,net.y,w*.55,w*.15,0,0,TAU);ctx.fill();
-    ctx.filter=depth?'brightness(.72) saturate(.68)':'brightness(.9)';
-    if(!window.PondEquipment?.draw(ctx,'basket',x-w/2,y-h,w,h)){ctx.fillStyle='#a27b43';ctx.beginPath();ctx.ellipse(x,y-h*.45,w*.4,h*.45,0,0,TAU);ctx.fill();}
-    ctx.filter='none';
-    if(net.phase==='sink'){ctx.strokeStyle='rgba(189,218,233,.25)';ctx.lineWidth=1;for(let i=0;i<4;i++){const yy=net.y+i*4*k;ctx.beginPath();ctx.ellipse(x,yy,w*.6+i*3*k,w*.12+i*k,0,0,TAU);ctx.stroke();}}
+    const {x,y,w,h,waterY,wet}=coverPose(),rest=coverRestPose();
+    if(net){
+      // Hemp tether tied to the side hoop, below the open neck.
+      ctx.strokeStyle='rgba(219,195,154,.64)';ctx.lineWidth=1*k;ctx.beginPath();ctx.moveTo(rest.x+12*k,rest.y-8*k);ctx.quadraticCurveTo((rest.x+x)/2,Math.max(rest.y,y)-12*k,x+w*.24,y-h*.65);ctx.stroke();
+      if(net.phase==='pull'&&time-net.t2<1.15&&Math.random()<.35)parts.push({x:x+(Math.random()-.5)*w*.6,y:y+6*k,vx:0,vy:35,life:.65,age:0,r:1.2,col:'rgba(220,235,255,.8)'});
+    }
+    ctx.save();
+    ctx.fillStyle='rgba(7,19,30,.24)';ctx.beginPath();ctx.ellipse(x,waterY,w*.55,w*.15,0,0,TAU);ctx.fill();
+    if(wet){
+      ctx.save();ctx.beginPath();ctx.rect(0,0,W,waterY);ctx.clip();drawFishCover(ctx,x,y,w,h);ctx.restore();
+      ctx.save();ctx.beginPath();ctx.rect(0,waterY,W,H-waterY);ctx.clip();ctx.globalAlpha=.48;ctx.filter='brightness(.7) saturate(.6)';drawFishCover(ctx,x,y,w,h);ctx.restore();
+      ctx.strokeStyle='rgba(189,218,233,.3)';ctx.lineWidth=1;
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(x,waterY+i*2*k,w*(.43+i*.1),w*(.085+i*.025),0,0,TAU);ctx.stroke();}
+    }else{ctx.filter='brightness(.9)';drawFishCover(ctx,x,y,w,h);}
     ctx.restore();
   }
 
@@ -811,15 +853,16 @@
     // bait pellets
     if (time < bait.until && bait.x != null) { ctx.fillStyle = "rgba(200,170,110,.8)"; for (let i = 0; i < 10; i++) { const a = i * 2.4; ctx.beginPath(); ctx.arc(bait.x + Math.cos(a) * 20 * k * (i / 10), bait.y + Math.sin(a) * 6 * k * (i / 10), 1.4, 0, TAU); ctx.fill(); } }
     drawTraps();
-    drawNet();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(fg, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // The carried cover stays above the boards throughout lift, carry and land.
+    // Its last airborne pose and its resting pose share the same anchor/size.
+    drawNet();
     // dock lantern
     const lx = W * 0.95, ly = H * DOCK.v0 - 62 * k, fl = 0.85 + 0.15 * Math.sin(time * 7) * Math.sin(time * 3.1);
     ctx.globalCompositeOperation = "lighter"; glow(ctx, lx, ly, 80 * k * fl, "255,190,110", 0.32); glow(ctx, lx, ly, 14 * k, "255,232,180", 0.9); ctx.globalCompositeOperation = "source-over";
     if(!window.PondEquipment?.draw(ctx,'lantern',lx-17*k,ly-26*k,34*k,55*k)){ctx.strokeStyle = "rgba(40,28,18,.9)"; ctx.lineWidth = 1.2; ctx.strokeRect(lx - 5 * k, ly - 7 * k, 10 * k, 14 * k);}
-    if(!net)window.PondEquipment?.draw(ctx,'basket',W*.85,H*.94,34*k,36*k,.9);
     window.PondEquipment?.draw(ctx,'trap',W*.87,H*.83,60*k,34*k,.85);
     // Matcha
     if (yuki.complete && yuki.naturalWidth) {
@@ -850,7 +893,7 @@
     });
     if (hover === "water" && !busy()) {                        // where the cast will land
       ctx.strokeStyle = "rgba(244,226,180,.55)"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
-      const s = scaleAt(hoverAt[1]), r = (tool === "net" ? 60 : 12) * k * s;
+      const s = scaleAt(hoverAt[1]), r = (tool === "net" ? 36 : 12) * k * s;
       ctx.beginPath(); ctx.ellipse(hoverAt[0], hoverAt[1], r, r * 0.34, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
     }
   }
@@ -864,14 +907,14 @@
     const stats = (c) => (c.cm ? `${c.cm} cm${c.kg ? ` · ${c.kg < 1 ? Math.max(1, Math.round(c.kg * 1000)) + " g" : c.kg.toFixed(1) + " kg"}` : ""}` : "");
     cardEl.innerHTML = single ? `
       <div class="cc-art"><img src="${iconOf(c0.id)}" alt="" width="160" height="160"></div>
-      <p class="cc-kicker">${firsts.length ? "New in your log!" : how === "rod" ? "On the line" : how === "net" ? "In the basket" : "In the trap"}</p>
+      <p class="cc-kicker">${firsts.length ? "New in your log!" : how === "rod" ? "On the line" : how === "net" ? "Under the bamboo cover" : "In the trap"}</p>
       <h3>${esc(info.name)} <span class="zh">${esc(info.zh)}</span></h3>
       <p class="cc-stats">${stats(c0)}${stats(c0) ? " · " : ""}<span class="stars">${"★".repeat(info.rarity)}</span></p>
       <p class="cc-text">${esc(info.text)}</p>
       <div class="cc-actions">${c0.id === "bottle" ? `<a class="btn sm primary" href="message.html">Read the bottles →</a>` : ""}<button class="btn sm primary" type="button" data-keep>${info.kind === "junk" ? "Keep it" : "Into the creel"}</button>${info.kind === "fish" || info.kind === "crust" ? `<button class="btn sm" type="button" data-release>Let it go</button>` : ""}</div>`
       : `
-      <p class="cc-kicker">${how === "net" ? "The basket comes up" : "The trap comes up"}${firsts.length ? " · something new!" : ""}</p>
-      <h3>${list.length} in the ${how === "net" ? "basket" : "trap"}</h3>
+      <p class="cc-kicker">${how === "net" ? "Caught with the bamboo cover" : "The trap comes up"}${firsts.length ? " · something new!" : ""}</p>
+      <h3>${list.length} ${how === "net" ? "caught in the shallows" : "in the trap"}</h3>
       <ul class="cc-list">${list.map((c) => `<li class="${firsts.includes(c.id) ? "new" : ""}"><img src="${iconOf(c.id)}" alt="" width="56" height="56"><b>${esc(BY[c.id].name)}</b><span class="zh">${esc(BY[c.id].zh)}</span><small>${stats(c)}</small></li>`).join("")}</ul>
       <div class="cc-actions"><button class="btn sm primary" type="button" data-keep>Keep them all</button><button class="btn sm" type="button" data-release>Let them go</button></div>`;
     cardEl.hidden = false;
@@ -906,7 +949,7 @@
   /* ================= HUD & tools ================= */
   const tools = {
     rod: { hint: "Tap the water to cast. Strike when the float goes under, then hold to reel." },
-    net: { hint: "Tap the shallows to lower your bamboo basket, then lift your catch." },
+    net: { hint: "Tap the shallows to press the open bamboo cover over fish, then gather them through its top." },
     trap: { hint: "Tap a stake to set a 地笼 trap. It soaks for about a minute — even if you leave." }
   };
   function setTool(t) {
@@ -1015,7 +1058,7 @@
   document.getElementById("btnBack2").addEventListener("click", () => Wd.back("pond"));
   document.getElementById("btnLog").addEventListener("click", openLog);
   document.getElementById("btnBait").addEventListener("click", scatterBait);
-  document.getElementById("btnTips").addEventListener("click", () => toast("Rod: wait until the float goes right under, then strike. While reeling, hold to pull and let go before the needle reaches the red. Space works too. Basket: lower it into the shallows where shadows gather. Traps: set one at a stake and come back in a minute.", 6000));
+  document.getElementById("btnTips").addEventListener("click", () => toast("Rod: wait until the float goes right under, then strike. While reeling, hold to pull and let go before the needle reaches the red. Space works too. Bamboo cover: press its open rim onto the shallow bed and collect fish through the neck. Traps: set one at a stake and come back in a minute.", 6000));
 
   function restoreSavedState() {
     const latest = Wd.store.get("wild-pond", { creel: {}, seen: {}, best: {}, traps: [null, null, null] }) || {};
