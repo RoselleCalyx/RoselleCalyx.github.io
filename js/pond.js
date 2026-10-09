@@ -234,6 +234,59 @@
   const P = (u, v) => [u * W, v * H];
   const frozen = () => season.name === "winter";
   const HOLE = { u: 0.46, v: 0.69 };
+  const iceRim = new Image(); iceRim.decoding = 'async';
+  iceRim.src = 'assets/wild/equipment/ice-hole-rim-v1.webp';
+  function holePath(g, x, y, rx, ry) {
+    g.beginPath();
+    for(let i=0;i<=64;i++){
+      const a=i/64*TAU,edge=1+.018*Math.sin(a*7)+.012*Math.cos(a*11);
+      const px=x+Math.cos(a)*rx*edge,py=y+Math.sin(a)*ry*edge;
+      i ? g.lineTo(px,py) : g.moveTo(px,py);
+    }
+    g.closePath();
+  }
+  function drawIceHole() {
+    if(!frozen())return;
+    const [x,y]=P(HOLE.u,HOLE.v),rx=55*k,ry=18*k;
+    ctx.save();
+    // The open water lies below the cut ice, with a faint sky reflection.
+    holePath(ctx,x,y,rx,ry);ctx.clip();
+    const deep=ctx.createLinearGradient(0,y-ry,0,y+ry);
+    deep.addColorStop(0,'#060f23');deep.addColorStop(.45,'#19364b');deep.addColorStop(1,'#0b2535');
+    ctx.fillStyle=deep;ctx.fillRect(x-rx*1.1,y-ry*1.1,rx*2.2,ry*2.2);
+    ctx.globalAlpha=.18;ctx.drawImage(refl,0,0,refl.width,refl.height,0,H*HZ,W,H*(1-HZ));ctx.globalAlpha=1;
+    for(let i=0;i<13;i++){
+      const v=(i+.5)/13,yy=y-ry+v*2*ry;
+      const span=rx*Math.sqrt(Math.max(0,1-Math.pow((yy-y)/ry,2)))*.82;
+      const off=Math.sin(time*.65+i*1.7)*2*k;
+      const shine=ctx.createLinearGradient(x-span,0,x+span,0);
+      shine.addColorStop(0,'rgba(161,198,224,0)');shine.addColorStop(.4,`rgba(161,198,224,${.035+.025*Math.sin(time*.8+i)})`);shine.addColorStop(1,'rgba(161,198,224,0)');
+      ctx.strokeStyle=shine;ctx.lineWidth=.6*k;ctx.beginPath();ctx.moveTo(x-span+off,yy);ctx.quadraticCurveTo(x,yy+Math.sin(time*.5+i)*k,x+span+off,yy);ctx.stroke();
+    }
+    // Quiet capillary rings and broken highlights move only on the open water.
+    for(let i=0;i<3;i++){
+      const phase=(time*.13+i/3)%1,R=rx*(.12+phase*.85);
+      ctx.strokeStyle=`rgba(155,202,222,${Math.sin(phase*Math.PI)*.13})`;
+      ctx.lineWidth=.7*k;ctx.beginPath();ctx.ellipse(x-5*k,y+2*k,R,R*.27,0,.12,Math.PI*1.78);ctx.stroke();
+    }
+    const shade=ctx.createLinearGradient(0,y-ry,0,y+ry);
+    shade.addColorStop(0,'rgba(1,9,19,.65)');shade.addColorStop(.35,'rgba(1,9,19,.03)');shade.addColorStop(1,'rgba(1,9,19,.28)');
+    ctx.fillStyle=shade;ctx.fillRect(x-rx*1.1,y-ry*1.1,rx*2.2,ry*2.2);ctx.restore();
+    ctx.save();
+    if(iceRim.complete&&iceRim.naturalWidth){
+      ctx.drawImage(iceRim,x-78*k,y-31*k,156*k,62*k);
+    }else{
+      // A faceted rim remains usable while the transparent material loads.
+      for(let i=0;i<36;i++){
+        const a=i/36*TAU,b=(i+1)/36*TAU,outer=1.18+.05*Math.sin(i*2.8);
+        ctx.beginPath();ctx.moveTo(x+Math.cos(a)*rx,y+Math.sin(a)*ry);
+        ctx.lineTo(x+Math.cos(a)*rx*outer,y+Math.sin(a)*ry*outer-3*k);
+        ctx.lineTo(x+Math.cos(b)*rx*outer,y+Math.sin(b)*ry*outer-3*k);
+        ctx.lineTo(x+Math.cos(b)*rx,y+Math.sin(b)*ry);ctx.closePath();ctx.fillStyle=i<18?'#b1cce0':'#e4edf5';ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
   const STAKES = [{ u: 0.11, v: 0.74 }, { u: 0.3, v: 0.9 }, { u: 0.58, v: 0.75 }];
   const DOCK = { u0: 0.66, u1: 1.02, v0: 0.79 };
   const persp = (y) => clamp((y / H - HZ) / (1 - HZ), 0, 1);   // 0 at the far shore, 1 at our feet
@@ -334,11 +387,7 @@
     for (let i = 0; i < 30; i++) { g.beginPath(); g.ellipse(r() * W, H * (HZ + 0.04 + r() * 0.6), (30 + r() * 90) * k * scaleAt(H * 0.7), (3 + r() * 6) * k, 0, 0, TAU); g.fill(); }
     g.filter = "none";
     }
-    const [hx, hy] = P(HOLE.u, HOLE.v), hr = 44 * k;
-    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.ellipse(hx, hy, hr * 1.3, hr * 0.42, 0, 0, TAU); g.fill();
-    const hg = g.createRadialGradient(hx, hy - hr * 0.1, 2, hx, hy, hr);
-    hg.addColorStop(0, "#0a1a30"); hg.addColorStop(1, "#22406a");
-    g.fillStyle = hg; g.beginPath(); g.ellipse(hx, hy, hr, hr * 0.3, 0, 0, TAU); g.fill();
+
   }
   function paintForeground() {
     const g = fg.getContext("2d"), r = rng(5151), snow = frozen();
@@ -838,7 +887,10 @@
     ctx.drawImage(bg, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawWater(dt);
+    drawIceHole();
     drawShadows(dt);
+    // Ice-fishing ripples stay inside the aperture, never on solid ice.
+    if(frozen()){const [x,y]=P(HOLE.u,HOLE.v);ctx.save();holePath(ctx,x,y,53*k,16*k);ctx.clip();}
     // ripples
     ripples = ripples.filter((r) => (r.t += dt) < 2.2);
     ripples.forEach((r) => {
@@ -849,6 +901,7 @@
     });
     bubbles = bubbles.filter((b) => (b.t += dt) < 1);
     bubbles.forEach((b) => { if (b.t > 0) { ctx.strokeStyle = `rgba(220,235,255,${0.7 * (1 - b.t)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(b.x, b.y - b.t * 4, 1.5 + b.t * 2, 0, TAU); ctx.stroke(); } });
+    if(frozen())ctx.restore();
     drawPads();
     // bait pellets
     if (time < bait.until && bait.x != null) { ctx.fillStyle = "rgba(200,170,110,.8)"; for (let i = 0; i < 10; i++) { const a = i * 2.4; ctx.beginPath(); ctx.arc(bait.x + Math.cos(a) * 20 * k * (i / 10), bait.y + Math.sin(a) * 6 * k * (i / 10), 1.4, 0, TAU); ctx.fill(); } }
