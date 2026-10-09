@@ -93,7 +93,7 @@
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height);
-    const W = weather.w, H = weather.h, wind = Math.sin(t * 0.15) * 14;
+    const W = weather.w, H = weather.h, wind = Math.sin(t * 0.15) * 14 + (window.FarmFX ? FarmFX.wind * 140 : 0);
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i];
       if (kind === "snow") {
@@ -271,6 +271,17 @@
     bubble.el.style.top = Math.max(250, r.top - w.top + 6) + "px";
   }
   world.addEventListener("click", closeBubble);
+  // a touch on empty ground: a little sparkle, a ripple on the pond, a puff of snow in winter
+  world.addEventListener("click", (e) => {
+    if (!window.FarmFX) return;
+    const r = world.getBoundingClientRect();
+    FarmFX.touch(e.clientX - r.left, e.clientY - r.top, season.name);
+  });
+  const fxAt = (el, kind, text) => {
+    if (!window.FarmFX || !el) return;
+    const b = worldPoint(el);
+    FarmFX.burst(b.x + b.w / 2, b.y + b.h * (kind === "heart" ? 0.25 : 0.5), kind, text);
+  };
   function openAnimal(a) {
     const d = a.def, hearts = store.get("farm-hearts", {}), key = d.species + ":" + d.name;
     const el = showBubble(`
@@ -284,6 +295,7 @@
       hearts[key] = (hearts[key] || 0) + 1; store.set("farm-hearts", hearts);
       e.currentTarget.querySelector("span").textContent = hearts[key];
       emote(a, "♥");
+      fxAt(a.el, "heart");
     };
     el.querySelector("[data-pet]").onclick = () => emote(a, a.keeper ? "purr…" : ["♪", "♥", "✿"][(Math.random() * 3) | 0]);
   }
@@ -414,6 +426,7 @@
     t.picked.list = [...new Set([...t.picked.list, ...ids])];
   }
   function pick(t, i, el) {
+    fxAt(el, "fruit", "+1");
     flyFruit(t.type, el);
     markPicked(t, [i]);
     addToBasket(t.type, 1);
@@ -425,7 +438,8 @@
     trees.forEach((t) => {
       const fr = [...t.el.querySelectorAll(".fruit")];
       if (!fr.length) return;
-      fr.forEach((f, k) => flyFruit(t.type, f, k * 60));
+      fr.forEach((f, k) => { flyFruit(t.type, f, k * 60); if (k < 5) fxAt(f, "fruit"); });
+      fxAt(fr[0], "fruit", "+" + fr.length);
       markPicked(t, fr.map((f) => +f.dataset.i));
       addToBasket(t.type, fr.length);
       got += fr.length;
@@ -575,6 +589,7 @@
     world.appendChild(f);
   }
   setupWeather();
+  if (window.FarmFX) FarmFX.init(world);
   preloadWalks();
   if (FARM.keeper) addAnimal(FARM.keeper, { keeper: true });
   (FARM.residents || []).forEach((d) => addAnimal(d));
@@ -625,7 +640,12 @@
     if (!calm) animals.forEach((a) => stepAnimal(a, dt, now));
     positionBubble();
     drawWeather(calm ? 0 : dt, calm ? 0 : time);
-    if (window.OrchardSim) OrchardSim.update(dt, time, season, clock().p, calm, Math.sin(time * 0.15) * 14 / 10);
+    const gust = window.FarmFX ? FarmFX.wind : 0;
+    if (window.OrchardSim) OrchardSim.update(dt, time, season, clock().p, calm, Math.sin(time * 0.15) * 14 / 10 + gust * 14);
+    if (window.FarmFX) FarmFX.update(dt, time, {
+      season: season.name, calm,
+      animals: animals.map((a) => ({ id: a.def.species + ":" + a.def.name, x: a.x, y: a.y, dir: a.dir, walking: a.state === "walk", size: a.sp.size * depth(a.y) }))
+    });
     tick += dt;
     if (tick > 1) {
       tick = 0;

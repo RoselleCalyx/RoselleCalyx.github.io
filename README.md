@@ -27,7 +27,7 @@ python -m http.server 8000
 - `data/papers.js`：论文。链接留空 `""` 就不显示对应按钮；`selected: true` 显示星标
 - `data/gallery.js`：足迹。**目前是示例数据，请换成你自己的。** 照片放进 `assets/gallery/`，填 `src`；`src` 为空时会自动画一幅油画风占位图
 - `data/bottles.js`：公开展示的漂流瓶（公开访客来信前请先征得对方同意）
-- 农场四季：所有访客共享同一个季节时钟，每季 8 分钟（一年 32 分钟）；樱桃和桃子夏天熟，苹果秋天熟，橙子冬天熟。`farm.html?season=winter` 可直接预览某个季节。果树是“活的”（`js/orchard-sim.js`）：花苞逐朵开放、花瓣飘落、青果慢慢长大变色、秋叶飘落堆积、枝头积雪渐厚又融化；加 `&speed=60` 可快进观看一整年，加 `&p=0.5` 可定格在季节的某个进度
+- 农场四季：所有访客共享同一个季节时钟，每季 8 分钟（一年 32 分钟）；樱桃和桃子夏天熟，苹果秋天熟，橙子冬天熟。`farm.html?season=winter` 可直接预览某个季节。果树是“活的”（`js/orchard-sim.js`）：花苞逐朵开放、花瓣飘落、青果慢慢长大变色、秋叶飘落堆积、枝头积雪渐厚又融化；加 `&speed=60` 可快进观看一整年，加 `&p=0.5` 可定格在季节的某个进度。场景动画在 `js/farm-fx.js`：星星闪烁、流星、冬夜极光、雁群、炊烟、窗灯与灯笼、远湖波光、瀑布、池塘涟漪与跃出水面的锦鲤、阵风、雨后彩虹、雪地脚印，以及点击时的小特效；加 `?fx=demo` 可在几秒内看到所有事件
 - `data/farm.js`：农场居民。也可以打开 `farm.html?keeper`，用“Adopt an Animal”直接生成一行代码，粘贴到 `residents` 里
 
 ## 主页说明
@@ -108,6 +108,7 @@ js/sky.js              星空、银河、流星、印象派画风
 js/common.js           导航、页脚、弹窗、灯箱、投递
 js/backend.js          可选的 Supabase 接口与防垃圾
 js/saturn.js           主页：土星、Cassini、滚动叙事
+js/orchard-sim.js  js/farm-fx.js   农场：活的果树与场景动画
 js/papers.js  js/gallery.js  js/message.js  js/starmap.js  js/farm.js  js/farm-art.js
 data/                  所有可编辑内容
 assets/                图片、CV
