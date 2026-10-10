@@ -14,6 +14,7 @@
   const zc = $("zoomChart"), zctx = zc.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mobileMap = matchMedia("(max-width: 760px)");
+  const touchMap = matchMedia("(pointer: coarse)");
 
   /* ---------- time & sky geometry ---------- */
   const now = new Date();
@@ -163,9 +164,17 @@
     const w = wrap.clientWidth;
     if (!w) return;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const previousRadius = Rc;
     size = w;
     canvas.width = canvas.height = Math.round(w * dpr);
     Rc = w / 2 - 26; cx = w / 2; cy = w / 2;
+    if ((mobileMap.matches || touchMap.matches) && previousRadius > 0) {
+      const ratio = Rc / previousRadius;
+      view.x *= ratio; view.y *= ratio;
+      if (target) { target.x *= ratio; target.y *= ratio; }
+    }
+    constrainView();
+    if (target) constrainView(target);
     buildBg();
     zc.width = zc.clientWidth * dpr; zc.height = zc.clientHeight * dpr;
     renderInfo();
@@ -343,6 +352,19 @@
   }
 
   /* ---------- camera ---------- */
+  function constrainView(camera = view) {
+    if (!mobileMap.matches && !touchMap.matches) return camera;
+    camera.k = Math.max(1, Math.min(6, camera.k));
+    // Keep the original sky disk covered; its rim stops a drag before the map can leave the frame.
+    const limit = Math.max(0, Rc * (camera.k - 1));
+    if (limit === 0) { camera.x = camera.y = 0; return camera; }
+    const distance = Math.hypot(camera.x, camera.y);
+    if (distance > limit) {
+      const ratio = limit / distance;
+      camera.x *= ratio; camera.y *= ratio;
+    }
+    return camera;
+  }
   function focus(sel) {
     let pts;
     if (sel.type === "const") pts = CONS.find((c) => c.id === sel.id).stars.map((s) => proj(s[1], s[2]));
@@ -352,6 +374,7 @@
     const ext = Math.max(0.04, ...pts.map((p) => Math.hypot(p.x - m.x, p.y - m.y)));
     const k = Math.max(1.6, Math.min(5, 0.32 / ext));
     target = { k, x: -m.x * Rc * k, y: -m.y * Rc * k };
+    constrainView(target);
   }
   function resetView() { target = { k: 1, x: 0, y: 0 }; }
   function zoomAt(f, mx, my) {
@@ -362,6 +385,7 @@
     view.y = my - cy - (my - cy - view.y) * r;
     view.k = nk;
     if (nk === 1) { view.x *= 0.5; view.y *= 0.5; }
+    constrainView();
   }
 
   /* ---------- pointer input ---------- */
@@ -424,7 +448,12 @@
     if (drag) {
       const dx = p[0] - drag.start[0], dy = p[1] - drag.start[1];
       if (Math.hypot(dx, dy) > 4) { drag.moved = true; target = null; canvas.classList.add("dragging"); }
-      if (drag.moved) { view.x = drag.vx + dx; view.y = drag.vy + dy; }
+      if (drag.moved) {
+        view.x = drag.vx + dx; view.y = drag.vy + dy;
+        constrainView();
+        // Rebase at the edge so reversing direction responds immediately after a long drag.
+        drag.start = p; drag.vx = view.x; drag.vy = view.y;
+      }
       return;
     }
     hover = hit(p[0], p[1]);
@@ -683,6 +712,7 @@
       view.k += (target.k - view.k) * f; view.x += (target.x - view.x) * f; view.y += (target.y - view.y) * f;
       if (Math.abs(target.k - view.k) < 0.002 && Math.abs(target.x - view.x) < 0.3) target = null;
     }
+    constrainView();
     draw();
   }
 

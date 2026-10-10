@@ -99,7 +99,7 @@ function page(options = {}) {
       querySelectorAll: selector => selector === '.sm-modes button' ? modes : [],
       querySelector: selector => selector.includes('data-mode="orrery"') ? modes[2] : null
     },
-    performance: { now: () => clock }, matchMedia: query => ({ matches: query.includes('max-width') && !!options.mobile }),
+    performance: { now: () => clock }, matchMedia: query => ({ matches: query.includes('max-width') && !!options.mobile || query.includes('pointer: coarse') && !!options.touch }),
     requestAnimationFrame() {}, addEventListener() {},
     innerHeight: options.innerHeight || 800,
     visualViewport: options.visualViewportHeight ? { height: options.visualViewportHeight } : undefined,
@@ -118,7 +118,10 @@ function page(options = {}) {
       point: id => { const star = CONS.find(c => c.id === id).stars[0]; return toS(star[1], star[2]); },
       setView: value => { Object.assign(view, value); target = null; },
       setHover: value => { hover = value; },
-      draw, hit
+      geometry: () => ({ size, Rc, cx, cy }),
+      target: () => target && { ...target },
+      constrain: value => constrainView(value),
+      resize, frame, draw, hit
     };
   })();`);
   vm.runInNewContext(instrumented, context, { filename: 'starmap.js' });
@@ -462,6 +465,128 @@ test('zoom buttons retain their camera controls without triggering page scroll',
   p.get('zoomIn').click(); assert.equal(p.snapshot().view.k, 1.4);
   p.get('zoomOut').click(); assert.equal(p.snapshot().view.k, 1);
   assert.deepEqual(p.scrolls, []);
+});
+
+function assertMobileCameraCovered(p, camera = p.snapshot().view, message = 'mobile camera') {
+  const { Rc } = p.api.geometry();
+  assert.ok(camera.k >= 1 && camera.k <= 6, `${message}: zoom remains between whole-sky and the maximum detail level`);
+  const offset = Math.hypot(camera.x, camera.y);
+  assert.ok(offset + Rc <= Rc * camera.k + 1e-8, `${message}: the enlarged sky contains the whole original circular frame`);
+}
+
+for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+  test(`mobile whole-sky long drag ${dx},${dy} stays centered`, () => {
+    const p = page({ mobile: true });
+    p.pointer('pointerdown', 1, 200, 200);
+    p.pointer('pointermove', 1, 200 + dx * 1500, 200 + dy * 1500);
+    p.pointer('pointermove', 1, 200 + dx * 3000, 200 + dy * 3000);
+    p.pointer('pointerup', 1, 200 + dx * 3000, 200 + dy * 3000);
+    assert.deepEqual(p.snapshot().view, { k: 1, x: 0, y: 0 }, 'the unzoomed map cannot be dragged out of its visible frame');
+    assertMobileCameraCovered(p);
+  });
+}
+
+test('mobile off-center wheel zoom caps scale and pan at a radial boundary and zooms back to center', () => {
+  const p = page({ mobile: true });
+  p.wheel(-10000, { ctrlKey: true, clientX: 385, clientY: 15 });
+  const zoomed = p.snapshot().view, { Rc } = p.api.geometry();
+  assert.equal(zoomed.k, 6, 'intentional zoom stops at the maximum scale');
+  assert.ok(zoomed.x < 0 && zoomed.y > 0, 'off-center zoom still moves toward the chosen corner');
+  assert.ok(Math.abs(Math.hypot(zoomed.x, zoomed.y) - Rc * 5) < 1e-8, 'diagonal pan stops on the circle rather than at two independent axis limits');
+  assertMobileCameraCovered(p);
+  p.wheel(10000, { ctrlKey: true, clientX: 385, clientY: 15 });
+  assert.deepEqual(p.snapshot().view, { k: 1, x: 0, y: 0 }, 'zooming back to the whole sky centers it immediately');
+  assert.deepEqual(p.scrolls, [], 'explicit zoom never scrolls the page');
+});
+
+test('mobile pinch obeys the same camera limits as wheel zoom', () => {
+  const p = page({ mobile: true });
+  p.pointer('pointerdown', 1, 100, 200);
+  p.pointer('pointerdown', 2, 200, 200);
+  p.pointer('pointermove', 2, 1500, 200);
+  assert.equal(p.snapshot().view.k, 6);
+  assertMobileCameraCovered(p);
+  p.pointer('pointermove', 2, 100.01, 200);
+  assert.deepEqual(p.snapshot().view, { k: 1, x: 0, y: 0 }, 'pinch collapse fully recenters instead of retaining an offscreen offset');
+  p.pointer('pointerup', 2, 100.01, 200);
+  p.pointer('pointerup', 1, 100, 200);
+});
+
+test('mobile edge drag responds to reversal immediately after a long overshoot', () => {
+  const p = page({ mobile: true }), { Rc } = p.api.geometry();
+  p.get('zoomIn').click();
+  p.pointer('pointerdown', 1, 200, 200);
+  p.pointer('pointermove', 1, 1800, 200);
+  const edge = p.snapshot().view;
+  assert.ok(Math.abs(edge.x - Rc * (edge.k - 1)) < 1e-8, 'the outward drag reaches the usable edge');
+  p.pointer('pointermove', 1, 1793, 200);
+  const reversed = p.snapshot().view;
+  assert.equal(reversed.x, edge.x - 7, 'the very first inward movement returns seven pixels without an overscroll dead zone');
+  assert.equal(reversed.y, edge.y);
+  assertMobileCameraCovered(p);
+  p.pointer('pointerup', 1, 1793, 200);
+});
+
+test('mobile focus near the sky edge constrains both its destination and every animation frame', () => {
+  const constellations = [
+    { id: 'ori', name: 'Orion', zh: '', stars: [['Rigel', 78, -8, 0], ['Betelgeuse', 88, 7, 1]], lines: [[0, 1]], story: '', tagline: '', season: '' },
+    { id: 'edge', name: 'Edge', zh: '', stars: [['A', 120, -60, 1], ['B', 120.1, -60, 2]], lines: [[0, 1]], story: '', tagline: '', season: '' }
+  ];
+  const p = page({ mobile: true, constellations });
+  p.listClick('edge');
+  const destination = JSON.parse(JSON.stringify(p.api.target()));
+  assert.ok(destination, 'selecting a list constellation starts the production focus animation');
+  assert.equal(destination.k, 5, 'a compact constellation still receives its detail zoom');
+  assertMobileCameraCovered(p, destination, 'focus destination');
+  for (let i = 0; i < 80; i++) {
+    p.advanceTime(50); p.api.frame((i + 1) * 50);
+    assertMobileCameraCovered(p, p.snapshot().view, `focus animation frame ${i}`);
+  }
+  assert.equal(p.snapshot().selected.id, 'edge');
+  assert.ok(p.snapshot().view.k > 4.9, 'the constrained focus still reaches its intended detail');
+});
+
+test('mobile resize keeps the same relative star position and reclamps a pending focus destination', () => {
+  const p = page({ mobile: true });
+  p.api.setView({ k: 3, x: 600, y: -600 });
+  p.listClick('cyg');
+  p.wrap.clientWidth = 320; p.api.resize();
+  assert.equal(p.api.geometry().Rc, 134, 'the camera uses the new smaller drawing circle');
+  assertMobileCameraCovered(p);
+  assertMobileCameraCovered(p, JSON.parse(JSON.stringify(p.api.target())), 'resized focus destination');
+  const before = p.snapshot().view, beforeRc = p.api.geometry().Rc;
+  p.wrap.clientWidth = 500; p.api.resize();
+  const after = p.snapshot().view, afterRc = p.api.geometry().Rc;
+  assert.ok(Math.abs(after.x / afterRc - before.x / beforeRc) < 1e-8, 'resizing preserves relative horizontal sky position');
+  assert.ok(Math.abs(after.y / afterRc - before.y / beforeRc) < 1e-8, 'resizing preserves relative vertical sky position');
+  assertMobileCameraCovered(p);
+  assertMobileCameraCovered(p, JSON.parse(JSON.stringify(p.api.target())), 'expanded focus destination');
+});
+
+test('mobile render loop also repairs an out-of-bounds camera before painting', () => {
+  const p = page({ mobile: true });
+  p.api.setView({ k: 2, x: 10000, y: -10000 });
+  p.advanceTime(50); p.api.frame(50);
+  assertMobileCameraCovered(p, p.snapshot().view, 'rendered camera');
+});
+
+test('a coarse-pointer phone retains mobile camera boundaries in a wide landscape layout', () => {
+  const p = page({ touch: true });
+  p.pointer('pointerdown', 1, 200, 200);
+  p.pointer('pointermove', 1, 2000, 2000);
+  assert.deepEqual(p.snapshot().view, { k: 1, x: 0, y: 0 });
+});
+
+test('desktop drag and zoom retain their existing unrestricted camera behavior', () => {
+  const p = page();
+  p.pointer('pointerdown', 1, 200, 200);
+  p.pointer('pointermove', 1, 1700, -1300);
+  p.pointer('pointerup', 1, 1700, -1300);
+  assert.deepEqual(p.snapshot().view, { k: 1, x: 1500, y: -1500 }, 'desktop whole-sky panning remains available');
+  p.wheel(-10000, { ctrlKey: true, clientX: 385, clientY: 15 });
+  const zoomed = p.snapshot().view, { Rc } = p.api.geometry();
+  assert.equal(zoomed.k, 6);
+  assert.ok(Math.hypot(zoomed.x, zoomed.y) > Rc * (zoomed.k - 1), 'desktop camera does not inherit the phone radial clamp');
 });
 
 test('modified wheel over the solar-system canvas leaves the hidden sky camera unchanged', () => {
