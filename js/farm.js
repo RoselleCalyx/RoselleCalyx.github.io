@@ -534,8 +534,8 @@
     kiwi:['Kiwi','farm'],grape:['Grapes','farm'],durian:['Durian','farm'],mango:['Mango','farm'],
     bayberry: ["Wild bayberry", "woods"], strawberry: ["Wild strawberry", "woods"], shoot: ["Bamboo shoot", "woods"], rosehip: ["Rose hip", "woods"],
     morel: ["Morel", "woods"], chanterelle: ["Chanterelle", "woods"], porcini: ["Porcini", "woods"], shiitake: ["Shiitake", "woods"], matsutake: ["Matsutake", "woods"], pinecone: ["Pine cone", "woods"],
-    crucian: ["Crucian carp", "pond"], carp: ["Carp", "pond"], koi: ["Koi", "pond"], goldkoi: ["Golden koi", "pond"], catfish: ["Catfish", "pond"], mandarin: ["Mandarin fish", "pond"],
-    bitterling: ["Bitterling", "pond"], minnow: ["Stone moroko", "pond"], loach: ["Loach", "pond"], eel: ["Rice-field eel", "pond"], shrimp: ["River shrimp", "pond"], crayfish: ["Crayfish", "pond"], crab: ["Mitten crab", "pond"], lotus: ["Lotus seed pod", "pond"]
+    crucian: ["Crucian carp · 鲫鱼", "pond"], carp: ["Carp · 鲤鱼", "pond"], koi: ["Koi · 锦鲤", "pond"], goldkoi: ["Golden koi · 黄金锦鲤", "pond"], catfish: ["Catfish · 鲶鱼", "pond"], mandarin: ["Mandarin fish · 鳜鱼（桂花鱼）", "pond"],
+    bitterling: ["Bitterling · 鳑鲏", "pond"], minnow: ["Stone moroko · 麦穗鱼", "pond"], loach: ["Loach · 泥鳅", "pond"], eel: ["Rice-field eel · 黄鳝", "pond"], shrimp: ["River shrimp · 河虾", "pond"], crayfish: ["Crayfish · 小龙虾", "pond"], crab: ["Mitten crab · 中华绒螯蟹", "pond"], lotus: ["Lotus seed pod · 莲蓬", "pond"]
   };
   const FISH = ["crucian", "carp", "koi", "goldkoi", "catfish", "mandarin", "bitterling", "minnow", "loach", "eel"];
   // what each friend loves, likes, and how it shows its joy
