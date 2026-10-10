@@ -7,7 +7,7 @@
   <meta name="description" content="Choose a star. Meet its story. An interactive star map with constellations, planets and deep-sky objects." />
   <meta name="theme-color" content="#04060d" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/style.css?v=20261010-starmap-scroll" />
+  <link rel="stylesheet" href="css/style.css?v=20261010-journey-entry" />
   <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
@@ -24,6 +24,7 @@
 
     <div class="starmap-layout">
       <aside class="sm-side glass">
+        <button class="btn sm-game cassini-btn" type="button" id="cassiniBtn"><span data-icon="star4"></span>Cassini’s journey</button>
         <div class="sm-modes" role="tablist" aria-label="What to show">
           <button type="button" class="active" data-mode="const"><span data-icon="constel"></span>Constellations</button>
           <button type="button" data-mode="planets"><span data-icon="planet"></span>Planets</button>
@@ -33,7 +34,6 @@
         </div>
         <ul class="sm-list" id="smList"></ul>
         <button class="btn sm-game" type="button" id="playQuiz"></button>
-        <button class="btn sm-game cassini-btn" type="button" id="cassiniBtn"><span data-icon="star4"></span>Cassini’s journey</button>
         <a class="btn sm-game" href="voyager.html"><span data-icon="planet"></span>A Lonely Voyager ↗</a>
       </aside>
 
