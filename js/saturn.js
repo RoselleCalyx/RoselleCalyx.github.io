@@ -582,10 +582,13 @@
 
   // One light, one anchor: the retained entry flare becomes the falling remnant.
   function handoffPose(q,calm) {
-    const f=burnFlight(p),[sx,sy]=P(f.x,f.y),w=cvFall.width,h=cvFall.height;
+    const f=burnFlight(p),[sx,sy]=P(f.x,f.y),h=cvFall.height;
     const travel=calm?0:Math.pow(q,1.35);
     const endY = descent ? descent.endY : sy + h * .18;
-    return {x:sx+(w*.52-sx)*smooth(0,1,q),y:sy+(endY-sy)*travel,
+    // Fall below the burn point on every screen, with at most four CSS pixels
+    // of gentle sway. Scroll-based motion also follows the same path in reverse.
+    const sway=calm?0:(Math.sin(q*Math.PI*6)*.75+Math.sin(q*Math.PI*14)*.25)*Math.sin(q*Math.PI)*4*dpr;
+    return {x:sx+sway,y:sy+(endY-sy)*travel,
       sx,sy,scale:Math.pow(1-smooth(0,1,q),2)*.96+.04};
   }
   function drawHandoff(calm){
