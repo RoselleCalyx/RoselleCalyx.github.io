@@ -1,4 +1,22 @@
 /* The biography carries the same quiet gold, orbital lines, and type as the sky. */
+/* Mobile browser chrome changes the visible crop, never the painting's scale. */
+@media (pointer: coarse) {
+  body[data-page="home"] #saturn,
+  body[data-page="home"] #fx,
+  body[data-page="home"] #rings,
+  body[data-page="home"] #starFall {
+    height: 100vh;
+    height: 100lvh;
+    bottom: auto;
+  }
+  body[data-page="home"] .hero-cosmos {
+    top: -3vh;
+    top: -3lvh;
+    height: 106vh;
+    height: 106lvh;
+    bottom: auto;
+  }
+}
 body[data-page="home"] .home-sections { padding-top: 58px; gap: 32px; }
 body[data-page="home"] .coda { margin-bottom: 10px; }
 body[data-page="home"] .coda p { color: var(--muted); font-size: .9rem; line-height: 1.9; }

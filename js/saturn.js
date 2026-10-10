@@ -298,12 +298,16 @@
 
   /* ---------- layout ---------- */
   let vw = 0, vh = 0, dpr = 1, F = null, planet = null, planetAt = 0, Rpx = 0, moons = [];
+  let layoutDirty = false;
   const P = (x, y) => [(F.left + x * F.S) * dpr, (F.top + y * F.S) * dpr];
   function layout() {
-    const r = hero.getBoundingClientRect();
+    // On phones the art uses the stable large viewport; the hero clips it to 100dvh.
+    const r = cvS.getBoundingClientRect();
     if (r.width < 10 || r.height < 10) return;
+    const nextDpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
+    if (F && r.width === vw && r.height === vh && nextDpr === dpr) return;
     vw = r.width; vh = r.height;
-    dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
+    dpr = nextDpr;
     cvS.width = cvF.width = Math.round(vw * dpr);
     cvS.height = cvF.height = Math.round(vh * dpr);
     if (cvR) { cvR.width = cvS.width; cvR.height = cvS.height; }
@@ -684,7 +688,9 @@
     requestAnimationFrame(frame);
     const real = Math.min(1, (now - last) / 1000), dt = Math.min(0.05, real);
     last = now;
-    if (document.hidden || !F) return;
+    if (document.hidden) return;
+    if (layoutDirty) { layoutDirty = false; layout(); readScroll(); }
+    if (!F) return;
     if(!visible&&fallTarget>=1){
       if(cFall){cFall.clearRect(0,0,cvFall.width,cvFall.height);cvFall.style.opacity='0';}
       return;
@@ -764,8 +770,10 @@
     updateLog();
   }
 
-  let rt;
-  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { layout(); readScroll(); }, 200); });
+  const invalidateLayout = () => { layoutDirty = true; };
+  addEventListener("resize", invalidateLayout);
+  window.visualViewport?.addEventListener("resize", invalidateLayout);
+  if ("ResizeObserver" in window) new ResizeObserver(invalidateLayout).observe(cvS);
   if ("IntersectionObserver" in window) new IntersectionObserver((e) => { visible = e[0].isIntersecting; }).observe(story);
   layout();
   readScroll();
