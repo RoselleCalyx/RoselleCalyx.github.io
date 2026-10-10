@@ -22,7 +22,7 @@
     penguin: { label: "Penguin", size: 0.84, speed: 0.75 },
     redpanda: { label: "Red panda", size: 0.92, speed: 1.05 },
     raccoon: { label: "Raccoon", size: 0.86, speed: 1.15 },
-    wolf: { label: "Wolf", size: 1.04, speed: 1.5 },
+    wolf: { label: "Wolf", size: 1.40, speed: 1.5 },
     crocodile: { label: "Crocodile", size: 1.12, speed: 0.9, habitat: "water" },
     fennec: { label: "Fennec fox", size: 0.78, speed: 1.65 }
   };
