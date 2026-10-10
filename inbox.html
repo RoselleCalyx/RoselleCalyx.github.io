@@ -1,83 +1,108 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="referrer" content="same-origin" />
-  <meta name="theme-color" content="#0a1119" />
-  <title>私密收件箱 · Message in a Bottle</title>
-  <link rel="stylesheet" href="css/inbox.css" />
+  <meta name="theme-color" content="#08131d" />
+  <title>Letters at the Harbor · Private Inbox</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
+  <link rel="preload" as="image" href="assets/inbox/harbor-night-v2.webp" />
   <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
+  <link rel="stylesheet" href="css/inbox.css?v=20261010-harbor" />
 </head>
-<body>
+<body data-page="inbox">
+  <div class="inbox-harbor" id="inboxHarbor" aria-hidden="true">
+    <img class="harbor-background" src="assets/inbox/harbor-night-v2.webp" alt="" fetchpriority="high" />
+    <div class="harbor-shade"></div>
+    <div class="harbor-island-glow"></div>
+    <div class="harbor-haze"></div>
+    <div class="harbor-surface"></div>
+    <canvas id="inboxSky"></canvas>
+  </div>
+  <nav class="inbox-nav" aria-label="Inbox navigation">
+    <a href="message.html" class="return-link"><span aria-hidden="true">←</span> Message in a Bottle</a>
+    <button id="harborCalm" type="button" class="harbor-motion" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><path d="m5 18 11-11M5 11l6-6M13 19l6-6M17 3v4m-2-2h4" /></svg>
+      <span class="harbor-motion-label">Calm sea</span>
+    </button>
+  </nav>
   <main class="inbox-shell">
     <header class="inbox-heading">
-      <a href="message.html" class="return-link">← 返回 Message</a>
-      <p class="eyebrow">PRIVATE INBOX</p>
-      <h1>私密收件箱</h1>
-      <p class="intro">阅读访客发来的私信。</p>
+      <div class="harbor-title">
+        <p class="eyebrow"><span aria-hidden="true"></span> A harbor for your words</p>
+        <h1>Letters at<br />the Harbor.<span class="title-translation" lang="zh-CN">夜港来信</span></h1>
+        <p class="intro">The island light is on.<br />Words find their way.</p>
+      </div>
+      <p class="harbor-caption"><span aria-hidden="true"></span> Under the same sky, a ship finds its way home.</p>
     </header>
-
+    <div class="inbox-workbench">
     <section class="setup-panel" id="setupPanel" hidden aria-labelledby="setupTitle">
-      <h2 id="setupTitle">连接收信服务</h2>
-      <p id="setupReason">尚未连接收信服务。当前页面不会假装收到或保存来信。</p>
+      <h2 id="setupTitle">Connect the inbox</h2>
+      <p id="setupReason">The inbox is not connected yet. Follow the setup steps below to receive letters.</p>
       <div id="setupCloudflare">
-        <p>使用 Cloudflare D1 保存私信，Telegram 在你关闭网页后继续提醒新信。</p>
+        <p>Cloudflare D1 stores private letters. Telegram can notify you even when this page is closed.</p>
         <ol>
-          <li>创建 Cloudflare 账号，按说明部署收信服务和 D1 数据库。</li>
-          <li>在服务端设置主人登录邮箱、密码，以及 Telegram bot 和接收人的私聊 ID。</li>
-          <li>将服务的 HTTPS 根地址填入 <code>js/config.js</code> 的 <code>messageApi</code>。</li>
+          <li>Create a Cloudflare account and deploy the message service and D1 database using the guide.</li>
+          <li>Set the host email, password, Telegram bot, and recipient chat ID on the server.</li>
+          <li>Add the service’s HTTPS base URL to <code>messageApi</code> in <code>js/config.js</code>.</li>
         </ol>
-        <a href="docs/message-cloudflare-setup.md" class="text-link">查看 Cloudflare + Telegram 配置说明</a>
+        <a href="docs/message-cloudflare-setup.md" class="text-link">Cloudflare + Telegram setup guide</a>
       </div>
       <div id="setupSupabase" hidden>
         <ol>
-          <li>创建 Supabase 项目，运行 <a href="docs/message-inbox.sql">收件箱 SQL</a>。</li>
-          <li>创建自己的登录账号，把 UUID 加入 <code>message_hosts</code>。</li>
-          <li>在 <code>js/config.js</code> 填入项目 URL 和 publishable key（或旧 anon key）。</li>
+          <li>Create a Supabase project and run the <a href="docs/message-inbox.sql">inbox SQL</a>.</li>
+          <li>Create a host account and add its UUID to <code>message_hosts</code>.</li>
+          <li>Add the project URL and publishable key (or legacy anon key) to <code>js/config.js</code>.</li>
         </ol>
-        <a href="docs/message-inbox-setup.md" class="text-link">查看 Supabase 配置说明</a>
+        <a href="docs/message-inbox-setup.md" class="text-link">Supabase setup guide</a>
       </div>
     </section>
 
     <section class="login-panel" id="loginPanel" hidden aria-labelledby="loginTitle">
-      <h2 id="loginTitle">主人登录</h2>
-      <p>使用主人账号查看私信。</p>
+      <div class="panel-heading">
+        <p class="panel-kicker">PRIVATE INBOX</p>
+        <h2 id="loginTitle">A light left on for you</h2>
+        <p class="panel-intro">Sign in as the host to read letters from the shore.<br /><small lang="zh-CN">主人登录后，可阅读岸边的私信。</small></p>
+      </div>
       <form id="loginForm">
-        <label for="hostEmail">登录邮箱</label>
-        <input id="hostEmail" name="email" type="email" autocomplete="username" required />
-        <label for="hostPassword">密码</label>
+        <label for="hostEmail">Email <small lang="zh-CN">登录邮箱</small></label>
+        <input id="hostEmail" name="email" type="email" autocomplete="username" inputmode="email" spellcheck="false" placeholder="Host email address" required />
+        <label for="hostPassword">Password <small lang="zh-CN">密码</small></label>
         <input id="hostPassword" name="password" type="password" autocomplete="current-password" required />
-        <button id="loginButton" type="submit">打开收件箱</button>
+        <button id="loginButton" type="submit">Open the inbox <span aria-hidden="true">↗</span></button>
       </form>
+      <p class="login-privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg>Private letters, visible only to the host.</p>
     </section>
 
-    <section id="inboxPanel" hidden aria-label="来信">
+    <section id="inboxPanel" hidden aria-label="Letters">
       <div class="inbox-toolbar">
-        <div><span id="hostIdentity"></span><p id="messageCount" class="muted"></p></div>
+        <div class="inbox-identity"><p class="panel-kicker">LETTERS ASHORE</p><h2 class="letters-title">Letters from the shore</h2><span id="hostIdentity"></span><p id="messageCount" class="muted"></p></div>
         <div class="toolbar-actions">
-          <button id="refreshButton" type="button">刷新</button>
-          <button id="notifyButton" type="button">开启桌面通知</button>
-          <button id="logoutButton" type="button" class="quiet-button">退出</button>
+          <button id="refreshButton" type="button">Refresh</button>
+          <button id="notifyButton" type="button">Enable notifications</button>
+          <button id="logoutButton" type="button" class="quiet-button">Sign out</button>
         </div>
       </div>
-      <p class="polling-note" id="pollingNote">页面打开时每 20 秒检查新信。桌面通知需要你主动开启；关闭页面后不会继续推送。</p>
-      <div class="filters" role="group" aria-label="筛选来信">
-        <button type="button" data-filter="all" aria-pressed="true">全部</button>
-        <button type="button" data-filter="unread" aria-pressed="false">未读</button>
+      <p class="polling-note" id="pollingNote">Checks for new letters every 20 seconds while open. Enable desktop notifications to receive alerts; they stop when this page closes.</p>
+      <div class="filters" role="group" aria-label="Filter letters">
+        <button type="button" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" data-filter="unread" aria-pressed="false">Unread</button>
       </div>
-      <p id="emptyInbox" class="empty-inbox" hidden>暂时没有来信。</p>
+      <p id="emptyInbox" class="empty-inbox" hidden>The sea is quiet. No letters yet.</p>
       <ul id="messageList" class="message-list"></ul>
-      <button id="loadMoreButton" type="button" hidden>加载更早的来信</button>
+      <button id="loadMoreButton" type="button" hidden>Load earlier letters</button>
     </section>
     <p id="inboxStatus" class="inbox-status" role="status" aria-live="polite"></p>
-    <footer class="inbox-footer">来信与联系方式只在这里阅读。收件箱没有公开发布功能。</footer>
+    <footer class="inbox-footer">Letters and contact details stay in this private inbox. Nothing is published here.<br /><small lang="zh-CN">来信与联系方式仅供主人阅读，不会公开。</small></footer>
+    </div>
   </main>
   <script src="js/config.js?v=20261010-cloudflare"></script>
-  <script src="js/inbox.js?v=20261010-cloudflare"></script>
+  <script src="js/inbox.js?v=20261010-language"></script>
+  <script src="js/inbox-scene.js?v=20261010-language"></script>
 </body>
 </html>

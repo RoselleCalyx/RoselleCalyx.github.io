@@ -40,8 +40,8 @@
     }
   } catch (_) {
     configurationError = messageApi
-      ? "收信服务地址无效。请在 js/config.js 的 messageApi 填写 HTTPS 服务根地址，不包含查询参数或 #。"
-      : (cfg.url || key ? "Supabase 配置不完整或无效。请使用项目 URL 和公开 publishable / anon key。" : "尚未连接收信服务。请先完成下面的部署步骤。" );
+      ? "Invalid inbox service URL. Set messageApi in js/config.js to an HTTPS base URL without a query or fragment."
+      : (cfg.url || key ? "Supabase configuration is incomplete or invalid. Use the project URL and a public publishable or anon key." : "The inbox is not connected yet. Complete the setup steps below. 尚未连接收信服务。" );
   }
 
   class InboxError extends Error {
@@ -49,11 +49,11 @@
   }
 
   function assertSession(version) {
-    if (version !== sessionVersion) throw new InboxError("session_changed", "登录会话已变化，此次操作已取消。");
+    if (version !== sessionVersion) throw new InboxError("session_changed", "Your sign-in session changed. This request was cancelled.");
   }
 
   function saveSession(data) {
-    if (!data || !data.access_token || !data.refresh_token) throw new InboxError("invalid_response", "登录服务返回了不完整的会话，请重试。");
+    if (!data || !data.access_token || !data.refresh_token) throw new InboxError("invalid_response", "The sign-in service returned an incomplete session. Please try again.");
     session = {
       access_token: data.access_token,
       refresh_token: data.refresh_token,
@@ -78,17 +78,17 @@
       const response = await fetch(base + path, Object.assign({}, options, { credentials: "omit", signal: controller.signal }));
       const body = await response.text();
       let data = null;
-      if (body) { try { data = JSON.parse(body); } catch (_) { if (response.ok) throw new InboxError("invalid_response", "收信服务返回了无法读取的内容。"); } }
+      if (body) { try { data = JSON.parse(body); } catch (_) { if (response.ok) throw new InboxError("invalid_response", "The inbox service returned an unreadable response."); } }
       if (!response.ok) {
-        if (response.status === 401) throw new InboxError("auth_expired", "登录已失效，请重新登录。", 401);
-        if (response.status === 403) throw new InboxError("forbidden", "此账号没有收件箱权限，请确认使用主人账号。", 403);
-        if (response.status === 429) throw new InboxError("rate_limit", "请求过于频繁，请稍后重试。", 429);
-        throw new InboxError("http_error", "暂时无法连接收信服务，请检查配置或稍后重试。", response.status);
+        if (response.status === 401) throw new InboxError("auth_expired", "Your session has expired. Please sign in again.", 401);
+        if (response.status === 403) throw new InboxError("forbidden", "This account cannot access the inbox. Please use the host account.", 403);
+        if (response.status === 429) throw new InboxError("rate_limit", "Too many requests. Please try again shortly.", 429);
+        throw new InboxError("http_error", "The inbox service is unavailable. Check the configuration or try again shortly.", response.status);
       }
       return data;
     } catch (error) {
       if (error instanceof InboxError) throw error;
-      throw new InboxError(error && error.name === "AbortError" ? "timeout" : "network_error", "连接收信服务超时或中断，请稍后重试。");
+      throw new InboxError(error && error.name === "AbortError" ? "timeout" : "network_error", "The inbox connection timed out or was interrupted. Please try again.");
     } finally { clearTimeout(timer); }
   }
 
@@ -101,7 +101,7 @@
 
   async function refresh() {
     if (refreshPromise) return refreshPromise;
-    if (!session) throw new InboxError("auth_expired", "请先登录。");
+    if (!session) throw new InboxError("auth_expired", "Please sign in first.");
     const version = sessionVersion;
     const refreshToken = session.refresh_token;
     refreshPromise = (async () => {
@@ -115,7 +115,7 @@
       } catch (error) {
         if (version === sessionVersion && (error.status === 400 || error.status === 401 || error.status === 403)) {
           clearSession();
-          throw new InboxError("auth_expired", "登录已失效，请重新登录。");
+          throw new InboxError("auth_expired", "Your session has expired. Please sign in again.");
         }
         throw error;
       } finally { if (version === sessionVersion) refreshPromise = null; }
@@ -124,7 +124,7 @@
   }
 
   async function validToken() {
-    if (!session) throw new InboxError("auth_expired", "请先登录。");
+    if (!session) throw new InboxError("auth_expired", "Please sign in first.");
     if (session.expires_at < Math.floor(Date.now() / 1000) + 60) return refresh();
     return session.access_token;
   }
@@ -154,13 +154,13 @@
   async function requireHost() {
     if (mode === "cloudflare") {
       const host = await authedRequest("/api/host/me");
-      if (!host || host.id !== "host") throw new InboxError("forbidden", "此账号没有守塔人权限，请确认使用主人账号。");
+      if (!host || host.id !== "host") throw new InboxError("forbidden", "This account is not the harbor keeper. Please use the host account.");
       return host.id;
     }
     // RLS only exposes the requesting user's own membership. A valid login alone
     // cannot grant host access; membership can only be bootstrapped server-side.
     const rows = await authedRequest("/rest/v1/message_hosts?select=user_id&limit=1");
-    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0].user_id) throw new InboxError("forbidden", "此账号没有守塔人权限，请确认使用主人账号。");
+    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0].user_id) throw new InboxError("forbidden", "This account is not the harbor keeper. Please use the host account.");
     return rows[0].user_id;
   }
 
@@ -182,7 +182,7 @@
     try {
       data = await request(mode === "cloudflare" ? "/api/host/login" : "/auth/v1/token?grant_type=password", { method: "POST", headers: headers(), body: JSON.stringify({ email: String(email).trim(), password: String(password) }) });
     } catch (error) {
-      if ([400, 401, 403].includes(error.status)) throw new InboxError("bad_credentials", "邮箱或密码不正确，或账号尚未启用。");
+      if ([400, 401, 403].includes(error.status)) throw new InboxError("bad_credentials", "The email or password is incorrect, or the account is not active.");
       throw error;
     }
     assertSession(version);
@@ -225,12 +225,12 @@
       : "/rest/v1/bottles?select=id,created_at,name,contact,text,read_at&order=created_at.desc,id.desc&limit=" + count + "&offset=" + start;
     const rows = await authedRequest(path);
     assertSession(version);
-    if (!Array.isArray(rows)) throw new InboxError("invalid_response", "无法读取来信列表，请检查数据库配置。");
+    if (!Array.isArray(rows)) throw new InboxError("invalid_response", "Letters could not be loaded. Check the database configuration.");
     return rows;
   }
 
   async function markRead(id) {
-    if (!/^\d+$/.test(String(id))) throw new InboxError("validation", "无效的来信编号。");
+    if (!/^\d+$/.test(String(id))) throw new InboxError("validation", "Invalid letter ID.");
     const version = sessionVersion;
     await requireHost();
     assertSession(version);
@@ -239,7 +239,7 @@
       method: "PATCH", headers: mode === "supabase" ? { Prefer: "return=representation" } : {}, body: JSON.stringify({ read_at: new Date().toISOString() })
     });
     assertSession(version);
-    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0].read_at) throw new InboxError("forbidden", "未能标记已读。来信不存在或账号权限已变化。");
+    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0].read_at) throw new InboxError("forbidden", "Could not mark this letter as read. It may no longer exist, or your access may have changed.");
     return rows[0];
   }
 
@@ -275,14 +275,14 @@
     $("inboxPanel").hidden = true;
     $("loginPanel").hidden = !api.configured;
     notifications = false;
-    $("notifyButton").textContent = "开启桌面通知";
+    $("notifyButton").textContent = "Enable notifications";
   }
 
   function signedInView() {
     viewVersion += 1;
     $("loginPanel").hidden = true;
     $("inboxPanel").hidden = false;
-    $("hostIdentity").textContent = api.identity && api.identity.email || "守塔人";
+    $("hostIdentity").textContent = api.identity && api.identity.email || "Harbor keeper";
     clearInterval(polling);
     polling = setInterval(() => load(false), 20000);
   }
@@ -290,28 +290,28 @@
   function render() {
     const all = Array.from(rows.values()).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || String(b.id).localeCompare(String(a.id), undefined, { numeric: true }));
     const visible = filter === "unread" ? all.filter((row) => !row.read_at) : all;
-    $("messageCount").textContent = "已载入 " + all.length + " 封 · " + all.filter((row) => !row.read_at).length + " 封未读";
+    $("messageCount").textContent = all.length + " loaded · " + all.filter((row) => !row.read_at).length + " unread";
     $("emptyInbox").hidden = visible.length !== 0;
-    $("emptyInbox").textContent = filter === "unread" ? "已载入的来信都读过了。" : "海面安静。暂时没有来信。";
+    $("emptyInbox").textContent = filter === "unread" ? "All loaded letters have been read." : "The sea is quiet. No letters yet.";
     const fragment = document.createDocumentFragment();
     for (const row of visible) {
       const item = document.createElement("li");
       item.className = "message-card" + (row.read_at ? "" : " is-unread");
       const meta = document.createElement("div"); meta.className = "message-meta";
-      const author = document.createElement("span"); author.className = "message-author"; author.textContent = row.name || "匿名旅人";
-      if (!row.read_at) { const unread = document.createElement("span"); unread.className = "unread-label"; unread.textContent = "未读"; author.append(unread); }
+      const author = document.createElement("span"); author.className = "message-author"; author.textContent = row.name || "A stranger";
+      if (!row.read_at) { const unread = document.createElement("span"); unread.className = "unread-label"; unread.textContent = "Unread"; author.append(unread); }
       const time = document.createElement("time"); time.dateTime = row.created_at || "";
-      const date = new Date(row.created_at); time.textContent = Number.isNaN(date.getTime()) ? "" : date.toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+      const date = new Date(row.created_at); time.textContent = Number.isNaN(date.getTime()) ? "" : date.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
       meta.append(author, time);
       const text = document.createElement("p"); text.className = "message-text"; text.textContent = row.text || "";
-      const contact = document.createElement("p"); contact.className = "message-contact"; contact.textContent = "回复线索：" + (row.contact || "未留下联系方式");
+      const contact = document.createElement("p"); contact.className = "message-contact"; contact.textContent = "Reply to: " + (row.contact || "No contact details shared");
       item.append(meta, text, contact);
       if (!row.read_at) {
-        const read = document.createElement("button"); read.type = "button"; read.className = "read-button"; read.textContent = "标记已读";
+        const read = document.createElement("button"); read.type = "button"; read.className = "read-button"; read.textContent = "Mark as read";
         read.addEventListener("click", async () => {
           read.disabled = true;
           const version = viewVersion;
-          try { const updated = await api.markRead(row.id); if (version !== viewVersion) return; rows.set(String(row.id), updated); render(); status("已标记为已读。"); }
+          try { const updated = await api.markRead(row.id); if (version !== viewVersion) return; rows.set(String(row.id), updated); render(); status("Marked as read."); }
           catch (error) { if (version !== viewVersion) return; handleError(error); read.disabled = false; }
         });
         item.append(read);
@@ -323,7 +323,7 @@
 
   function handleError(error) {
     if (error.code === "auth_expired" || error.code === "forbidden") { api.signOut(); signedOutView(); }
-    status(error.message || "暂时无法读取来信。", true);
+    status(error.message || "Letters could not be loaded. Please try again.", true);
   }
 
   async function load(manual = false, more = false) {
@@ -332,7 +332,7 @@
     const version = viewVersion;
     $("refreshButton").disabled = true;
     $("loadMoreButton").disabled = true;
-    if (manual) status("正在查看海面…");
+    if (manual) status("Checking the shore…");
     try {
       const letters = await api.list({ offset: more ? offset : 0 });
       if (version !== viewVersion) return;
@@ -343,11 +343,11 @@
       if (more || firstLoad) $("loadMoreButton").hidden = letters.length < 100;
       if (!firstLoad && !more && newLetters.length && notifications && window.Notification && Notification.permission === "granted") {
         // Notification content avoids exposing a private letter on the lock screen.
-        try { const note = new Notification("有新的漂流瓶", { body: newLetters.length + " 封来信漂到了岸边。", tag: "message-bottle-inbox" }); note.onclick = () => { window.focus(); note.close(); }; } catch (_) { status("新信已收到，但此浏览器无法显示桌面通知。", true); }
+        try { const note = new Notification("New letters ashore", { body: newLetters.length + (newLetters.length === 1 ? " new letter has reached the shore." : " new letters have reached the shore."), tag: "message-bottle-inbox" }); note.onclick = () => { window.focus(); note.close(); }; } catch (_) { status("New letters have arrived, but this browser could not show a notification.", true); }
       }
       firstLoad = false;
       render();
-      status("最近检查：" + new Date().toLocaleTimeString("zh-CN"));
+      status("Last checked: " + new Date().toLocaleTimeString("en-GB"));
     } catch (error) { if (version === viewVersion) handleError(error); }
     finally { loading = false; $("refreshButton").disabled = false; $("loadMoreButton").disabled = false; }
   }
@@ -355,7 +355,7 @@
   $("loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     $("loginButton").disabled = true;
-    status("正在打开收件箱…");
+    status("Opening the inbox…");
     try {
       await api.signIn($("hostEmail").value, $("hostPassword").value);
       $("hostPassword").value = "";
@@ -366,9 +366,9 @@
   });
   $("logoutButton").addEventListener("click", async () => {
     signedOutView();
-    status("正在退出…");
+    status("Signing out…");
     const result = await api.signOut();
-    status(result.remoteRevoked ? "已退出。" : "本页登录已清除。网络中断，远端会话未能撤销。", !result.remoteRevoked);
+    status(result.remoteRevoked ? "Signed out." : "Signed out on this page. The remote session could not be revoked because the connection was interrupted.", !result.remoteRevoked);
   });
   $("refreshButton").addEventListener("click", () => load(true));
   $("loadMoreButton").addEventListener("click", () => load(true, true));
@@ -378,14 +378,14 @@
     render();
   }));
   $("notifyButton").addEventListener("click", async () => {
-    if (!("Notification" in window) || !window.isSecureContext) { status("此浏览器不支持桌面通知。请在 HTTPS 桌面浏览器中打开收件箱。", true); return; }
-    if (notifications) { notifications = false; $("notifyButton").textContent = "开启桌面通知"; status("已关闭本页桌面通知。"); return; }
+    if (!("Notification" in window) || !window.isSecureContext) { status("Desktop notifications are unavailable. Open the inbox in a desktop browser over HTTPS.", true); return; }
+    if (notifications) { notifications = false; $("notifyButton").textContent = "Enable notifications"; status("Desktop notifications are off for this page."); return; }
     try {
       const permission = await Notification.requestPermission();
       notifications = permission === "granted";
-      $("notifyButton").textContent = notifications ? "关闭桌面通知" : "开启桌面通知";
-      status(notifications ? "已开启。页面打开时收到新信会通知你；关闭页面后不继续推送。" : "通知未获允许。你仍然可以在这里阅读新信。", !notifications);
-    } catch (_) { status("浏览器未能开启通知，请检查浏览器设置。", true); }
+      $("notifyButton").textContent = notifications ? "Disable notifications" : "Enable notifications";
+      status(notifications ? "Notifications are on while this page is open. They stop when the page closes." : "Notifications were not allowed. You can still read new letters here.", !notifications);
+    } catch (_) { status("Notifications could not be enabled. Check your browser settings.", true); }
   });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && api.signedIn) load(); });
 
@@ -397,7 +397,7 @@
       $("setupSupabase").hidden = api.setupKind !== "supabase";
       return;
     }
-    if (api.mode === "cloudflare") $("pollingNote").textContent = "页面打开时每 20 秒检查新信。本页桌面通知需要你主动开启；已配置的 Telegram 提醒不受页面关闭影响。";
+    if (api.mode === "cloudflare") $("pollingNote").textContent = "Checks for new letters every 20 seconds while open. Desktop alerts require permission; configured Telegram alerts continue when this page closes.";
     $("loginPanel").hidden = false;
     try { if (await api.restore()) { signedInView(); await load(true); } }
     catch (error) { handleError(error); }
