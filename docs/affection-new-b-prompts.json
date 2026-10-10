@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-10-10",
+  "tool": "built-in imagegen",
+  "transparent_background": true,
+  "layout": {
+    "columns": 4,
+    "rows": 4,
+    "frames": 16
+  },
+  "frameGroups": {
+    "munch": [
+      0,
+      3
+    ],
+    "greeting": [
+      4,
+      7
+    ],
+    "nuzzle": [
+      8,
+      11
+    ],
+    "stretch": [
+      12,
+      15
+    ]
+  },
+  "assets": {
+    "wolf": {
+      "reference": "assets/farm/wolf.webp",
+      "source": "assets/farm/affection/source/wolf-v1.png",
+      "output": "assets/farm/affection/wolf-v4.webp",
+      "prompt": "Use case: illustration-story.\nAsset type: production character interaction sprite atlas for an existing watercolor farm.\nLayout: EXACTLY sixteen separate full-body figures in a strict FOUR COLUMNS by FOUR ROWS grid, square canvas approximately 2048×2048, equal square cells, no visible grid or borders. Each animal completely inside its own cell, including the full ears/tail/paws, generous transparent gutters, no inter-cell overlap. Foot-contact baseline about 94% of each local cell. The same character at the SAME physical body scale in all sixteen cells; maintain the same torso length, head size, eye spacing and proportions rather than enlarging individual poses.\nView: three-quarter side view facing RIGHT in every frame, with face slightly turned toward viewer. Non-human animal anatomy. One complete animal per cell. All physical movements are small and plausible with grounded supporting paws. No separate food or heart props: animal BODY anatomy itself performs the action.\nMedium: match the input's softly dimensional detailed watercolor/gouache baby animal illustration, tactile delicate fur and realistic softly shaded fur strands, premium children's picture-book cutout, natural warm subtle lighting, no dark outlines, no flat vector look.\nBackdrop: ACTUAL transparent alpha background everywhere outside figures and between cells. No ground, no cast shadows, no background scenery, no text, no labels, no frame numbers, no collars or clothing.\nFrame numbering is row-major 0–15; DO NOT draw numbers. Every frame must be noticeably different from its neighbours but remain the same animal, enabling four gentle four-frame interaction clips.\nInput image 1: the EXACT CHARACTER IDENTITY reference: this gray-silver baby wolf with charcoal ear tips, warm cream face/chest/belly, amber-brown eyes, small black nose, fluffy cheeks, thick dark-tipped tail, oversized round paws. Preserve its puppy proportions and fur markings. Produce new poses of this individual, not a different wolf.\nRow 1 frames 0–3 — sniff food / gentle chewing, actual body movement:\n0 sitting slightly side-on facing right, neck extends subtly and nose dips to sniff.\n1 lowers head toward right forepaws, ears subtly incline forward, supporting paws unchanged.\n2 head remains lowered, mouth makes a tiny natural closed-mouth chew, one forepaw lightly flexes.\n3 swallows, tongue barely peeks or mouth gently closes, lifts head halfway to neutral.\nRow 2 frames 4–7 — wolf tail wag and little forepaw greeting:\n4 head alert and content, tail begins to sweep left, right front paw begins lifting.\n5 fluffy tail visibly sweeps right, one forepaw raised gently at chest height.\n6 tail sweeps back left, raised paw curls modestly forward, head tilts warmly.\n7 tail settles softly, paw lowers to ground, body returns toward sitting neutral.\nRow 3 frames 8–11 — affectionate head lean / eyes close:\n8 head tilts right toward the viewer, shoulder leans slightly forward.\n9 leans nearer with a relaxed neck, eyelids half close, ears relaxed.\n10 eyes peacefully fully closed, cheek and muzzle gently extend forward as a nuzzle, supporting body remains natural.\n11 opens eyes halfway, eases head back upright, soft calm expression.\nRow 4 frames 12–15 — stretch front legs and recover:\n12 from sitting, reaches both forelegs gently forward, chest inclines down.\n13 both forelegs extended farther in a small natural puppy stretch, hindquarters resting, head down right.\n14 pulls paws back toward body, chest rises, ears lift.\n15 settles into a side-on three-quarter upright sitting pose facing right, neutral relaxed expression matching frame 0's body size."
+    },
+    "fennec": {
+      "reference": "assets/farm/fennec.webp",
+      "source": "assets/farm/affection/source/fennec-v1.png",
+      "output": "assets/farm/affection/fennec-v4.webp",
+      "prompt": "Use case: illustration-story.\nAsset type: production character interaction sprite atlas for an existing watercolor farm.\nLayout: EXACTLY sixteen separate full-body figures in a strict FOUR COLUMNS by FOUR ROWS grid, square canvas approximately 2048×2048, equal square cells, no visible grid or borders. Each animal completely inside its own cell, including the full ears/tail/paws, generous transparent gutters, no inter-cell overlap. Foot-contact baseline about 94% of each local cell. The same character at the SAME physical body scale in all sixteen cells; maintain the same torso length, head size, eye spacing and proportions rather than enlarging individual poses.\nView: three-quarter side view facing RIGHT in every frame, with face slightly turned toward viewer. Non-human animal anatomy. One complete animal per cell. All physical movements are small and plausible with grounded supporting paws. No separate food or heart props: animal BODY anatomy itself performs the action.\nMedium: match the input's softly dimensional detailed watercolor/gouache baby animal illustration, tactile delicate fur and realistic softly shaded fur strands, premium children's picture-book cutout, natural warm subtle lighting, no dark outlines, no flat vector look.\nBackdrop: ACTUAL transparent alpha background everywhere outside figures and between cells. No ground, no cast shadows, no background scenery, no text, no labels, no frame numbers, no collars or clothing.\nFrame numbering is row-major 0–15; DO NOT draw numbers. Every frame must be noticeably different from its neighbours but remain the same animal, enabling four gentle four-frame interaction clips.\nInput image 1: the EXACT CHARACTER IDENTITY reference: this sand-golden tiny baby fennec fox, very large tall thin ears with delicate pink interiors, creamy white face/chest/belly, amber-brown eyes, tiny black nose, round baby face and soft fluffy sand-colored tail, petite paws. Preserve its individual face, giant ear proportions, small body and fur colors. Produce new poses of this individual, not an orange red fox.\nRow 1 frames 0–3 — sniff food / gentle chewing, actual body movement:\n0 sitting slightly side-on facing right, neck extends subtly and nose dips to sniff.\n1 lowers head toward right forepaws, tall ears lightly incline outward, supporting paws unchanged.\n2 head remains lowered, mouth makes a tiny natural closed-mouth chew, one forepaw lightly flexes.\n3 swallows, mouth gently closes, lifts head halfway to neutral, ears returning upright.\nRow 2 frames 4–7 — fennec perked ears and little forepaw greeting:\n4 ears prick more erect, head lifts alert and content, one forepaw begins lifting.\n5 giant ears fully upright and attentive, one tiny forepaw raised gently at chest height.\n6 ears tilt a little forward separately, raised paw curls modestly forward, head tilts warmly.\n7 ears settle naturally upright, paw lowers to ground, body returns toward sitting neutral.\nRow 3 frames 8–11 — affectionate head lean / eyes close:\n8 head tilts right toward the viewer, shoulder leans slightly forward, ears soften outward.\n9 leans nearer with a relaxed neck, eyelids half close, giant ears relaxed but fully visible.\n10 eyes peacefully fully closed, cheek and muzzle gently extend forward as a nuzzle.\n11 opens eyes halfway, eases head back upright, soft calm expression and ears gently upright.\nRow 4 frames 12–15 — stretch front legs and recover:\n12 from sitting, reaches both petite forelegs gently forward, chest inclines down.\n13 both forelegs extended farther in a small natural fox stretch, hindquarters resting, head down right, long ears remain naturally attached.\n14 pulls paws back toward body, chest rises, ears lift.\n15 settles into a side-on three-quarter upright sitting pose facing right, neutral relaxed expression matching frame 0's body size."
+    }
+  }
+}

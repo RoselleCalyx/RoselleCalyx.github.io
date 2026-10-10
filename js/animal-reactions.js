@@ -2,12 +2,25 @@
 (function(){
   const cache=new Map();
   const sheets={};
+  const species=['snowcat','rabbit','panda','fox','shiba','hedgehog','duckling','penguin','redpanda','raccoon','wolf','crocodile','fennec'];
+  const newSpecies=new Set(['redpanda','raccoon','wolf','crocodile','fennec']);
   const tailScratch=document.createElement('canvas');tailScratch.width=tailScratch.height=320;
   const wagMask=new Path2D('M102 53 C55 42 12 78 16 120 C18 151 34 168 50 166 L69 142 L98 114 C109 91 117 60 102 53 Z');
-  for(const sp of ['snowcat','rabbit','panda','fox','shiba','hedgehog','duckling','penguin']){
+  for(const sp of species){
     const img=new Image();img.decoding='async';
     img.onload=async()=>{try{await img.decode();}catch{}if(img.complete&&img.naturalWidth===384*16)sheets[sp]=img;};
     img.src=`assets/farm/affection/${sp}-v4.webp`;
+  }
+  function sequenceFor(sp,kind){
+    if(newSpecies.has(sp)){
+      // New sheets keep each action within its own four-frame group.
+      if(kind==='munch')return [0,1,2,3,2,3,1,0];
+      if(kind==='pet-stretch'||kind==='knead')return [12,13,14,15,14,13,12];
+      if(kind.startsWith('pet-'))return [8,9,10,11,10,9,8];
+      // A wolf wags and a crocodile swishes with their painted tail frames.
+      return [4,5,6,7,6,5,4];
+    }
+    return kind==='pet-stretch'||kind==='knead'?[8,9,12,13,14,15,8]:kind.startsWith('pet-')?[8,9,10,11,10,9,8]:kind==='munch'?[0,1,2,3,2,3,1,0]:kind==='wave'||kind==='flap'?[8,4,5,6,5,6,4,7,8]:kind==='curl'?[8,9,11,12,13,14,15,8]:kind==='wag'?[8,9,10,9,8,10,9,8]:[0,1,2,3,4,5,6,7];
   }
   const bones={
     shiba:{tail:{path:'M111 121 C49 105 17 144 26 207 C28 257 61 282 103 285 L112 252 L108 204 Z',pivot:[108,239]},paw:{path:'M125 231 L155 231 L159 304 L123 305 Z',pivot:[141,233]}},
@@ -40,16 +53,18 @@
     if(sheet){
       const p=Math.max(0,Math.min(1,(now-r.start)/r.duration));
       // Feeding, greeting and affection have actual articulated silhouettes.
-      const sequence=r.kind==='pet-stretch'||r.kind==='knead'?[8,9,12,13,14,15,8]:r.kind.startsWith('pet-')?[8,9,10,11,10,9,8]:r.kind==='munch'?[0,1,2,3,2,3,1,0]:r.kind==='wave'||r.kind==='flap'?[8,4,5,6,5,6,4,7,8]:r.kind==='curl'?[8,9,11,12,13,14,15,8]:r.kind==='wag'?[8,9,10,9,8,10,9,8]:[0,1,2,3,4,5,6,7];
+      const sequence=sequenceFor(a.def.species,r.kind);
       // Reduced motion still acknowledges a deliberate click with calm pose changes.
       const f=(calm?Math.floor(p*3)/3:p)*(sequence.length-1),i=Math.floor(f),blend=calm?0:f-i;
       const g=cv.getContext('2d');g.clearRect(0,0,320,320);
       const smooth=blend*blend*(3-2*blend);
+      // The low crocodile torso sits through the existing aquatic waterline.
+      const drawY=a.def.species==='crocodile'?-22:-40;
       g.save();g.globalCompositeOperation='lighter';
       [[sequence[i],1-smooth],[sequence[Math.min(i+1,sequence.length-1)],smooth]].forEach(([frame,alpha])=>{
-        g.globalAlpha=alpha;g.drawImage(sheet,frame*384,0,384,384,-20,-40,360,360);
+        g.globalAlpha=alpha;g.drawImage(sheet,frame*384,0,384,384,-20,drawY,360,360);
       });g.restore();
-      if(r.kind==='wag'&&!calm){
+      if(r.kind==='wag'&&a.def.species==='shiba'&&!calm){
         // Move only the existing curled tail; keep the paws planted.
         const tg=tailScratch.getContext('2d');tg.clearRect(0,0,320,320);tg.drawImage(cv,0,0);
         g.save();g.globalCompositeOperation='destination-out';g.fill(wagMask);g.restore();
@@ -75,5 +90,5 @@
     art.parts.filter(b=>b.name!=='tail').forEach(part);
     r.painted=true;a.el.classList.add('reaction-ready');
   }
-  window.AnimalReactions={draw,get ready(){return Object.keys(sheets).length===8;}};
+  window.AnimalReactions={draw,get ready(){return Object.keys(sheets).length===species.length;}};
 })();

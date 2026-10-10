@@ -551,7 +551,7 @@
   const happyActions={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','pet-stretch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','wave','happy-hop'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop']};
   const petActions={snowcat:['knead','pet-nuzzle','wave','pet-stretch'],rabbit:['binky','pet-nuzzle','wave','pet-stretch'],panda:['wave','pet-nuzzle','pet-stretch'],fox:['wave','pet-nuzzle','pounce','pet-stretch'],shiba:['wag','pet-nuzzle','wave','pet-stretch'],hedgehog:['curl','pet-nuzzle','wave'],duckling:['flap','pet-nuzzle','wave'],penguin:['flap','pet-nuzzle','wave']};
   Object.assign(happyActions, { redpanda: ['wave', 'happy-hop'], raccoon: ['wave', 'happy-hop'], wolf: ['wag', 'wave'], crocodile: ['swish'], fennec: ['pounce', 'happy-hop', 'wave'] });
-  Object.assign(petActions, { redpanda: ['pet-nuzzle', 'wave', 'pet-stretch'], raccoon: ['wave', 'pet-nuzzle'], wolf: ['wag', 'pet-nuzzle', 'pet-stretch'], crocodile: ['swish', 'pet-nuzzle'], fennec: ['pet-nuzzle', 'wave', 'pounce'] });
+  Object.assign(petActions, { redpanda: ['pet-nuzzle', 'wave', 'pet-stretch'], raccoon: ['wave', 'pet-nuzzle', 'pet-stretch'], wolf: ['wag', 'pet-nuzzle', 'pet-stretch'], crocodile: ['swish', 'pet-nuzzle', 'pet-stretch'], fennec: ['pet-nuzzle', 'wave', 'pet-stretch'] });
   const actionText={wave:'waves a little paw',wag:'wags its fluffy tail', 'happy-hop':'hops up with delight',flap:'flutters tiny wings',swish:'swishes its tail through the water'};
   function react(a, kind, options = {}) {
     [...a.el.classList].filter((c) => c.startsWith("react")).forEach((c) => a.el.classList.remove(c));
