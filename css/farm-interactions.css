@@ -60,13 +60,37 @@ body[data-page="farm"] .bubble.animal-food.below::after { border-bottom-color: r
 .roster .resident-note { white-space: pre-line; overflow-wrap: anywhere; }
 @media (max-width: 520px) { .farm-shared-tools { align-items: flex-start; gap: 12px; } }
 
-/* Water residents float on a quiet wake. */
+/* The waterline cuts through the torso, leaving the eyes and back above water. */
+.actor.aquatic { --swim-line: 83.5%; --swim-width: 112%; --water-wash: 105, 119, 175; --water-glint: 225, 228, 241; }
+.farm-world[data-season="autumn"] .actor.aquatic { --water-wash: 103, 126, 130; --water-glint: 241, 226, 204; }
+.farm-world[data-season="winter"] .actor.aquatic { --water-wash: 99, 139, 163; --water-glint: 225, 241, 249; }
 .actor.aquatic::before { display: none; }
-.swim-ripple { position: absolute; left: -9%; width: 118%; height: 12%; bottom: 1%; border: 1px solid rgba(224, 231, 244, .5); border-radius: 50%; pointer-events: none; }
-.swim-ripple::after { content: ""; position: absolute; inset: -35% -9%; border: 1px solid rgba(224, 231, 244, .2); border-radius: inherit; }
-.actor.aquatic.walking .swim-ripple { animation: crocodile-wake 2.8s ease-out infinite; }
+.actor.aquatic .flip { position: relative; }
+.actor.aquatic .bob { z-index: 1; }
+.actor.aquatic :is(.animal-sprite, .pose-sprite, .reaction-art, .walk-sprite) {
+  --swim-cut: 83.5%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(var(--swim-cut) - 1%), rgba(0, 0, 0, .65) var(--swim-cut), transparent calc(var(--swim-cut) + 4%));
+  mask-image: linear-gradient(to bottom, #000 0%, #000 calc(var(--swim-cut) - 1%), rgba(0, 0, 0, .65) var(--swim-cut), transparent calc(var(--swim-cut) + 4%));
+}
+.actor.aquatic .pose-sprite { --swim-cut: 83.3%; }
+/* Mask each sheet before its 1.45x transform, so the nose and tail keep their width. */
+.actor.aquatic .walk-sprite { --swim-cut: 82%; transform: translateY(calc(var(--walk-offset, .25%) + var(--swim-drift, 0%))) scale(var(--walk-scale)); transition: none; }
+.actor.aquatic.walk-ready.walking { --swim-width: 142%; }
+.swim-water { position: absolute; left: 50%; top: var(--swim-line); width: var(--swim-width); height: 15%; transform: translate(-50%, -50%); color: rgb(var(--water-glint)); pointer-events: none; }
+.swim-water::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 54%, rgba(var(--water-wash), .28) 0%, rgba(var(--water-wash), .12) 45%, transparent 72%); }
+.swim-water svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; overflow: visible; }
+.swim-water-back { z-index: 0; opacity: .3; }
+.swim-water-front { z-index: 2; }
+.swim-water-front::before { inset: 38% 4% -20%; opacity: .8; }
+.swim-contact { opacity: .65; }
+.swim-wake { opacity: .25; transform-origin: 50% 50%; }
+.swim-glints { opacity: .7; stroke-width: 2; }
+.actor.aquatic.walking .swim-wake { animation: crocodile-wake 2.8s ease-out infinite; }
+.actor.aquatic.walking .swim-glints { animation: crocodile-glimmer 2.1s ease-in-out infinite; }
 .actor.aquatic.react-swish { --ra: crocodile-swish; }
 .actor[data-species="crocodile"] .bite-treat { left: 76%; top: 73%; }
-@keyframes crocodile-wake { 0% { opacity: .25; transform: scale(.88); } 55% { opacity: .7; } 100% { opacity: .25; transform: scale(1.12); } }
+@keyframes crocodile-wake { 0% { opacity: .14; transform: translateX(0) scale(.93); } 55% { opacity: .4; } 100% { opacity: 0; transform: translateX(-5%) scale(1.12); } }
+@keyframes crocodile-glimmer { 0%,100% { opacity: .35; } 50% { opacity: .75; } }
 @keyframes crocodile-swish { 0%,100% { transform: rotate(0); } 30% { transform: rotate(2deg); } 65% { transform: rotate(-2deg); } }
-.farm-calm .swim-ripple, .farm-reduced-motion .swim-ripple { animation: none !important; }
+.farm-calm :is(.swim-wake, .swim-glints), .farm-reduced-motion :is(.swim-wake, .swim-glints) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .swim-wake, .swim-glints { animation: none !important; } }

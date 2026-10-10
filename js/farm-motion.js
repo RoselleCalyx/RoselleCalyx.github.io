@@ -20,7 +20,7 @@
     redpanda: { frames: 6, stride: .28, scale: 1.25, baseline: 360 / 384, src: 'assets/farm/walk/redpanda-v2.webp' },
     raccoon: { frames: 6, stride: .3, scale: 1.25, baseline: 360 / 384 },
     wolf: { frames: 6, stride: .36, scale: 1.25, baseline: 360 / 384 },
-    crocodile: { frames: 6, stride: .4, scale: 1.45, baseline: 360 / 384 },
+    crocodile: { frames: 6, stride: .4, scale: 1.45, baseline: 360 / 384, waterlines: [.826, .809, .839, .789, .811, .832] },
     fennec: { frames: 6, stride: .38, scale: 1.25, baseline: 360 / 384 }
   });
   function leap(progress){

@@ -217,8 +217,11 @@
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
     el.setAttribute("aria-label", `${def.name}, ${sp.label}`);
-    const art = `<div class="flip"><div class="bob">${ART[def.species]()}${walkSprite(def.species)}${jumpSprite(def.species)}${poseSprite(def.species)}<canvas class="reaction-art" width="320" height="320" aria-hidden="true"></canvas></div></div>`;
-    el.innerHTML = (sp.habitat === 'water' ? '<span class="swim-ripple" aria-hidden="true"></span>' : '') + art
+    const swimming = sp.habitat === 'water';
+    const waterBack = swimming ? '<span class="swim-water swim-water-back" aria-hidden="true"><svg viewBox="0 0 360 100" preserveAspectRatio="none"><path d="M30 50 C30 17 330 17 330 50 M7 48 C28 8 332 8 353 48"/></svg></span>' : '';
+    const waterFront = swimming ? '<span class="swim-water swim-water-front" aria-hidden="true"><svg viewBox="0 0 360 100" preserveAspectRatio="none"><path class="swim-contact" d="M30 50 C45 78 315 78 330 50"/><g class="swim-wake"><path d="M7 56 C34 92 326 92 353 56 M1 49 Q40 72 101 65 M1 72 Q42 91 93 80"/></g><path class="swim-glints" d="M71 63 Q90 68 117 66 M177 72 Q205 74 230 69 M264 64 Q286 62 301 56"/></svg></span>' : '';
+    const art = `<div class="flip">${waterBack}<div class="bob">${ART[def.species]()}${walkSprite(def.species)}${jumpSprite(def.species)}${poseSprite(def.species)}<canvas class="reaction-art" width="320" height="320" aria-hidden="true"></canvas></div>${waterFront}</div>`;
+    el.innerHTML = art
       + `<span class="resident-label">${esc(def.name)}</span>`
       + (opts.pending ? `<span class="tag">waiting for approval</span>` : "");
     actorsEl.appendChild(el);
@@ -279,6 +282,17 @@
     a.el.classList.toggle("hopping", a.state === "walk" && a.sp.gait === "hop");
     a.el.classList.toggle('sleeping', a.pose === 'sleep');
     const sample = Motion.sample(a.phase, a.def.species), frame = sample.frame;
+    const gait = Motion.GAITS[a.def.species];
+    if (gait.waterlines) {
+      // Align each frame's torso to one water plane, including the blended next frame.
+      [[a.sprite, frame], [a.nextSprite, sample.next]].forEach(([sprite, index]) => {
+        if (!sprite) return;
+        const line = gait.waterlines[index];
+        const shifted = .9375 + (line - .9375) * gait.scale + .0025;
+        sprite.style.setProperty('--swim-cut', line * 100 + '%');
+        sprite.style.setProperty('--swim-drift', (.835 - shifted) * 100 + '%');
+      });
+    }
     const leap=Motion.leap(a.jumpPhase||0),j=a.el.querySelector('.jump-sprite'),jn=a.el.querySelector('.jump-sprite-next');
     if(j){j.style.backgroundPositionX=leap.frame*100/7+'%';jn.style.backgroundPositionX=leap.next*100/7+'%';a.el.style.setProperty('--jump-blend',leap.blend.toFixed(3));}
     if (a.nextSprite) {
