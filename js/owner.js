@@ -36,7 +36,7 @@
     parent[path[path.length - 1]] = value;
     setDirty();
   }
-  function field(path, title, { type = "text", options, required = false, rows = 3, min, max, placeholder, help } = {}) {
+  function field(path, title, { type = "text", options, required = false, rows = 3, min, max, placeholder, help, image = false, ratio = "original" } = {}) {
     const label = node("label", undefined, "owner-field");
     label.append(node("span", title));
     const input = node(options ? "select" : type === "textarea" || type === "lines" || type === "json" ? "textarea" : "input");
@@ -68,6 +68,19 @@
     });
     label.append(input);
     if (help) label.append(node("small", help));
+    if (image && window.OwnerImages) {
+      const wrapper = node("div", undefined, "owner-image-field");
+      wrapper.append(label);
+      window.OwnerImages.attach(wrapper, {
+        input, ratio, label: title,
+        canUse: () => api.signedIn && !busy && input.isConnected,
+        upload: blob => api.uploadImage(blob),
+        onCommit: () => {
+          status("Image added to your draft. Save & publish to update the website.");
+        }
+      });
+      return wrapper;
+    }
     return label;
   }
   function group(title, text) {
@@ -133,7 +146,7 @@
   }
   function homePanel(root) {
     const hero = group("Welcome & about", "Line breaks in the hero title and introduction are preserved.");
-    grid(hero, [field(["home", "heroTitle"], "Hero title", { type: "textarea", rows: 2 }), field(["home", "heroLede"], "Hero introduction", { type: "textarea", rows: 2 }), field(["home", "avatar"], "Portrait image", { placeholder: "assets/avatar.jpg" }), field(["home", "heroFoot"], "Hero footer")]);
+    grid(hero, [field(["home", "heroTitle"], "Hero title", { type: "textarea", rows: 2 }), field(["home", "heroLede"], "Hero introduction", { type: "textarea", rows: 2 }), field(["home", "avatar"], "Portrait image", { placeholder: "assets/avatar.jpg", image: true, ratio: "3:4" }), field(["home", "heroFoot"], "Hero footer")]);
     hero.append(field(["home", "bio"], "Biography", { type: "lines", rows: 6, help: "One paragraph per line." }), field(["home", "interests"], "Research interests", { type: "lines", help: "One interest per line." }), field(["home", "beyond"], "Beyond the lab", { type: "textarea" }), field(["home", "coda"], "Story closing text", { type: "textarea" })); root.append(hero);
     collection(root, ["home", "education"], "Education", "", { date: "", title: "", detail: "" }, (card, path) => grid(card, [field(path.concat("date"), "Date / period"), field(path.concat("title"), "Qualification", { required: true }), field(path.concat("detail"), "Details", { type: "textarea" })]));
     collection(root, ["home", "news"], "News", "", { date: "", text: "", href: "" }, (card, path) => grid(card, [field(path.concat("date"), "Date"), field(path.concat("text"), "News", { type: "textarea", required: true }), field(path.concat("href"), "Optional link")]));
@@ -144,11 +157,11 @@
       paper.links ||= {}; paper.figures ||= [];
       card.append(field(path.concat("title"), "Title", { required: true }));
       grid(card, [field(path.concat("authors"), "Authors in order", { type: "lines", help: "One full author name per line.", required: true }), field(path.concat("venue"), "Venue / journal / status"), field(path.concat("year"), "Year", { type: "number", min: 1900, max: 2200, required: true }), field(path.concat("type"), "Type", { options: ["publication", "preprint", "project"] }), field(path.concat("topics"), "Topics", { type: "lines", help: "One topic per line." }), field(path.concat("selected"), "Selected paper", { type: "checkbox" })]);
-      card.append(field(path.concat("abstract"), "Abstract", { type: "textarea", rows: 6 }), field(path.concat("image"), "Cover figure URL / asset path"));
+      card.append(field(path.concat("abstract"), "Abstract", { type: "textarea", rows: 6 }), field(path.concat("image"), "Cover figure URL / asset path", { image: true, ratio: "4:3" }));
       if (paper.image) { const img = node("img", undefined, "owner-image-preview"); img.src = paper.image; img.alt = "Current paper cover"; img.loading = "lazy"; card.append(img); }
       grid(card, [["pdf", "PDF"], ["code", "Code"], ["project", "Project website"], ["data", "Dataset"]].map(([key, title]) => field(path.concat("links", key), title)));
       card.append(field(path.concat("bibtex"), "BibTeX", { type: "textarea", rows: 5, help: "Optional. Leave empty to generate a citation from the paper fields." }));
-      collection(card, path.concat("figures"), "Figures", "Use image URLs or paths to existing site assets.", { src: "", caption: "" }, (figure, figPath) => grid(figure, [field(figPath.concat("src"), "Image", { required: true }), field(figPath.concat("caption"), "Caption")]));
+      collection(card, path.concat("figures"), "Figures", "Upload and crop an image, or use an image URL or existing site asset.", { src: "", caption: "" }, (figure, figPath) => grid(figure, [field(figPath.concat("src"), "Image", { required: true, image: true }), field(figPath.concat("caption"), "Caption")]));
     });
   }
   function galleryPanel(root) {
@@ -159,7 +172,7 @@
       card.append(field(path.concat("story"), "Story", { type: "textarea" }));
       collection(card, path.concat("photos"), "Photos", "Leave image empty to display a painted placeholder.", { src: "", caption: "", paint: { sky: "dusk", land: "mountains" } }, (photo, pth, data) => {
         data.paint ||= { sky: "dusk", land: "mountains" };
-        grid(photo, [field(pth.concat("src"), "Image URL / asset path"), field(pth.concat("caption"), "Caption"), field(pth.concat("paint", "sky"), "Placeholder sky", { options: ["dusk", "aurora", "milkyway", "sunset", "night", "dawn"] }), field(pth.concat("paint", "land"), "Placeholder landscape", { options: ["mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"] }), field(pth.concat("paint", "cabin"), "Cabin in placeholder", { type: "checkbox" })]);
+        grid(photo, [field(pth.concat("src"), "Image URL / asset path", { image: true }), field(pth.concat("caption"), "Caption"), field(pth.concat("paint", "sky"), "Placeholder sky", { options: ["dusk", "aurora", "milkyway", "sunset", "night", "dawn"] }), field(pth.concat("paint", "land"), "Placeholder landscape", { options: ["mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"] }), field(pth.concat("paint", "cabin"), "Cabin in placeholder", { type: "checkbox" })]);
       });
     });
   }
@@ -177,14 +190,15 @@
       card.append(field(path.concat("poem"), "Poem", { type: "textarea" }), field(path.concat("fact"), "Mission fact", { type: "textarea" }));
       card.append(field(path.concat("source"), "Source link"));
       grid(card, ["equinox", "eclipse", "plume", "close", "farewell"].map(key => field(path.concat(key), "Scene effect: " + key, { type: "checkbox" })));
-      grid(card, ["art", "target", "label", "vantage", "terrain", "pose", "description", "particles", "haze"].map(key => field(path.concat("scene", key), "Scene " + key, key === "haze" ? { type: "number", min: 0, max: 1 } : key === "art" ? { required: true } : key === "particles" ? { options: ["", "ice"] } : {})));
+      grid(card, ["art", "target", "label", "vantage", "terrain", "pose", "description", "particles", "haze"].map(key => field(path.concat("scene", key), "Scene " + key, key === "haze" ? { type: "number", min: 0, max: 1 } : key === "art" ? { required: true, image: true } : key === "particles" ? { options: ["", "ice"] } : {})));
       card.querySelectorAll('input[type="number"]').forEach(input => { input.step = "any"; });
     });
     const extras = group("Additional text & links", "Structured page content is editable above. The JSON backup contains the full public content for transfer or recovery.");
-    extras.append(node("p", "Images can use an HTTPS URL or a path such as assets/paper1.png. Image files must already be hosted.", "owner-help")); root.append(extras);
+    extras.append(node("p", "Choose Upload & crop beside an image field, or use an HTTPS URL or a path such as assets/paper1.png. Uploaded images enter your draft; Save & publish makes the change visible on the website.", "owner-help")); root.append(extras);
   }
   function render() {
     if (!draft) return;
+    window.OwnerImages?.cleanup();
     for (const [key, fn] of [["profile", profilePanel], ["home", homePanel], ["papers", paperPanel], ["gallery", galleryPanel], ["public", publicPanel]]) {
       const root = document.querySelector('[data-owner-panel="' + key + '"]'); root.replaceChildren(); fn(root);
     }
@@ -291,6 +305,7 @@
   });
   window.addEventListener("beforeunload", event => { if (dirty && draft) { event.preventDefault(); event.returnValue = ""; } });
   window.addEventListener("host-session-change", event => {
+    window.OwnerImages?.cancelAll();
     generation += 1; busy = false;
     if (event.detail.signedIn) {
       const hash = location.hash.slice(1); showTab(hash === "inbox" ? "letters" : hash || "profile");
@@ -299,6 +314,7 @@
     } else {
       $("ownerEditor").hidden = true; $("lettersWorkspace").hidden = true;
       if (event.detail.explicit || !dirty) {
+        window.OwnerImages?.cleanup();
         draft = null; dirty = false;
         document.querySelectorAll("#ownerContentForm [data-owner-panel]").forEach(el => el.replaceChildren());
         status("");

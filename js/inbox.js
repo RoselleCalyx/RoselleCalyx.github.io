@@ -89,7 +89,8 @@
         if (data && data.code === "content_conflict") throw new InboxError("content_conflict", "The website was updated elsewhere. Your draft is preserved. Reload the published version before saving again.", response.status);
         if (data && data.code === "farm_capacity") throw new InboxError("farm_capacity", "The farm can hold 24 residents in total. Remove a resident before adding more. Your draft is preserved.", response.status);
         if (data && data.code === "resident_not_found") throw new InboxError("resident_not_found", "This resident has already left the farm. Refresh the resident list.", response.status);
-        if (response.status === 413) throw new InboxError("too_large", "This content is too large to publish. Reduce the text or number of items, then try again.", 413);
+        if (data && /^media_|^upload_/.test(data.code || "")) throw new InboxError(data.code, data.message || "This image could not be uploaded. Please try again.", response.status);
+        if (response.status === 413) throw new InboxError("too_large", path === "/api/host/media" ? data?.message || "This cropped image is too large to upload. Choose a smaller output." : "This content is too large to publish. Reduce the text or number of items, then try again.", 413);
         if (data && data.code === "validation") throw new InboxError("validation", data.message || "Please check the content fields.", response.status);
         if (response.status === 404) throw new InboxError("not_available", "This feature is not available on the connected service yet. Deploy the latest owner-workspace service.", 404);
         throw new InboxError("http_error", "The inbox service is unavailable. Check the configuration or try again shortly.", response.status);
@@ -308,6 +309,15 @@
     if (!data || data.ok !== true || data.revision !== revision + 1 || !data.content || Array.isArray(data.content) || typeof data.content !== "object" || typeof data.updatedAt !== "string" || Number.isNaN(new Date(data.updatedAt).getTime())) throw new InboxError("invalid_response", "Publication could not be confirmed. Reload to check the published version before retrying.");
     return data;
   }
+  async function uploadImage(blob) {
+    requireFarmService();
+    const types = ["image/jpeg", "image/png", "image/webp"];
+    if (!(blob instanceof Blob) || !types.includes(blob.type) || blob.size < 1 || blob.size > 1048576) throw new InboxError("media_invalid", "Please crop an image smaller than 1 MB before uploading.");
+    const data = await authedRequest("/api/host/media", { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!data || data.ok !== true || !uuid.test(String(data.id)) || data.url !== base + "/api/media/" + data.id || !types.includes(data.mime) || !Number.isInteger(data.bytes) || data.bytes < 1 || data.bytes > 1048576 || ![data.width, data.height].every(value => Number.isInteger(value) && value > 0 && value <= 2048)) throw new InboxError("invalid_response", "The image upload could not be confirmed. Your current image has not changed.");
+    return data.url;
+  }
   async function updateMessage(id, changes) {
     requireFarmService();
     if (!/^[1-9]\d*$/.test(String(id))) throw new InboxError("validation", "Invalid letter ID.");
@@ -325,7 +335,7 @@
   const api = window.HostInbox = Object.freeze({
     configured: Boolean(base), mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
     farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
-    getContent, saveContent, updateMessage, removeResident,
+    getContent, saveContent, uploadImage, updateMessage, removeResident,
     get identity() { return session && session.user; },
     get signedIn() { return Boolean(session); }
   });

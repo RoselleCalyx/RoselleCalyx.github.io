@@ -1,6 +1,7 @@
 import { farmRoute } from './farm.js';
 import { HTTPError } from "./errors.js";
 import { readSiteContent, saveSiteContent } from "./site-content.js";
+import { uploadMedia, readMedia } from "./media.js";
 
 const ACCESS_SECONDS = 3600;
 const REFRESH_SECONDS = 7 * 24 * 3600;
@@ -187,6 +188,10 @@ async function hostRoute(request, env, path, url) {
   if (path === "/api/host/me" && request.method === "GET") return { id: "host", email: env.HOST_EMAIL };
   if (path === "/api/host/site-content" && request.method === "GET") return readSiteContent(env);
   if (path === "/api/host/site-content" && request.method === "PUT") return saveSiteContent(env, await jsonBody(request, ["revision", "content"], 1024 * 1024));
+  if (path === "/api/host/media" && request.method === "POST") {
+    await rateLimit(request, env, "owner-media", 60, 3600);
+    return uploadMedia(request, env);
+  }
   if (path === "/api/host/messages" && request.method === "GET") {
     const limitRaw = url.searchParams.get("limit") || "100", offsetRaw = url.searchParams.get("offset") || "0";
     if (!/^\d+$/.test(limitRaw) || !/^\d+$/.test(offsetRaw) || !Number.isSafeInteger(Number(offsetRaw))) throw new HTTPError(400, "validation", "Invalid inbox page.");
@@ -253,8 +258,12 @@ export default {
   async fetch(request, env, ctx) {
     try {
       configured(env);
-      assertOrigin(request, env);
       const url = new URL(request.url), path = url.pathname;
+      const media = /^\/api\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.exec(path);
+      // Public image embeds are sent without an Origin header by browsers.
+      // This exception never applies to private APIs or media uploads.
+      if (media && ["GET", "HEAD"].includes(request.method)) return await readMedia(request, env, media[1]);
+      assertOrigin(request, env);
       const farm = path === '/api/farm' || path.startsWith('/api/farm/') || path.startsWith('/api/host/farm/');
       if (request.method === "OPTIONS") {
         const method = request.headers.get("Access-Control-Request-Method") || "";

@@ -1,0 +1,41 @@
+/* Image selection stays with its URL field; the crop dialog is shared across fields. */
+.owner-image-tools { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; margin-top: 3px; }
+.owner-image-upload { min-height: 40px; font-size: 11px; padding: 8px 15px; color: #ead5ae; }
+.owner-image-file[hidden] { display: none; }
+.owner-image-message { line-height: 1.6; }
+.owner-image-current { display: block; max-width: min(100%, 250px); max-height: 170px; width: auto; object-fit: contain; border-radius: 8px; background: #13222f; }
+.owner-image-current[hidden] { display: none; }
+.owner-image-dialog { color: #e6e8e6; background: #0b1b2a; border: 1px solid #dac6a449; border-radius: 16px; width: min(760px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); padding: 24px; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 24px 100px #0008; }
+.owner-image-dialog::backdrop { background: #020912c9; backdrop-filter: blur(4px); }
+.owner-image-dialog * { box-sizing: border-box; }
+.owner-crop-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.owner-crop-heading h2 { margin: 0; color: #f0dfbf; font: 400 22px/1.4 var(--display, sans-serif); }
+.owner-crop-heading button { flex: 0 0 40px; width: 40px; height: 40px; padding: 0; font: 400 24px/1 var(--text, sans-serif); }
+.owner-crop-intro { color: #a9becb; font-size: 12px; line-height: 1.6; margin: 8px 0 18px; }
+.owner-crop-options { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 1fr); align-items: end; gap: 14px; margin-bottom: 18px; }
+.owner-crop-control { display: flex; flex-direction: column; gap: 7px; min-width: 0; color: #c0cdd4; font-size: 12px; }
+.owner-crop-control select, .owner-crop-control input[type="number"] { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid #a9becb40; border-radius: 8px; background: #071521; color: #e6e8e6; font: inherit; }
+.owner-crop-custom { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.owner-crop-custom[hidden] { display: none; }
+.owner-crop-stage { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 150px; padding: 0; border-radius: 10px; background: repeating-conic-gradient(#122633 0% 25%, #1d3442 0% 50%) 50% / 16px 16px; overflow: hidden; }
+#ownerCropCanvas { display: block; max-width: 100%; cursor: grab; touch-action: none; outline: 1px solid #f0dfbf4d; outline-offset: -1px; }
+#ownerCropCanvas:active { cursor: grabbing; }
+.owner-crop-sliders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding-top: 18px; }
+.owner-crop-control input[type="range"] { width: 100%; height: 32px; padding: 0; margin: 0; accent-color: #dfc69e; background: transparent; }
+.owner-crop-control input:disabled { opacity: .45; }
+.owner-crop-dimensions { color: #a4bac7; font-size: 11px; line-height: 1.6; margin: 12px 0 0; }
+.owner-crop-status { min-height: 38px; font-size: 12px; line-height: 1.6; color: #b9c9d1; margin: 8px 0 16px; }
+.owner-crop-status.is-error { color: #ecc0ad; }
+.owner-crop-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.owner-crop-actions button { min-height: 44px; padding: 10px 18px; font-size: 12px; }
+#ownerCropUpload { color: #f4e2b4; border-color: #dfc69e77; background: #dfc69e16; }
+.owner-image-dialog button:focus-visible, .owner-image-dialog input:focus-visible, .owner-image-dialog select:focus-visible { outline: 2px solid #e5c891; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .owner-image-dialog { width: calc(100vw - 20px); max-width: calc(100vw - 20px); max-height: calc(100dvh - 20px); padding: 16px; border-radius: 12px; }
+  .owner-crop-heading h2 { font-size: 19px; }
+  .owner-crop-options { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .owner-crop-sliders { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-top: 14px; }
+  .owner-crop-control { gap: 4px; }
+  .owner-crop-status { margin-bottom: 12px; }
+  .owner-crop-actions button { flex: 1 1 120px; padding: 10px; }
+}
