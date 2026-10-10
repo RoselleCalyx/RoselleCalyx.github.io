@@ -8,7 +8,7 @@ const newSpecies = ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'];
 const plain = value => JSON.parse(JSON.stringify(value));
 
 function page({ fetch, settings = {}, placeholders = [], timeout = false } = {}) {
-  const order = [], timers = new Map(); let nextTimer = 0;
+  const order = [], preloads = [], timers = new Map(); let nextTimer = 0;
   const context = {
     window: { SITE: { name: 'Static host', links: { github: 'https://github.com/static' }, messageApi: 'https://content.example', ...settings },
       PAPERS: [{ title: 'Static paper' }], GALLERY: [{ id: 'static' }], BOTTLES: [{ text: 'Static note' }],
@@ -18,11 +18,11 @@ function page({ fetch, settings = {}, placeholders = [], timeout = false } = {})
     setTimeout(callback) { const id = ++nextTimer; timers.set(id, callback); if (timeout) queueMicrotask(() => timers.has(id) && callback()); return id; },
     clearTimeout(id) { timers.delete(id); },
     CustomEvent: function (type, options) { this.type = type; this.detail = options.detail; },
-    document: { querySelectorAll: () => placeholders.map(src => ({ getAttribute: () => src, replaceWith(script) { order.push(script.src); queueMicrotask(script.onload); } })),
+    document: { head: { appendChild(link) { preloads.push(link); } }, querySelectorAll: () => placeholders.map(src => ({ getAttribute: () => src, replaceWith(script) { order.push(script.src); queueMicrotask(script.onload); } })),
       createElement: () => ({}), dispatchEvent(event) { order.push(event.type); } }, console
   };
   vm.runInNewContext(source, context);
-  return { context, api: context.window.SiteContent, order };
+  return { context, api: context.window.SiteContent, order, preloads };
 }
 const response = content => ({ ok: true, text: async () => JSON.stringify({ ok: true, revision: 3, updatedAt: '2026-10-10T10:00:00Z', content }) });
 
@@ -47,10 +47,12 @@ test('the static baseline survives network errors, malformed JSON, failed HTTP r
   }
 });
 
-test('runtime modules start once and in dependency order after content is available', async () => {
+test('runtime modules preload while content is pending, then start once in dependency order', async () => {
   let resolve; const delayed = new Promise(done => { resolve = done; });
   const p = page({ placeholders: ['js/sky.js', 'js/common.js', 'js/papers.js'], fetch: async () => { await delayed; return response({ site: { name: 'Loaded before startup' } }); } });
-  assert.deepEqual(p.order, []); resolve(); await p.api.started;
+  assert.deepEqual(p.order, []);
+  assert.deepEqual(p.preloads.map(link => [link.rel, link.as, link.href]), [['preload', 'script', 'js/sky.js'], ['preload', 'script', 'js/common.js'], ['preload', 'script', 'js/papers.js']]);
+  resolve(); await p.api.started;
   assert.equal(p.context.window.SITE.name, 'Loaded before startup');
   assert.deepEqual(p.order, ['js/sky.js', 'js/common.js', 'js/papers.js', 'site-content-ready']);
 });

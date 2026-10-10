@@ -165,9 +165,9 @@
     return api;
   });
   const scripts = Array.from(document.querySelectorAll("script[data-site-src]"));
-  // Fetch the farm's dependencies while its published content is being read.
+  // Fetch page dependencies while its published content is being read.
   // Execution still waits for that snapshot and follows the original order.
-  if (document.body?.dataset.page === "farm") scripts.forEach(placeholder => {
+  scripts.forEach(placeholder => {
     const preload = document.createElement("link");
     preload.rel = "preload"; preload.as = "script";
     preload.href = placeholder.getAttribute("data-site-src");

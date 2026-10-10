@@ -63,7 +63,7 @@
   }
 
   /* ================= weather ================= */
-  const weather = { cv: null, ctx: null, w: 0, h: 0, dpr: 1, parts: [], kind: "" };
+  const weather = { cv: null, ctx: null, w: 0, h: 0, dpr: 1, parts: [], kind: "", dirty: true };
   function setupWeather() {
     const cv = document.createElement("canvas");
     cv.className = "weather";
@@ -73,6 +73,7 @@
       weather.dpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.5);
       weather.w = world.offsetWidth; weather.h = world.offsetHeight;
       cv.width = Math.round(weather.w * weather.dpr); cv.height = Math.round(weather.h * weather.dpr);
+      weather.dirty = true;
     };
     fit();
     if ("ResizeObserver" in window) new ResizeObserver(fit).observe(world);
@@ -101,10 +102,13 @@
     const n = Math.round(base * (lowPower ? 0.5 : 1) * (calm ? 0.3 : 1));
     weather.kind = kind;
     weather.parts = Array.from({ length: n }, () => makePart(kind, true));
+    weather.dirty = true;
   }
   function drawWeather(dt, t) {
     const { ctx, cv, dpr, parts, kind } = weather;
     if (!ctx) return;
+    if (dt === 0 && !weather.dirty) return;
+    weather.dirty = dt !== 0;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cv.width, cv.height);
     const W = weather.w, H = weather.h, wind = breeze(t) * 14 + (window.FarmFX ? FarmFX.wind * 140 : 0);
@@ -470,38 +474,46 @@
     if (!bubble) return;
     // The three action icons stay above their friend on every screen size.
     if (bubble.mode === 'animal-actions') {
-      const el = bubble.el, r = bubble.anchor.getBoundingClientRect(), vr = viewport.getBoundingClientRect();
+      const el = bubble.el;
       if (el.parentNode !== document.body) document.body.appendChild(el);
-      el.hidden = r.right <= vr.left || r.left >= vr.right || r.bottom <= vr.top || r.top >= vr.bottom || r.bottom <= 0 || r.top >= innerHeight;
-      const width = Math.min(140, viewport.clientWidth - 24), half = width / 2;
-      el.style.width = width + 'px';
-      el.style.left = Math.max(Math.max(12, vr.left + 12) + half, Math.min(Math.min(innerWidth - 12, vr.right - 12) - half, r.left + r.width / 2)) + 'px';
-      el.style.top = Math.max(el.offsetHeight + 8, r.top - 6) + 'px';
+      const r = bubble.anchor.getBoundingClientRect(), vr = viewport.getBoundingClientRect();
+      const width = Math.min(140, viewport.clientWidth - 24), half = width / 2, widthStyle = width + 'px';
+      const hidden = r.right <= vr.left || r.left >= vr.right || r.bottom <= vr.top || r.top >= vr.bottom || r.bottom <= 0 || r.top >= innerHeight;
+      // Only a size/visibility change needs layout before measuring the toolbar.
+      if (el.style.width !== widthStyle) el.style.width = widthStyle;
+      if (el.hidden !== hidden) el.hidden = hidden;
+      const height = el.offsetHeight;
+      const left = Math.max(Math.max(12, vr.left + 12) + half, Math.min(Math.min(innerWidth - 12, vr.right - 12) - half, r.left + r.width / 2)) + 'px';
+      const top = Math.max(height + 8, r.top - 6) + 'px';
+      if (el.style.left !== left) el.style.left = left;
+      if (el.style.top !== top) el.style.top = top;
       return;
     }
     // A fixed sheet keeps the expanded feeding tray clear of the clipped garden.
     const mobile = window.matchMedia('(max-width: 900px)').matches;
-    bubble.el.classList.toggle('mobile-sheet', mobile);
+    if (bubble.el.classList.contains('mobile-sheet') !== mobile) bubble.el.classList.toggle('mobile-sheet', mobile);
     if (mobile) {
       if (bubble.el.parentNode !== document.body) document.body.appendChild(bubble.el);
-      bubble.el.style.width = '';
-      bubble.el.style.left = '';
-      bubble.el.style.top = '';
+      if (bubble.el.style.width) bubble.el.style.width = '';
+      if (bubble.el.style.left) bubble.el.style.left = '';
+      if (bubble.el.style.top) bubble.el.style.top = '';
       return;
     }
     if (bubble.el.parentNode !== world) world.appendChild(bubble.el);
-    const w = world.getBoundingClientRect(), r = bubble.anchor.getBoundingClientRect();
-    const vr = viewport.getBoundingClientRect();
-    const half = Math.min(125, viewport.clientWidth / 2 - 12);
-    bubble.el.style.width = Math.min(250, viewport.clientWidth - 24) + "px";
+    const el = bubble.el, w = world.getBoundingClientRect(), r = bubble.anchor.getBoundingClientRect();
+    const vr = viewport.getBoundingClientRect(), viewportWidth = viewport.clientWidth;
+    const half = Math.min(125, viewportWidth / 2 - 12), widthStyle = Math.min(250, viewportWidth - 24) + "px";
+    if (el.style.width !== widthStyle) el.style.width = widthStyle;
+    // Measure before position writes, while still picking up tray/content changes.
+    const hgt = el.offsetHeight + 16, above = r.top - w.top + 6, roomBelow = w.height - (r.bottom - w.top);
     const min = vr.left - w.left + half + 12, max = vr.right - w.left - half - 12;
-    const left = Math.max(min, Math.min(max, r.left + r.width / 2 - w.left));
-    bubble.el.style.left = left + "px";
+    const left = Math.max(min, Math.min(max, r.left + r.width / 2 - w.left)) + "px";
     // open upward when there is room, otherwise below the animal so nothing is clipped by the frame
-    const hgt = bubble.el.offsetHeight + 16, above = r.top - w.top + 6, roomBelow = w.height - (r.bottom - w.top);
     const below = above - hgt < 0 && roomBelow > above;
-    bubble.el.classList.toggle("below", below);
-    bubble.el.style.top = (below ? r.bottom - w.top - 6 : Math.max(Math.min(250, hgt), above)) + "px";
+    const top = (below ? r.bottom - w.top - 6 : Math.max(Math.min(250, hgt), above)) + "px";
+    if (el.classList.contains('below') !== below) el.classList.toggle("below", below);
+    if (el.style.left !== left) el.style.left = left;
+    if (el.style.top !== top) el.style.top = top;
   }
   world.addEventListener("click", closeBubble);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBubble(); });

@@ -235,8 +235,29 @@
   });
 
   /* ================= photo wall ================= */
-  let items = [];
+  let items = [], wallVersion = 0;
+  const wallObserver = typeof IntersectionObserver === "function" ? new IntersectionObserver((entries) => {
+    entries.forEach(({ target, isIntersecting }) => {
+      if (!isIntersecting || !wall.contains(target)) return;
+      wallObserver.unobserve(target);
+      loadWallPhoto(target.dataset.k);
+    });
+  }, { rootMargin: "300px 0px" }) : null;
+  function loadWallPhoto(key) {
+    const version = wallVersion, it = items[+key];
+    if (!it) return;
+    photoSrc(it.al, it.i).then((src) => {
+      if (version !== wallVersion) return;
+      const img = wall.querySelector(`img[data-k="${key}"]`);
+      if (img) img.src = src;
+    });
+  }
+  wall.addEventListener("load", (e) => {
+    if (e.target.matches("img[data-k]")) e.target.style.aspectRatio = "";
+  }, true);
   function renderWall() {
+    wallVersion++;
+    if (wallObserver) wallObserver.disconnect();
     const a = state.album && albums.find((x) => x.id === state.album);
     storyEl.classList.toggle("show", !!a);
     if (a) storyEl.innerHTML = `<p class="kicker">${esc(a.place)} · ${fmtDate(a.date)}</p><h2>${esc(a.title || a.place)}</h2><p>${esc(a.story || "")}</p>`;
@@ -248,14 +269,14 @@
       al.photos.forEach((ph, i) => items.push({ al, i, ph }));
     });
     let html = items.map((it, k) => `<button class="tile reveal" type="button" data-k="${k}" aria-label="${esc(it.ph.caption || it.al.place)}">
-        <img alt="${esc(it.ph.alt || it.ph.caption || "")}" data-k="${k}" style="aspect-ratio:${it.ph.src ? "auto" : ASPECTS[(albums.indexOf(it.al) * 2 + it.i) % ASPECTS.length]}">
+        <img alt="${esc(it.ph.alt || it.ph.caption || "")}" data-k="${k}" loading="lazy" decoding="async" style="aspect-ratio:${ASPECTS[(albums.indexOf(it.al) * 2 + it.i) % ASPECTS.length]}">
         <span class="tile-cap"><b>${esc(it.ph.caption || it.al.title)}</b><span>${esc(it.al.place)} · ${fmtDate(it.al.date)}</span></span>
       </button>`);
     if (!state.album && html.length > 2) html.splice(3, 0, `<div class="tile note reveal"><p>Same sky.<br>Different places.<br>Still me.</p></div>`);
     wall.innerHTML = html.length ? html.join("") : `<div class="empty">No footprints here yet.</div>`;
     wall.querySelectorAll("img[data-k]").forEach((img) => {
-      const it = items[+img.dataset.k];
-      photoSrc(it.al, it.i).then((src) => { img.src = src; img.style.aspectRatio = ""; });
+      if (wallObserver) wallObserver.observe(img);
+      else loadWallPhoto(img.dataset.k);
     });
     Site.reveal(wall);
   }

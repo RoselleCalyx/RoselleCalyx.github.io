@@ -229,6 +229,8 @@
   /* ================= scene geometry ================= */
   let W = 0, H = 0, k = 1, dpr = 1, season = Wd.season(), time = 0;
   const bg = document.createElement("canvas"), refl = document.createElement("canvas"), fg = document.createElement("canvas");
+  const waterLayer = document.createElement("canvas"), waterCtx = waterLayer.getContext("2d");
+  let waterLastDraw = -Infinity, waterCalm = false;
   const painting=window.SceneTextures?.create("pond",()=>{if(W){paintBackground();paintForeground();}});
   const HZ = 0.4;                                     // the far shore's waterline
   const P = (u, v) => [u * W, v * H];
@@ -337,6 +339,7 @@
   }
   const LANTERNS = () => [[W * 0.2 + 26 * k, H * HZ - 6 * k], [W * 0.38, H * HZ - 5 * k], [W * 0.62, H * HZ - 7 * k], [W * 0.79, H * HZ - 5 * k]];
   function paintBackground() {
+    waterLastDraw = -Infinity;
     const g = bg.getContext("2d");
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     paintSky(g);
@@ -745,36 +748,51 @@
 
   /* ================= drawing ================= */
   let hover = null, hoverTrap = -1;
-  function drawWater(dt) {
-    const y0 = Math.round(H * HZ), rows = H - y0;
+  function drawWater() {
+    const y0 = Math.round(H * HZ);
     if (frozen()) return;
+    const calm = Wd.reduce || !!(window.Sky && Sky.calm);
+    // Cache only ambient water; the rod, fish and catch ripples still draw every frame.
+    if (waterLastDraw === -Infinity || calm !== waterCalm || (!calm && time - waterLastDraw + 1e-6 >= 1 / 30)) {
+      waterLastDraw = time; waterCalm = calm;
+      waterCtx.setTransform(1, 0, 0, 1, 0, 0);
+      waterCtx.clearRect(0, 0, waterLayer.width, waterLayer.height);
+      // Include the backdrop so additive highlights keep their original blending.
+      waterCtx.drawImage(bg, 0, -y0 * dpr);
+      waterCtx.setTransform(dpr, 0, 0, dpr, 0, -y0 * dpr);
+      paintWater(waterCtx, calm ? 0 : time);
+    }
+    ctx.drawImage(waterLayer, 0, 0, waterLayer.width, waterLayer.height, 0, y0, W, waterLayer.height / dpr);
+  }
+  function paintWater(g, waterTime) {
+    const y0 = Math.round(H * HZ), rows = H - y0;
     // reflected sky, rippled strip by strip
     for (let y = 0; y < rows;) {
       const t = y / rows, band = Math.max(1, Math.round(1 + t * 3));
-      const amp = (0.5 + t * t * 9) * k, off = Math.sin(y * 0.09 / (0.3 + t) + time * 1.4) * amp + Math.sin(y * 0.031 + time * 0.7) * amp * 0.6;
-      const sy = Math.min(refl.height - 1, Math.round((y + Math.sin(y * 0.2 + time * 2) * t * 1.5) * dpr));
-      ctx.drawImage(refl, 0, sy, refl.width, Math.max(1, band * dpr), off, y0 + y, W, band);
+      const amp = (0.5 + t * t * 9) * k, off = Math.sin(y * 0.09 / (0.3 + t) + waterTime * 1.4) * amp + Math.sin(y * 0.031 + waterTime * 0.7) * amp * 0.6;
+      const sy = Math.min(refl.height - 1, Math.round((y + Math.sin(y * 0.2 + waterTime * 2) * t * 1.5) * dpr));
+      g.drawImage(refl, 0, sy, refl.width, Math.max(1, band * dpr), off, y0 + y, W, band);
       y += band;
     }
     if(painting?.ready(season.name))return;
     // depth: the water darkens and clears toward us
     const pal = PAL[season.name];
-    const wg = ctx.createLinearGradient(0, y0, 0, H);
+    const wg = g.createLinearGradient(0, y0, 0, H);
     wg.addColorStop(0, "rgba(20,40,70,.05)"); wg.addColorStop(1, "rgba(6,14,28,.55)");
-    ctx.fillStyle = wg; ctx.fillRect(0, y0, W, rows);
+    g.fillStyle = wg; g.fillRect(0, y0, W, rows);
     // moon path and lantern streaks
-    ctx.globalCompositeOperation = "lighter";
+    g.globalCompositeOperation = "lighter";
     const mx = W * 0.8;
     for (let i = 0; i < 70; i++) {
-      const t = i / 70, y = y0 + 4 + t * t * rows * 0.75, w = (6 + t * 40) * k * (0.5 + 0.5 * Math.sin(time * 3 + i * 1.7));
-      ctx.fillStyle = `rgba(230,236,255,${0.25 * (1 - t) + 0.05})`; ctx.fillRect(mx - w / 2 + Math.sin(time * 2 + i) * 4 * k * t, y, w, 1.2);
+      const t = i / 70, y = y0 + 4 + t * t * rows * 0.75, w = (6 + t * 40) * k * (0.5 + 0.5 * Math.sin(waterTime * 3 + i * 1.7));
+      g.fillStyle = `rgba(230,236,255,${0.25 * (1 - t) + 0.05})`; g.fillRect(mx - w / 2 + Math.sin(waterTime * 2 + i) * 4 * k * t, y, w, 1.2);
     }
     LANTERNS().forEach(([lx], j) => {
-      for (let i = 0; i < 22; i++) { const t = i / 22, y = y0 + 3 + t * rows * 0.35, w = (2 + t * 10) * k * (0.6 + 0.4 * Math.sin(time * 4 + i + j)); ctx.fillStyle = `rgba(255,200,120,${0.3 * (1 - t)})`; ctx.fillRect(lx - w / 2 + Math.sin(time * 2.4 + i) * 2 * k, y, w, 1.2); }
+      for (let i = 0; i < 22; i++) { const t = i / 22, y = y0 + 3 + t * rows * 0.35, w = (2 + t * 10) * k * (0.6 + 0.4 * Math.sin(waterTime * 4 + i + j)); g.fillStyle = `rgba(255,200,120,${0.3 * (1 - t)})`; g.fillRect(lx - w / 2 + Math.sin(waterTime * 2.4 + i) * 2 * k, y, w, 1.2); }
     });
     // glints
-    for (let i = 0; i < 40; i++) { const sx = (Math.sin(i * 91.7) * 0.5 + 0.5) * W, t = ((i * 0.137 + time * 0.05) % 1), sy = y0 + t * t * rows; const a = Math.max(0, Math.sin(time * 2 + i * 3)) * 0.3; ctx.fillStyle = `rgba(${pal.glow},${a})`; ctx.fillRect(sx, sy, (3 + t * 14) * k, 1); }
-    ctx.globalCompositeOperation = "source-over";
+    for (let i = 0; i < 40; i++) { const sx = (Math.sin(i * 91.7) * 0.5 + 0.5) * W, t = ((i * 0.137 + waterTime * 0.05) % 1), sy = y0 + t * t * rows; const a = Math.max(0, Math.sin(waterTime * 2 + i * 3)) * 0.3; g.fillStyle = `rgba(${pal.glow},${a})`; g.fillRect(sx, sy, (3 + t * 14) * k, 1); }
+    g.globalCompositeOperation = "source-over";
   }
   function drawShadows(dt) {
     const calm = Wd.reduce || (window.Sky && Sky.calm);
@@ -892,7 +910,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(bg, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawWater(dt);
+    drawWater();
     drawIceHole();
     drawShadows(dt);
     // Ice-fishing ripples stay inside the aperture, never on solid ice.
@@ -1141,6 +1159,7 @@
     W = w; H = h; k = Math.min(H / 600, W / 700);
     for (const c of [cv, bg, fg]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
     refl.width = Math.round(W * dpr); refl.height = Math.round(H * (1 - HZ) * dpr) + 2;
+    waterLayer.width = refl.width; waterLayer.height = refl.height;
     paintBackground(); paintForeground(); setupLife();
     return true;
   }
