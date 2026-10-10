@@ -13,15 +13,10 @@ export async function legacyIdentity(name, env) {
   const bytes = new TextEncoder().encode('legacy-visitor:' + name.trim());
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), n => n.toString(16).padStart(2, '0')).join('');
 }
-export function redactName(text, name, alias) {
-  if (!name || name === 'a visitor') return text;
-  return String(text || '').split(name).join(alias);
-}
-
 export function redactNames(text, identities) {
   const names = new Map(identities.filter(row => row.name && row.name !== 'a visitor').map(row => [row.name.toLowerCase(),row.alias]));
   if (!names.size) return text;
   const escape = name => Array.from(name,c => '\\^$.*+?()[]{}|'.includes(c) ? '\\' + c : c).join('');
   const pattern = [...names.keys()].sort((a,b)=>b.length-a.length).map(escape).join('|');
-  return String(text || '').replace(new RegExp(pattern,'gi'),name => names.get(name.toLowerCase()));
+  return String(text || '').replace(new RegExp('(?<![A-Za-z0-9_])(?:' + pattern + ')(?![A-Za-z0-9_])','gi'),name => names.get(name.toLowerCase()));
 }
