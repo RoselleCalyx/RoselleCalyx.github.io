@@ -125,7 +125,7 @@
       if(stop.body!=='nebula'&&window.CassiniArt){
         let alpha=stop.farewell?clamp(1-time/16,0,1):1;
         const phone=width<700;
-        const x=width*(.69+.095*Math.sin(time*(phone?.28:.032)));
+        const x=width*(.69+.095*Math.sin(time*(phone?.9:.032)));
         const y=height*(.35-.025*Math.sin(time*.043));
         const size=clamp(width*.105,80,190)/340;
         ctx.globalAlpha=fade*alpha;

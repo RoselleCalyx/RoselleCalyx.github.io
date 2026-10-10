@@ -21,6 +21,7 @@ const base = process.env.VOYAGER_PREVIEW_URL || 'http://127.0.0.1:4174';
         const original = CassiniArt.draw;
         CassiniArt.draw = function (ctx, x, y, scale, angle) {
           window.__craftMotion = { x, y, scale, angle };
+          (window.__craftTrail ||= []).push({ x, y });
           return original.call(this, ctx, x, y, scale, angle);
         };
       });
@@ -31,14 +32,16 @@ const base = process.env.VOYAGER_PREVIEW_URL || 'http://127.0.0.1:4174';
         assert.equal(await page.locator('#voyagerFigure').getAttribute('data-frame'), frame);
       } else {
         await page.waitForTimeout(400);
-        const first = await page.evaluate(() => __craftMotion);
+        const first = await page.evaluate(() => { __craftTrail = []; return __craftMotion; });
         await page.waitForTimeout(2500);
         const last = await page.evaluate(() => __craftMotion);
-        assert.ok(last.x > first.x, 'Cassini moves independently of mouse or touch input');
+        const trail = await page.evaluate(() => __craftTrail);
+        const travel = Math.max(...trail.map(p => p.x)) - Math.min(...trail.map(p => p.x));
+        assert.ok(travel > 0, 'Cassini moves independently of mouse or touch input');
         if (width < 700) {
-          assert.ok(last.x - first.x > 15, 'phone motion is clearly visible over a short observation');
+          assert.ok(travel > 15, 'phone motion is clearly visible even when the flight changes direction');
           const scene = await page.locator('#voyagerScene').boundingBox();
-          for (const pose of [first, last]) {
+          for (const pose of trail) {
             assert.ok(pose.x >= scene.width * .595 && pose.x <= scene.width * .785, 'flight retains its original horizontal range');
             assert.ok(pose.y >= scene.height * .325 && pose.y <= scene.height * .375, 'flight retains the original scene height instead of following text or controls');
           }
@@ -49,7 +52,7 @@ const base = process.env.VOYAGER_PREVIEW_URL || 'http://127.0.0.1:4174';
         assert.deepEqual(await page.evaluate(() => __craftMotion), paused, 'pause freezes the actual spacecraft pose');
         await page.locator('#vMotion').click(); await page.waitForTimeout(300);
         assert.notDeepEqual(await page.evaluate(() => __craftMotion), paused, 'resume restarts flight');
-        results.push({ width, fallback, travelPixels: last.x - first.x });
+        results.push({ width, fallback, travelPixels: travel });
       }
       await page.close();
     }
