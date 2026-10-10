@@ -297,7 +297,7 @@ test('trusted owner records show a Host badge while visitors keep word-only alia
   ] }, bottles: [] };
   assert.equal((await f.call('/api/host/site-content', {method:'PUT',token,body:{revision:0,content}})).status,200);
   const published = (await (await f.call('/api/site-content')).json()).content;
-  assert.equal(published.farm.residents[0].adoptedBy,'Chen · Host');
+  assert.equal(published.farm.residents[0].adoptedBy,'Titan · Chen');
   assert.match(published.farm.residents[1].adoptedBy,/^[A-Za-z ]+$/);
   assert.deepEqual((await (await f.call('/api/host/site-content',{token})).json()).content,content);
 });

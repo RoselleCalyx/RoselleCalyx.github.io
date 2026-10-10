@@ -1,6 +1,6 @@
 const MOONS = ['Titan', 'Enceladus', 'Dione', 'Rhea', 'Iapetus', 'Mimas', 'Tethys', 'Hyperion', 'Phoebe', 'Janus', 'Andromeda', 'Orion', 'Sirius', 'Vega', 'Altair', 'Polaris', 'Rigel', 'Deneb', 'Antares', 'Arcturus', 'Aldebaran', 'Capella', 'Spica', 'Procyon', 'Betelgeuse', 'Bellatrix', 'Alnilam', 'Alnitak', 'Mintaka', 'Merope', 'Maia', 'Electra', 'Taygeta', 'Pleione', 'Atlas', 'Alcyone', 'Celaeno', 'Carina', 'Lyra', 'Cygnus', 'Cassiopeia', 'Perseus', 'Pegasus', 'Auriga', 'Phoenix', 'Centaurus', 'Dorado', 'Hydra', 'Leo', 'Draco', 'Triangulum', 'Sombrero', 'Whirlpool', 'Pinwheel', 'Rosette', 'Lagoon', 'Trifid', 'Helix', 'Crab', 'Tarantula', 'Callisto', 'Europa', 'Ganymede', 'Io', 'Triton', 'Oberon', 'Titania', 'Ariel', 'Umbriel', 'Miranda'];
 const WORDS = ['Amber', 'Silver', 'Quiet', 'Golden', 'Misty', 'Gentle', 'Bright', 'Velvet', 'Hidden', 'Distant', 'Snowy', 'Dreamy', 'Soft', 'Wild', 'Little', 'Starry'];
-export const HOST_ALIAS = 'Chen · Host';
+export const HOST_ALIAS = 'Titan · Chen';
 // Trusted, Host-managed legacy records use the site owner's public badge.
 export function isLegacyHost(name) { return String(name).trim().toLowerCase() === 'chen'; }
 export function aliasForId(id) {
