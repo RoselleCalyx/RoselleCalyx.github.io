@@ -435,12 +435,6 @@
     // a lantern on the dock
     const lx = W * 0.95, ly = y0 - 56 * k;
     if(!window.PondEquipment?.draw(g,'stake',lx-6*k,ly-20*k,12*k,82*k)){g.fillStyle = "#2a1e14"; g.fillRect(lx - 2 * k, ly, 4 * k, 54 * k);}
-    // A narrow piece of shore joins the landward end of the wooden platform.
-    g.beginPath();g.moveTo(W*.932,H);g.quadraticCurveTo(W*.95,H*.965,W*.98,H*.956);
-    g.lineTo(W*1.01,H*.952);g.lineTo(W*1.01,H*1.01);g.closePath();
-    const shore=g.createLinearGradient(0,H*.953,0,H);
-    shore.addColorStop(0,snow?'#bac7d0':season.name==='autumn'?'#5b5039':'#48503a');
-    shore.addColorStop(1,snow?'#dee6eb':'#2a3023');g.fillStyle=shore;g.fill();
     // Existing fallback bank in the left corner
     if(!painting?.ready(season.name)){
     g.fillStyle = snow ? "#dfe7f3" : season.name === "autumn" ? "#4a3e22" : "#1c3020";
@@ -474,7 +468,7 @@
     const r = rng(3131);
     shadows = frozen() ? [] : Array.from({ length: Wd.lowPower ? 6 : 9 }, () => makeShadow(true));
     reeds = [];
-    const reedSpots = [[0.96, 0.995, 0.975, 0.993, 3], [0.976, 0.998, 0.43, 0.45, 2], [0.3, 0.38, 0.425, 0.435, 3]];
+    const reedSpots = [[0.976, 0.998, 0.43, 0.45, 2], [0.3, 0.38, 0.425, 0.435, 3]];
     reedSpots.forEach(([u0, u1, v0, v1, n]) => { for (let i = 0; i < n; i++) {
       const v=lerp(v0,v1,r());
       reeds.push({ x: W * lerp(u0, u1, r()), y: H*v, h: (v>.8?65+r()*45:18+r()*14)*k, ph: r()*TAU, cat:r()<.3 });
@@ -927,13 +921,7 @@
       if (r.cat) { ctx.fillStyle = "#5a3a1e"; ctx.save(); ctx.translate(lerp(r.x, tx, 0.85), lerp(r.y, ty, 0.85)); ctx.rotate(sw); ctx.beginPath(); ctx.roundRect(-2.6 * k, -12 * k, 5.2 * k, 16 * k, 2.6 * k); ctx.fill(); ctx.restore(); }
       if (frozen()) { ctx.fillStyle = "rgba(240,246,255,.8)"; ctx.beginPath(); ctx.arc(tx, ty, 1.6 * k, 0, TAU); ctx.fill(); }
     });
-    if(!frozen()){
-      // Rooted tufts grow on the bank where the dock meets land, not over floating plants.
-      for(let i=0;i<7;i++){
-        const u=.948+i*.008,v=.984+Math.sin(i*1.7)*.004;
-        window.PondPlants?.reed(ctx,W*u,H*v,(27+i%4*8)*k,wind+Math.sin(time*.9+i)*.026,season.name,'grass');
-      }
-    }
+
   }
   function drawRod() {
     const tipP = rodTip(), [bx, by] = rodBase();
