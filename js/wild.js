@@ -149,7 +149,7 @@
       const s = seen[it.id];
       return `<li class="${s ? "found" : "unknown"}${it.poison ? " poison" : ""}">
         <img src="${iconOf(it.id)}" alt="" width="72" height="72">
-        <b>${s ? esc(it.name) : "?"}</b><span class="zh">${s ? esc(it.zh) : ""}</span>
+        <b>${s ? esc(it.name) : "?"}</b>
         <small>${s ? esc(it.text) : esc(it.hint || "Not found yet.")}</small>
         <span class="meta">${s ? `${it.poison ? "seen" : "×" + (counts[it.id] || 0)}${best && best[it.id] ? " · best " + best[it.id] + " cm" : ""}` : ""}${"★".repeat(it.rarity || 1)}</span>
       </li>`;

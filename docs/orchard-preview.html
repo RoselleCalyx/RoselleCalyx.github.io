@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="../"><title>四季果园预览</title><link rel="stylesheet" href="css/style.css?v=20261009-orchard-shapes9">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="../"><title>Seasonal Orchard Preview</title><link rel="stylesheet" href="css/style.css?v=20261009-orchard-shapes9">
 <style>body{padding:28px;background:#101d24;color:#eee8d8}main{max-width:1100px;margin:auto}h1{font-size:30px;margin:0 0 12px}.tools{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:18px 0}.tools select{padding:7px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{padding:14px;background:#25352c;border:1px solid #61715a;border-radius:16px;overflow:hidden}.card h2{font-size:18px;margin:0}.specimen{position:relative;width:100%;aspect-ratio:1}.specimen .tree{position:relative;left:auto;top:auto;width:100%;transform:none}.specimen .tree-inner{animation:none}.card p{font-size:13px;color:#c7d0b4;margin:8px 0}.card .fruit{cursor:pointer}.count{min-height:24px}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style></head>
-<body><main><h1>四季果园 · 三种自然形态</h1><p>每次种植随机获得一种形态，并固定保存。拖动季节进度，查看花开、挂果、落叶与积雪。</p><div class="tools"><label>植物 <select id="species"></select></label><label>季节 <select id="season"><option value="spring">春 · 花开</option><option value="summer">夏 · 果实生长</option><option value="autumn">秋 · 采收与落叶</option><option value="winter">冬 · 积雪</option></select></label><label>季节进度 <input id="progress" type="range" min="0" max="1" step=".01" value=".45"></label><span id="percent">45%</span></div><div class="grid" id="grid"></div></main>
-<script src="js/farm-motion.js?v=20261009-orchard-shapes9"></script><script src="js/farm-art.js?v=20261009-orchard-shapes9"></script><script src="js/orchard-sim.js?v=20261009-orchard-shapes9"></script>
+<body><main><h1>The seasonal orchard · three natural shapes</h1><p>Each planting keeps one of three randomly chosen shapes. Move the season slider to watch blossoms, fruit, falling leaves and snow.</p><div class="tools"><label>Plant <select id="species"></select></label><label>Season <select id="season"><option value="spring">Spring · blossoms</option><option value="summer">Summer · growing fruit</option><option value="autumn">Autumn · harvest and falling leaves</option><option value="winter">Winter · snow</option></select></label><label>Season progress <input id="progress" type="range" min="0" max="1" step=".01" value=".45"></label><span id="percent">45%</span></div><div class="grid" id="grid"></div></main>
+<script src="js/farm-motion.js?v=20261009-orchard-shapes9"></script><script src="js/farm-art.js?v=20261010-english-ui"></script><script src="js/orchard-sim.js?v=20261009-orchard-shapes9"></script>
 <script>
 document.body.insertAdjacentHTML('beforeend',FarmArt.defs());
 const types=Object.keys(FarmArt.TREES),speciesControl=document.querySelector('#species'),seasonControl=document.querySelector('#season'),progress=document.querySelector('#progress');
-speciesControl.innerHTML=types.map(type=>`<option value="${type}">${FarmArt.TREES[type].zh}</option>`).join('');speciesControl.value='kiwi';
+speciesControl.innerHTML=types.map(type=>`<option value="${type}">${FarmArt.TREES[type].label}</option>`).join('');speciesControl.value='kiwi';
 let season={name:'spring',abs:1},time=0,last=performance.now();
 let trees=[];
 function chooseSpecies(){
  trees.forEach(t=>OrchardSim.detach(t));document.querySelector('#grid').replaceChildren();const type=speciesControl.value;
  trees=[0,1,2].map(variant=>{
- const card=document.createElement('article');card.className='card';card.innerHTML=`<h2>${FarmArt.TREES[type].zh} · 形态 ${variant+1}</h2><div class="specimen"><div class="tree" data-type="${type}" data-variant="${variant}"></div></div><p>${FarmArt.TREES[type].vine?'旧木枝 · 手工藤架':FarmArt.TREES[type].evergreen?'常绿树冠':'自然枝干 · 四季变化'}</p><p class="count">点击成熟果实采收</p>`;document.querySelector('#grid').append(card);
+ const card=document.createElement('article');card.className='card';card.innerHTML=`<h2>${FarmArt.TREES[type].label} · shape ${variant+1}</h2><div class="specimen"><div class="tree" data-type="${type}" data-variant="${variant}"></div></div><p>${FarmArt.TREES[type].vine?'Woody stems · handmade trellis':FarmArt.TREES[type].evergreen?'Evergreen canopy':'Natural branches · seasonal changes'}</p><p class="count">Click ripe fruit to harvest</p>`;document.querySelector('#grid').append(card);
  const el=card.querySelector('.tree'),t={type,variant,seed:21+variant*13,el,picked:[]};el.innerHTML=OrchardSim.markup();t.sim=OrchardSim.attach(t,el,render);
- el.onclick=e=>{const f=e.target.closest('.fruit');if(!f)return;t.picked.push(Number(f.dataset.i));render();card.querySelector('.count').textContent=`已采收 ${t.picked.length} 份`;};return t;
+ el.onclick=e=>{const f=e.target.closest('.fruit');if(!f)return;t.picked.push(Number(f.dataset.i));render();card.querySelector('.count').textContent=`Harvested ${t.picked.length}`;};return t;
  });render();
 }
 function render(){trees.forEach(t=>{t.el.querySelector('.fruit-layer').innerHTML=FarmArt.treeSVG({type:t.type,variant:t.variant,seed:t.seed,season:season.name,stage:'mature',picked:t.picked,live:true}).fruits;});}

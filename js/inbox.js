@@ -41,7 +41,7 @@
   } catch (_) {
     configurationError = messageApi
       ? "Invalid inbox service URL. Set messageApi in js/config.js to an HTTPS base URL without a query or fragment."
-      : (cfg.url || key ? "Supabase configuration is incomplete or invalid. Use the project URL and a public publishable or anon key." : "The inbox is not connected yet. Complete the setup steps below. 尚未连接收信服务。" );
+      : (cfg.url || key ? "Supabase configuration is incomplete or invalid. Use the project URL and a public publishable or anon key." : "The inbox is not connected yet. Complete the setup steps below." );
   }
 
   class InboxError extends Error {

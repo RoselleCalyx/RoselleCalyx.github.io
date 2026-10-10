@@ -20,17 +20,17 @@
 
   /* ================= what can be found ================= */
   const ITEMS = [
-    { id: "bayberry", name: "Wild bayberry", zh: "野杨梅", rarity: 1, seasons: ["summer"], text: "Dark red, bumpy and sweet-sour. It ripens in the plum-rain weeks of early summer.", hint: "Look up into the evergreen tree in summer." },
-    { id: "strawberry", name: "Wild strawberry", zh: "野草莓", rarity: 1, seasons: ["spring"], text: "Tiny and fierce with flavour, hiding under three-fingered leaves.", hint: "Low in the grass, in spring." },
-    { id: "shoot", name: "Bamboo shoot", zh: "春笋 · 冬笋", rarity: 1, seasons: ["spring", "winter"], text: "After a spring rain they push up overnight; in winter they wait, sweet, beneath the snow.", hint: "At the foot of the bamboo, spring or winter." },
-    { id: "morel", name: "Morel", zh: "羊肚菌", rarity: 3, seasons: ["spring"], text: "A honeycomb cap that appears for a few weeks of spring, then is gone.", hint: "Rare, in spring." },
-    { id: "chanterelle", name: "Chanterelle", zh: "鸡油菌", rarity: 2, seasons: ["summer", "autumn"], text: "Golden trumpets that smell faintly of apricots.", hint: "Summer and autumn, in the moss." },
-    { id: "porcini", name: "Porcini", zh: "牛肝菌", rarity: 2, seasons: ["summer", "autumn"], text: "A fat stem and a glossy brown cap — the king of the forest floor.", hint: "Summer and autumn." },
-    { id: "shiitake", name: "Shiitake", zh: "香菇", rarity: 1, seasons: ["spring", "autumn"], text: "They grow in shelves on fallen oak, cracked like old porcelain.", hint: "On the fallen log, spring and autumn." },
-    { id: "matsutake", name: "Matsutake", zh: "松茸", rarity: 4, seasons: ["autumn"], text: "Half hidden under pine needles; one of the most prized mushrooms in the world.", hint: "Very rare, under the pines in autumn." },
-    { id: "pinecone", name: "Pine cone", zh: "松果", rarity: 1, seasons: ["autumn", "winter"], text: "For the fire, for the squirrels, for a windowsill.", hint: "Under the pines, autumn and winter." },
-    { id: "rosehip", name: "Rose hip", zh: "野蔷薇果", rarity: 1, seasons: ["autumn", "winter"], text: "The wild rose's winter fruit: tart, bright, full of vitamin C.", hint: "On the wild rose, autumn and winter." },
-    { id: "amanita", name: "Fly agaric", zh: "毒蝇伞", rarity: 2, poison: true, seasons: ["summer", "autumn"], text: "The fairy-tale toadstool — and poisonous. Admire it, leave it for the fairies.", hint: "Red with white spots. Look, don't pick." }
+    { id: "bayberry", name: "Wild bayberry", rarity: 1, seasons: ["summer"], text: "Dark red, bumpy and sweet-sour. It ripens in the plum-rain weeks of early summer.", hint: "Look up into the evergreen tree in summer." },
+    { id: "strawberry", name: "Wild strawberry", rarity: 1, seasons: ["spring"], text: "Tiny and fierce with flavour, hiding under three-fingered leaves.", hint: "Low in the grass, in spring." },
+    { id: "shoot", name: "Bamboo shoot", rarity: 1, seasons: ["spring", "winter"], text: "After a spring rain they push up overnight; in winter they wait, sweet, beneath the snow.", hint: "At the foot of the bamboo, spring or winter." },
+    { id: "morel", name: "Morel", rarity: 3, seasons: ["spring"], text: "A honeycomb cap that appears for a few weeks of spring, then is gone.", hint: "Rare, in spring." },
+    { id: "chanterelle", name: "Chanterelle", rarity: 2, seasons: ["summer", "autumn"], text: "Golden trumpets that smell faintly of apricots.", hint: "Summer and autumn, in the moss." },
+    { id: "porcini", name: "Porcini", rarity: 2, seasons: ["summer", "autumn"], text: "A fat stem and a glossy brown cap — the king of the forest floor.", hint: "Summer and autumn." },
+    { id: "shiitake", name: "Shiitake", rarity: 1, seasons: ["spring", "autumn"], text: "They grow in shelves on fallen oak, cracked like old porcelain.", hint: "On the fallen log, spring and autumn." },
+    { id: "matsutake", name: "Matsutake", rarity: 4, seasons: ["autumn"], text: "Half hidden under pine needles; one of the most prized mushrooms in the world.", hint: "Very rare, under the pines in autumn." },
+    { id: "pinecone", name: "Pine cone", rarity: 1, seasons: ["autumn", "winter"], text: "For the fire, for the squirrels, for a windowsill.", hint: "Under the pines, autumn and winter." },
+    { id: "rosehip", name: "Rose hip", rarity: 1, seasons: ["autumn", "winter"], text: "The wild rose's winter fruit: tart, bright, full of vitamin C.", hint: "On the wild rose, autumn and winter." },
+    { id: "amanita", name: "Fly agaric", rarity: 2, poison: true, seasons: ["summer", "autumn"], text: "The fairy-tale toadstool — and poisonous. Admire it, leave it for the fairies.", hint: "Red with white spots. Look, don't pick." }
   ];
   const BY = Object.fromEntries(ITEMS.map((it) => [it.id, it]));
   const SPAWN = {
@@ -706,7 +706,7 @@
         it.found = true;
         const [x, y] = P(it.u, it.v);
         sparkle(x, y - it.s * 0.4, 16);
-        Wd.float(stage, x, y - it.s - 16, ready(it) ? `Found: ${BY[it.id].zh}!` : `${BY[it.id].zh} — still growing`, "soft");
+        Wd.float(stage, x, y - it.s - 16, ready(it) ? `Found: ${BY[it.id].name}!` : `${BY[it.id].name} — still growing`, "soft");
       }
       if (c.target === 1 && !it && !c.closeAt) c.closeAt = now + 6;
       if (c.closeAt && now > c.closeAt && !c.drag) { c.target = 0; c.closeAt = 0; }
@@ -891,9 +891,9 @@
     persist();
     const r = cv.getBoundingClientRect();
     Wd.fly(iconOf(id), r.left + x, r.top + y, basketEl);
-    Wd.float(stage, x, y - 20, `+1 ${it.zh}`);
+    Wd.float(stage, x, y - 20, `+1 ${it.name}`);
     setTimeout(renderBasket, 850);
-    if (first) { setTimeout(() => toast(`New in your field journal: ${it.name} · ${it.zh}`, 3200), 500); document.getElementById("btnJournal").classList.add("glint"); }
+    if (first) { setTimeout(() => toast(`New in your field journal: ${it.name}`, 3200), 500); document.getElementById("btnJournal").classList.add("glint"); }
   }
   function pick(target) {
     if (target === "yuki") {
@@ -924,7 +924,7 @@
     if (info.poison) {
       it.shake = time;
       if (!save.seen.amanita) { save.seen.amanita = 1; persist(); document.getElementById("btnJournal").classList.add("glint"); }
-      Wd.float(stage, x, y - it.s - 10, "Poisonous fly agaric · 毒蝇伞", "warn");
+      Wd.float(stage, x, y - it.s - 10, "Poisonous fly agaric", "warn");
       toast("Fly agaric: beautiful, and poisonous. Matcha says leave it for the fairies.", 3400);
       return;
     }
@@ -1015,12 +1015,12 @@
   const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   const COVER_TIP = { rock: "Roll the rock aside", grass: "Part the grass", snow: "Brush the snow away", leaves: "Sweep the needles aside" };
   function label(h) {
-    if (h === "yuki") return "Matcha · snow leopard cat · 雪山豹猫";
+    if (h === "yuki") return "Matcha · snow leopard cat";
     if (h.coverHit) return h.coverHit.target > 0.5 ? "Put it back" : COVER_TIP[h.coverHit.kind];
-    if (berries.includes(h)) return h.ripe >= 0.75 ? "Wild bayberry · 野杨梅" : h.ripe < 0.15 ? "Bayberry blossom" : `Bayberry · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
-    if (hips.includes(h)) return h.ripe >= 0.75 ? "Rose hip · 野蔷薇果" : `Rose hip · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
+    if (berries.includes(h)) return h.ripe >= 0.75 ? "Wild bayberry" : h.ripe < 0.15 ? "Bayberry blossom" : `Bayberry · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
+    if (hips.includes(h)) return h.ripe >= 0.75 ? "Rose hip" : `Rose hip · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
     const info = BY[h.id];
-    return `${info.name} · ${info.zh}${info.poison || ready(h) ? "" : ` — growing ${Math.round((h.g / READY) * 100)}%`}`;
+    return `${info.name}${info.poison || ready(h) ? "" : ` — growing ${Math.round((h.g / READY) * 100)}%`}`;
   }
   // rocks, tufts, snow and needles can be dragged aside as well as tapped
   let drag = null, swallowClick = false;

@@ -220,7 +220,7 @@ export async function drainOutbox(env) {
   try {
     const notification = await timedJSON("https://api.telegram.org/bot" + env.TELEGRAM_BOT_TOKEN + "/sendMessage", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: entries.length + " 封新来信漂到了岸边。\n" + inbox.href, disable_web_page_preview: true, protect_content: true })
+      body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text: entries.length + (entries.length === 1 ? " new letter has" : " new letters have") + " reached the shore.\n" + inbox.href, disable_web_page_preview: true, protect_content: true })
     });
     sent = notification.result.ok && notification.body.ok === true;
     if (!sent) {

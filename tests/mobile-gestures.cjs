@@ -133,7 +133,7 @@ function realPondGameplay(f) {
   context.Wd.fly = () => {};
   const code = [
     sourceSection('pond.js', '  function strike() {', '  function updateRod(dt) {'),
-    sourceSection('pond.js', '  function land() {', '  /* ---------- the fishing bamboo basket'),
+    sourceSection('pond.js', '  function land() {', '  /* ---------- the open-bottom fishing cover'),
     sourceSection('pond.js', '  function setTrap(i) {', '  const trapFloat ='),
     sourceSection('pond.js', '  function showCatch(list, how, x, y) {', '  /* ================= HUD & tools')
   ].join('\n');

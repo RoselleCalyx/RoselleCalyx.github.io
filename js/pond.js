@@ -21,22 +21,22 @@
 
   /* ================= what lives here ================= */
   const CATCH = [
-    { id: "crucian", name: "Crucian carp", zh: "鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or bamboo cover, any season." },
-    { id: "carp", name: "Common carp", zh: "鲤鱼", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
-    { id: "koi", name: "Koi", zh: "锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "Rare, on the rod; most often in summer." },
-    { id: "goldkoi", name: "Golden koi", zh: "金锦鲤", rarity: 5, len: [48, 72], fight: 0.85, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "A summer legend." },
-    { id: "catfish", name: "Catfish", zh: "鲶鱼", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
-    { id: "mandarin", name: "Mandarin fish", zh: "鳜鱼", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.” — 桃花流水鳜鱼肥", hint: "Rare; best in spring." },
-    { id: "bitterling", name: "Bitterling", zh: "鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "Under the bamboo cover." },
-    { id: "minnow", name: "Stone moroko", zh: "麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "Under the bamboo cover." },
-    { id: "loach", name: "Loach", zh: "泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Bamboo cover or trap." },
-    { id: "shrimp", name: "River shrimp", zh: "河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Bamboo cover or trap." },
-    { id: "crayfish", name: "Crayfish", zh: "小龙虾", rarity: 1, len: [8, 14], fight: 0.1, kind: "crust", text: "Red-armoured and indignant, especially in summer.", hint: "In the trap, warm months." },
-    { id: "crab", name: "Mitten crab", zh: "大闸蟹", rarity: 2, len: [6, 10], fight: 0.1, kind: "crust", text: "“When the autumn wind rises, the crabs’ legs itch.” — 秋风起，蟹脚痒. Hairy claws, golden roe.", hint: "In the trap; best in autumn." },
-    { id: "eel", name: "Rice-field eel", zh: "黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "Rare, in the trap." },
-    { id: "lotus", name: "Lotus seed pod", zh: "莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; found beside the bamboo cover among the fish.", hint: "Summer, with the bamboo cover." },
-    { id: "boot", name: "Old boot", zh: "旧靴子", rarity: 1, len: [0, 0], kind: "junk", text: "Someone’s, once. It goes back on the bank to dry.", hint: "Everyone catches one eventually." },
-    { id: "bottle", name: "Message in a bottle", zh: "漂流瓶", rarity: 4, len: [0, 0], kind: "junk", text: "There is a note inside: “Whoever finds this — write back.”", hint: "Drifts in now and then." }
+    { id: "crucian", name: "Crucian carp", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or bamboo cover, any season." },
+    { id: "carp", name: "Common carp", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
+    { id: "koi", name: "Koi", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "Rare, on the rod; most often in summer." },
+    { id: "goldkoi", name: "Golden koi", rarity: 5, len: [48, 72], fight: 0.85, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "A summer legend." },
+    { id: "catfish", name: "Catfish", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
+    { id: "mandarin", name: "Mandarin fish", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.”", hint: "Rare; best in spring." },
+    { id: "bitterling", name: "Bitterling", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "Under the bamboo cover." },
+    { id: "minnow", name: "Stone moroko", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "Under the bamboo cover." },
+    { id: "loach", name: "Loach", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Bamboo cover or trap." },
+    { id: "shrimp", name: "River shrimp", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Bamboo cover or trap." },
+    { id: "crayfish", name: "Crayfish", rarity: 1, len: [8, 14], fight: 0.1, kind: "crust", text: "Red-armoured and indignant, especially in summer.", hint: "In the trap, warm months." },
+    { id: "crab", name: "Mitten crab", rarity: 2, len: [6, 10], fight: 0.1, kind: "crust", text: "“When the autumn wind rises, the crabs’ legs itch.” Hairy claws, golden roe.", hint: "In the trap; best in autumn." },
+    { id: "eel", name: "Rice-field eel", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "Rare, in the trap." },
+    { id: "lotus", name: "Lotus seed pod", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; found beside the bamboo cover among the fish.", hint: "Summer, with the bamboo cover." },
+    { id: "boot", name: "Old boot", rarity: 1, len: [0, 0], kind: "junk", text: "Someone’s, once. It goes back on the bank to dry.", hint: "Everyone catches one eventually." },
+    { id: "bottle", name: "Message in a bottle", rarity: 4, len: [0, 0], kind: "junk", text: "There is a note inside: “Whoever finds this — write back.”", hint: "Drifts in now and then." }
   ];
   const BY = Object.fromEntries(CATCH.map((c) => [c.id, c]));
   const ROD = {
@@ -961,14 +961,14 @@
     cardEl.innerHTML = single ? `
       <div class="cc-art"><img src="${iconOf(c0.id)}" alt="" width="160" height="160"></div>
       <p class="cc-kicker">${firsts.length ? "New in your log!" : how === "rod" ? "On the line" : how === "net" ? "Under the bamboo cover" : "In the trap"}</p>
-      <h3>${esc(info.name)} <span class="zh">${esc(info.zh)}</span></h3>
+      <h3>${esc(info.name)}</h3>
       <p class="cc-stats">${stats(c0)}${stats(c0) ? " · " : ""}<span class="stars">${"★".repeat(info.rarity)}</span></p>
       <p class="cc-text">${esc(info.text)}</p>
       <div class="cc-actions">${c0.id === "bottle" ? `<a class="btn sm primary" href="message.html">Read the bottles →</a>` : ""}<button class="btn sm primary" type="button" data-keep>${info.kind === "junk" ? "Keep it" : "Into the creel"}</button>${info.kind === "fish" || info.kind === "crust" ? `<button class="btn sm" type="button" data-release>Let it go</button>` : ""}</div>`
       : `
       <p class="cc-kicker">${how === "net" ? "Caught with the bamboo cover" : "The trap comes up"}${firsts.length ? " · something new!" : ""}</p>
       <h3>${list.length} ${how === "net" ? "caught in the shallows" : "in the trap"}</h3>
-      <ul class="cc-list">${list.map((c) => `<li class="${firsts.includes(c.id) ? "new" : ""}"><img src="${iconOf(c.id)}" alt="" width="56" height="56"><b>${esc(BY[c.id].name)}</b><span class="zh">${esc(BY[c.id].zh)}</span><small>${stats(c)}</small></li>`).join("")}</ul>
+      <ul class="cc-list">${list.map((c) => `<li class="${firsts.includes(c.id) ? "new" : ""}"><img src="${iconOf(c.id)}" alt="" width="56" height="56"><b>${esc(BY[c.id].name)}</b><small>${stats(c)}</small></li>`).join("")}</ul>
       <div class="cc-actions"><button class="btn sm primary" type="button" data-keep>Keep them all</button><button class="btn sm" type="button" data-release>Let them go</button></div>`;
     cardEl.hidden = false;
     cardEl.classList.remove("show"); void cardEl.offsetWidth; cardEl.classList.add("show");
@@ -1003,7 +1003,7 @@
   const tools = {
     rod: { hint: "Tap the water to cast. Strike when the float goes under, then hold to reel." },
     net: { hint: "Tap the shallows to press the open bamboo cover over fish, then gather them through its top." },
-    trap: { hint: "Tap a stake to set a crab trap (地笼). It soaks for about a minute — even if you leave." }
+    trap: { hint: "Tap a stake to set a crab trap. It soaks for about a minute — even if you leave." }
   };
   function setTool(t) {
     cancelGesture();
@@ -1060,7 +1060,7 @@
     cv.style.cursor = hover || hoverTrap >= 0 ? "pointer" : rod.state === "reeling" ? "grabbing" : "default";
     if (e.pointerType === "mouse" && (hover === "yuki" || hoverTrap >= 0)) {
       const st = hoverTrap >= 0 ? trapState(hoverTrap) : "";
-      tip.textContent = hover === "yuki" ? "Matcha · snow leopard cat · 雪山豹猫" : st === "free" ? "Set a crab trap · 地笼" : st === "ready" ? "Haul up the trap!" : `Soaking… ${Math.ceil((save.traps[hoverTrap].t0 + save.traps[hoverTrap].dur - Date.now()) / 1000)}s`;
+      tip.textContent = hover === "yuki" ? "Matcha · snow leopard cat" : st === "free" ? "Set a crab trap" : st === "ready" ? "Haul up the trap!" : `Soaking… ${Math.ceil((save.traps[hoverTrap].t0 + save.traps[hoverTrap].dur - Date.now()) / 1000)}s`;
       const half = tip.offsetWidth / 2 + 8;
       tip.style.left = Math.max(half, Math.min(stage.clientWidth - half, x)) + "px";
       tip.style.top = Math.max(tip.offsetHeight + 24, y) + "px"; tip.classList.add("on");

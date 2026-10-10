@@ -490,6 +490,49 @@
     }
   }
 
+  /* ---------- wheel intent ---------- */
+  // Small trackpad bumps should not advance the opening story. Once a
+  // gesture is deliberate, release its accumulated distance without a jump.
+  const HOME_WHEEL_INTENT_PX = 80, HOME_WHEEL_IDLE_MS = 280;
+  const homeWheel = { last: -Infinity, direction: 0, total: 0, scrolling: false };
+  function resetHomeWheel() {
+    homeWheel.last = -Infinity; homeWheel.direction = 0;
+    homeWheel.total = 0; homeWheel.scrolling = false;
+  }
+  function hasNativeScrollTarget(target) {
+    if (target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return true;
+    for (let el = target; el && el !== story; el = el.parentElement) {
+      if (el.scrollHeight > el.clientHeight + 1 && /^(auto|scroll)$/.test(getComputedStyle(el).overflowY)) return true;
+    }
+    return false;
+  }
+  story.addEventListener("wheel", (e) => {
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? (window.visualViewport?.height || innerHeight) : 1;
+    const dy = e.deltaY * unit;
+    // Reading below the sticky scene, browser gestures, and open overlays
+    // retain their native scrolling behavior.
+    if (e.defaultPrevented || !e.cancelable || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey ||
+        !Number.isFinite(dy) || !dy || Math.abs(e.deltaY) <= Math.abs(e.deltaX || 0) ||
+        story.getBoundingClientRect().bottom <= innerHeight + 1 ||
+        document.querySelector(".nav.open, .modal.open, .lightbox.open") ||
+        document.body.style.position === "fixed" || document.documentElement.style.overflow === "hidden" ||
+        hasNativeScrollTarget(e.target)) {
+      resetHomeWheel(); return;
+    }
+    e.preventDefault();
+    const now = Number.isFinite(e.timeStamp) && e.timeStamp > 0 ? e.timeStamp : performance.now();
+    const direction = Math.sign(dy);
+    if (now < homeWheel.last || now - homeWheel.last > HOME_WHEEL_IDLE_MS || direction !== homeWheel.direction) resetHomeWheel();
+    homeWheel.last = now; homeWheel.direction = direction; homeWheel.total += dy;
+    if (!homeWheel.scrolling && Math.abs(homeWheel.total) < HOME_WHEEL_INTENT_PX) return;
+    const distance = homeWheel.scrolling ? dy : homeWheel.total;
+    homeWheel.scrolling = true; homeWheel.total = 0;
+    window.scrollBy({ top: distance, left: 0, behavior: "instant" });
+  }, { passive: false });
+  story.addEventListener("pointerleave", resetHomeWheel);
+  document.addEventListener("pointerdown", resetHomeWheel, true);
+  for (const event of ["blur", "resize", "pageshow", "hashchange", "popstate", "keydown"]) addEventListener(event, resetHomeWheel);
+
   /* ---------- scroll progress ---------- */
   let pTarget = 0, p = 0, fallTarget=0, fall=0;
   let descent = null;

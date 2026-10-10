@@ -445,12 +445,12 @@
   };
   /* ================= feeding: orchard fruit, finds from the woods, fish from the pond ================= */
   const FOOD = {
-    apple: ["Apple", "苹果", "farm"], peach: ["Peach", "桃子", "farm"], orange: ["Orange", "橙子", "farm"], cherry: ["Cherries", "樱桃", "farm"],
-    kiwi:['Kiwi','猕猴桃','farm'],grape:['Grapes','葡萄','farm'],durian:['Durian','榴莲','farm'],mango:['Mango','芒果','farm'],
-    bayberry: ["Wild bayberry", "野杨梅", "woods"], strawberry: ["Wild strawberry", "野草莓", "woods"], shoot: ["Bamboo shoot", "竹笋", "woods"], rosehip: ["Rose hip", "野蔷薇果", "woods"],
-    morel: ["Morel", "羊肚菌", "woods"], chanterelle: ["Chanterelle", "鸡油菌", "woods"], porcini: ["Porcini", "牛肝菌", "woods"], shiitake: ["Shiitake", "香菇", "woods"], matsutake: ["Matsutake", "松茸", "woods"], pinecone: ["Pine cone", "松果", "woods"],
-    crucian: ["Crucian carp", "鲫鱼", "pond"], carp: ["Carp", "鲤鱼", "pond"], koi: ["Koi", "锦鲤", "pond"], goldkoi: ["Golden koi", "金锦鲤", "pond"], catfish: ["Catfish", "鲶鱼", "pond"], mandarin: ["Mandarin fish", "鳜鱼", "pond"],
-    bitterling: ["Bitterling", "鳑鲏", "pond"], minnow: ["Stone moroko", "麦穗鱼", "pond"], loach: ["Loach", "泥鳅", "pond"], eel: ["Rice-field eel", "黄鳝", "pond"], shrimp: ["River shrimp", "河虾", "pond"], crayfish: ["Crayfish", "小龙虾", "pond"], crab: ["Mitten crab", "大闸蟹", "pond"], lotus: ["Lotus seed pod", "莲蓬", "pond"]
+    apple: ["Apple", "farm"], peach: ["Peach", "farm"], orange: ["Orange", "farm"], cherry: ["Cherries", "farm"],
+    kiwi:['Kiwi','farm'],grape:['Grapes','farm'],durian:['Durian','farm'],mango:['Mango','farm'],
+    bayberry: ["Wild bayberry", "woods"], strawberry: ["Wild strawberry", "woods"], shoot: ["Bamboo shoot", "woods"], rosehip: ["Rose hip", "woods"],
+    morel: ["Morel", "woods"], chanterelle: ["Chanterelle", "woods"], porcini: ["Porcini", "woods"], shiitake: ["Shiitake", "woods"], matsutake: ["Matsutake", "woods"], pinecone: ["Pine cone", "woods"],
+    crucian: ["Crucian carp", "pond"], carp: ["Carp", "pond"], koi: ["Koi", "pond"], goldkoi: ["Golden koi", "pond"], catfish: ["Catfish", "pond"], mandarin: ["Mandarin fish", "pond"],
+    bitterling: ["Bitterling", "pond"], minnow: ["Stone moroko", "pond"], loach: ["Loach", "pond"], eel: ["Rice-field eel", "pond"], shrimp: ["River shrimp", "pond"], crayfish: ["Crayfish", "pond"], crab: ["Mitten crab", "pond"], lotus: ["Lotus seed pod", "pond"]
   };
   const FISH = ["crucian", "carp", "koi", "goldkoi", "catfish", "mandarin", "bitterling", "minnow", "loach", "eel"];
   // what each friend loves, likes, and how it shows its joy
@@ -468,9 +468,9 @@
   function pantry() {
     const woods = store.get("wild-woods", {}).basket || {}, pond = store.get("wild-pond", {}).creel || {}, icons = store.get("wild-icons", {});
     const list = [];
-    Object.entries(FOOD).forEach(([id, [name, zh, from]]) => {
+    Object.entries(FOOD).forEach(([id, [name, from]]) => {
       const n = from === "farm" ? basket[id] || 0 : from === "woods" ? woods[id] || 0 : pond[id] || 0;
-      if (n > 0) list.push({ id, name, zh, from, n, icon: from === "farm" ? fruitIcon(id) : icons[id] ? `<img src="${icons[id]}" alt="">` : `<span class="emo">${EMOJI[from]}</span>` });
+      if (n > 0) list.push({ id, name, from, n, icon: from === "farm" ? fruitIcon(id) : icons[id] ? `<img src="${icons[id]}" alt="">` : `<span class="emo">${EMOJI[from]}</span>` });
     });
     return list;
   }
@@ -572,7 +572,7 @@
     tray.hidden = false;
     if (!list.length) { tray.innerHTML = `<p class="feed-empty">Nothing to offer yet. Pick ripe fruit in the orchard, forage in <a href="woods.html">the woods</a>, or fish at <a href="pond.html">the pond</a>.</p>`; positionBubble(); el.querySelector('.x').focus({ preventScroll: true }); return; }
     const mark = { love: "♥", like: "♪", meh: "✕", play: "✦" };
-    tray.innerHTML = list.map((f, i) => `<button type="button" class="treat ${known[f.id] || ""}" data-i="${i}" title="${esc(f.name)} · ${esc(f.zh)}" aria-label="Offer ${esc(f.name)}">${f.icon}<b>${f.n}</b>${known[f.id] ? `<i>${mark[known[f.id]]}</i>` : ""}</button>`).join("");
+    tray.innerHTML = list.map((f, i) => `<button type="button" class="treat ${known[f.id] || ""}" data-i="${i}" title="${esc(f.name)}" aria-label="Offer ${esc(f.name)}">${f.icon}<b>${f.n}</b>${known[f.id] ? `<i>${mark[known[f.id]]}</i>` : ""}</button>`).join("");
     tray.onclick = (e) => {
       const b = e.target.closest(".treat"); if (!b) return;
       e.stopPropagation();
@@ -700,7 +700,7 @@
       : ph.fruit === "ripe" ? (t.el.querySelector(".fruit") ? "Ripe! Tap a fruit to pick it, or use Harvest." : "You picked everything this season. It will fruit again next year.")
       : `${T.label === "Orange" ? "Oranges" : T.label.replace(" blossom", "") + "s"} ripen in ${ripeIn.toLowerCase()}.`;
     const el = showBubble(`
-      <span class="sp">${esc(T.label)} ${T.vine?'vine':'tree'} · ${esc(T.zh)}</span>
+      <span class="sp">${esc(T.label)} ${T.vine?'vine':'tree'}</span>
       <h4>${sap ? "A young sapling" : cap(LOOKS[ph.fol])}</h4>
       <p>${line}</p>
       <div class="bubble-actions">
@@ -890,7 +890,7 @@
     modal(`
       <h2>Plant a Tree</h2>
       <p class="muted">Choose a fruit tree or climbing vine. Each planting grows into one of three unique shapes. Summer brings cherries, peaches, mangoes and durians; autumn brings apples, kiwis and grapes; oranges ripen in winter. Saplings grow after a season or three waterings.</p>
-      <div class="species-grid tree-grid">${Object.entries(TREES).map(([k, T]) => `<button type="button" data-tree="${k}">${preview(k)}<span>${T.label} · ${T.zh}<br><small>${T.vine?'Climbing vine · ':''}ripe in ${T.ripe}</small></span></button>`).join("")}</div>`, {
+      <div class="species-grid tree-grid">${Object.entries(TREES).map(([k, T]) => `<button type="button" data-tree="${k}">${preview(k)}<span>${T.label}<br><small>${T.vine?'Climbing vine · ':''}ripe in ${T.ripe}</small></span></button>`).join("")}</div>`, {
       onOpen(m) {
         m.card.querySelector(".tree-grid").addEventListener("click", (e) => {
           const b = e.target.closest("button"); if (!b) return;
@@ -930,8 +930,8 @@
   ];
   const WATER = { cx: 64.5, cy: 79, rx: 21.5, ry: 7.2 };
   const WAYS = {
-    woods: { url: "woods.html", label: "Into the woods", zh: "林间采集", at: [12, 32], c: "#040a07" },
-    pond: { url: "pond.html", label: "Go fishing", zh: "池畔垂钓", at: [64.5, 79], c: "#030812" }
+    woods: { url: "woods.html", label: "Into the woods", at: [12, 32], c: "#040a07" },
+    pond: { url: "pond.html", label: "Go fishing", at: [64.5, 79], c: "#030812" }
   };
   const inPoly = (x, y, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c; } return c; };
   const zoneAt = (x, y) => (((x - WATER.cx) / WATER.rx) ** 2 + ((y - WATER.cy) / WATER.ry) ** 2 < 1 ? "pond" : WOODS.some((p) => inPoly(x, y, p)) ? "woods" : null);
@@ -944,7 +944,7 @@
     viewport.classList.toggle("zone-hover", !!z);
     if (!z) { zoneTip.classList.remove("on"); return; }
     const [x, y] = pct(e);
-    zoneTip.innerHTML = `${WAYS[z].label} →<span class="zh">${WAYS[z].zh}</span>`;
+    zoneTip.textContent = `${WAYS[z].label} →`;
     zoneTip.style.left = x + "%"; zoneTip.style.top = y + "%";
     zoneTip.classList.add("on");
   });
@@ -957,7 +957,7 @@
     // Burned lettering follows the timber's grain; a sunlit lower chisel edge
     // gives it depth without a bright outline floating over the board.
     const letters = `<text x="${tx}" y="41" font-size="15.5" font-weight="600">${left ? "The woods" : "Fishing"}</text>
-      <text x="${tx}" y="55.5" font-size="10.2" font-weight="500" letter-spacing=".35">${left ? "林间采集" : "池畔垂钓"}</text>`;
+      <text x="${tx}" y="55.5" font-size="10.2" font-weight="500" letter-spacing=".35">${left ? "Gather" : "Cast a line"}</text>`;
     return `<svg viewBox="0 0 140 146" aria-hidden="true">
       <defs>
         <filter id="${id}-chisel" x="-5%" y="-8%" width="110%" height="116%">

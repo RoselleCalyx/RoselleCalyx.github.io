@@ -12,25 +12,25 @@
 
   /* ---------- species ---------- */
   const SPECIES = {
-    snowcat: { label: "Snow leopard cat", zh: "雪山豹猫", size: 1.25, speed: 1.25 },
-    rabbit: { label: "Rabbit", zh: "兔子", size: 0.78, speed: 4, gait: "hop" },
-    panda: { label: "Panda", zh: "熊猫", size: 1.12, speed: 0.85 },
-    fox: { label: "Fox", zh: "狐狸", size: 0.98, speed: 1.55 },
-    shiba: { label: "Shiba Inu", zh: "柴犬", size: 0.95, speed: 1.4 },
-    hedgehog: { label: "Hedgehog", zh: "刺猬", size: 0.66, speed: 0.65 },
-    duckling: { label: "Duckling", zh: "小鸭", size: 0.64, speed: 1 },
-    penguin: { label: "Penguin", zh: "企鹅", size: 0.84, speed: 0.75 }
+    snowcat: { label: "Snow leopard cat", size: 1.25, speed: 1.25 },
+    rabbit: { label: "Rabbit", size: 0.78, speed: 4, gait: "hop" },
+    panda: { label: "Panda", size: 1.12, speed: 0.85 },
+    fox: { label: "Fox", size: 0.98, speed: 1.55 },
+    shiba: { label: "Shiba Inu", size: 0.95, speed: 1.4 },
+    hedgehog: { label: "Hedgehog", size: 0.66, speed: 0.65 },
+    duckling: { label: "Duckling", size: 0.64, speed: 1 },
+    penguin: { label: "Penguin", size: 0.84, speed: 0.75 }
   };
   /* ---------- trees ---------- */
   const TREES = {
-    apple: { label: "Apple", zh: "苹果", ripe: "autumn", flower: "fl-white", crown: "round" },
-    peach: { label: "Peach", zh: "桃", ripe: "summer", flower: "fl-peach", crown: "round" },
-    orange: { label: "Orange", zh: "橙子", ripe: "winter", flower: "fl-white", crown: "dome", evergreen: true },
-    cherry: { label: "Cherry blossom", zh: "樱桃", ripe: "summer", flower: "fl-sakura", crown: "wide" },
-    kiwi: { label: "Kiwi", zh: "猕猴桃", ripe: "autumn", flower: "fl-white", crown: "wide", vine: true, asset: true },
-    grape: { label: "Grape", zh: "葡萄", ripe: "autumn", flower: "fl-white", crown: "wide", vine: true, asset: true },
-    durian: { label: "Durian", zh: "榴莲", ripe: "summer", flower: "fl-white", crown: "tall", evergreen: true, asset: true },
-    mango: { label: "Mango", zh: "芒果", ripe: "summer", flower: "fl-white", crown: "dome", evergreen: true, asset: true }
+    apple: { label: "Apple", ripe: "autumn", flower: "fl-white", crown: "round" },
+    peach: { label: "Peach", ripe: "summer", flower: "fl-peach", crown: "round" },
+    orange: { label: "Orange", ripe: "winter", flower: "fl-white", crown: "dome", evergreen: true },
+    cherry: { label: "Cherry blossom", ripe: "summer", flower: "fl-sakura", crown: "wide" },
+    kiwi: { label: "Kiwi", ripe: "autumn", flower: "fl-white", crown: "wide", vine: true, asset: true },
+    grape: { label: "Grape", ripe: "autumn", flower: "fl-white", crown: "wide", vine: true, asset: true },
+    durian: { label: "Durian", ripe: "summer", flower: "fl-white", crown: "tall", evergreen: true, asset: true },
+    mango: { label: "Mango", ripe: "summer", flower: "fl-white", crown: "dome", evergreen: true, asset: true }
   };
   const FRUIT = { apple: "#d63b33", peach: "#f4a27c", orange: "#f39a1f", cherry: "#b3142b", kiwi:'#91613f',grape:'#725095',durian:'#859242',mango:'#efbb45' };
   // what each tree looks like in each season
