@@ -65,7 +65,7 @@ body[data-page="farm"] .bubble:not(.animal-actions)::before {
 body[data-page="farm"] .bubble:not(.animal-actions)::after { display: none; }
 body[data-page="farm"] .bubble h4 {
   margin: 2px 0 8px;
-  padding-right: 22px;
+  padding-right: 32px;
   color: #47311e;
   font-family: var(--farm-note-font);
   font-size: 1.25rem;
@@ -86,17 +86,18 @@ body[data-page="farm"] .bubble .muted { color: #80674f; font-size: .8rem; line-h
 body[data-page="farm"] .bubble .x {
   display: grid;
   place-items: center;
-  top: 7px;
-  right: 7px;
+  top: 14px;
+  right: 12px;
   width: 30px;
   height: 30px;
   padding: 0;
   border-radius: 50%;
-  color: #886745;
+  background: rgba(255, 239, 195, .92);
+  color: #694823;
   font-family: var(--ui);
   font-size: 19px;
 }
-body[data-page="farm"] .bubble .x:hover { background: rgba(102, 66, 30, .08); color: #4f3825; }
+body[data-page="farm"] .bubble .x:hover { background: #fff0cd; color: #4f3825; }
 body[data-page="farm"] .bubble :is(.x, .btn, .treat):focus-visible { outline: 2px solid #8b704a; outline-offset: 2px; }
 body[data-page="farm"] .bubble .btn {
   padding: 7px 12px;
@@ -130,7 +131,7 @@ body[data-page="farm"] .farm-zone-tip { padding: 10px 18px; font-size: .94rem; }
 @media (max-width: 900px) {
   body[data-page="farm"] .bubble.mobile-sheet { padding: 22px 22px 20px; }
   body[data-page="farm"] .bubble.mobile-sheet h4 { padding-right: 36px; }
-  body[data-page="farm"] .bubble.mobile-sheet .x { top: 8px; right: 8px; width: 44px; height: 44px; }
+  body[data-page="farm"] .bubble.mobile-sheet .x { top: 14px; right: 12px; width: 44px; height: 44px; }
 }
 .farm-feedback, .farm-feedback:empty {
   display: block;
