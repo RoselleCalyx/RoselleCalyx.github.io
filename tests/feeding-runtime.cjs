@@ -49,7 +49,7 @@ const root=path.resolve(__dirname,'..'),out='/tmp/feeding-qa',base='http://127.0
    await checkToolbar();
    if(sp==='snowcat'){
     assert.equal(await p.locator('[data-heart]').getAttribute('data-liked'),'false','food-earned hearts do not select the like icon');
-    assert.equal(await p.locator('.animal-heart-shape').evaluate(el=>getComputedStyle(el).fill),'none','the heart starts with a transparent center');
+    assert.equal(await p.locator('.animal-heart-shape').evaluate(el=>getComputedStyle(el).fill),'rgb(246, 240, 227)','the heart starts solid ivory');
     const before=await p.evaluate(()=>{const a=__feed.animals.find(a=>a.keeper);return Site.store.get('farm-hearts',{})[a.def.species+':'+a.def.name]||0;});
     await p.locator('[data-heart]').click();
     assert.equal(await p.locator('[data-heart]').getAttribute('data-liked'),'true');

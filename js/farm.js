@@ -694,7 +694,7 @@
       <path d="M20 15c-6-5-14-1-14 7 0 7 5 13 10 13 2 0 3-1 4-1s2 1 4 1c5 0 10-6 10-13 0-8-8-12-14-7Z" fill="#e76158"/>
     </svg>`,
     heart: `<svg viewBox="0 0 40 40" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path class="animal-heart-shape" d="M20 35S5 26 5 15C5 6 14 5 20 12 26 5 35 6 35 15c0 11-15 20-15 20Z" fill="none" stroke="#e75860" stroke-width="2.3"/>
+      <path class="animal-heart-shape" d="M20 35S5 26 5 15C5 6 14 5 20 12 26 5 35 6 35 15c0 11-15 20-15 20Z" fill="#f6f0e3" stroke="#f6f0e3" stroke-width="2.3"/>
     </svg>`
   };
   function openAnimal(a, focus = false) {
