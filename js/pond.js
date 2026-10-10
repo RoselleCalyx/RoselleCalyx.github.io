@@ -23,10 +23,10 @@
   const CATCH = [
     { id: "crucian", name: "Crucian carp · 鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or bamboo cover, any season." },
     { id: "carp", name: "Common carp · 鲤鱼", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
-    { id: "koi", name: "Koi · 锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "春夏秋可钓，夏季最多。Look for red-and-white patches on a fork-tailed shadow · 锦鲤。" },
+    { id: "koi", name: "Koi · 锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "春夏秋可钓，夏季最多。Look for a warm-toned fork-tailed shadow · 锦鲤的暖褐色整体鱼影。" },
     { id: "goldkoi", name: "Golden koi · 黄金锦鲤", rarity: 5, len: [48, 72], fight: 0.85, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "Summer only · 仅夏季。Look for a large golden silhouette; cast beside it and keep the line out of the red." },
     { id: "catfish", name: "Catfish · 鲶鱼", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
-    { id: "mandarin", name: "Mandarin fish · 鳜鱼（桂花鱼）", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.”", hint: "春季最多，秋冬也有。Look for a broad mottled shadow with a spiny fin · 鳜鱼的斑纹和棘状背鳍。" },
+    { id: "mandarin", name: "Mandarin fish · 鳜鱼（桂花鱼）", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.”", hint: "春季最多，秋冬也有。Look for a broad olive shadow with a spiny fin · 鳜鱼的宽身和棘状背鳍。" },
     { id: "bitterling", name: "Bitterling · 鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "Under the bamboo cover." },
     { id: "minnow", name: "Stone moroko · 麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "Under the bamboo cover." },
     { id: "loach", name: "Loach · 泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Bamboo cover or trap." },
@@ -602,16 +602,14 @@
     if (net || frozen()) return;
     const s = scaleAt(y);
     net = { x, y, r: 36 * k * s, t0: time, phase: "fly", caught: [] };
-    // Reserve fish under the descending cover, with a forgiving rim hit area.
-    // Their escape speed makes aiming harder, but cannot undo a successful throw.
-    catchUnderCover();
+    // Fish continue swimming until the cover actually reaches the water.
     hint.textContent = "Pressing the open bamboo cover into the shallows…";
   }
   function catchUnderCover() {
     if (!net) return;
     for (const fish of shadows) {
       if (!['wander','flee'].includes(fish.mode) || BY[fish.id].kind !== 'fish') continue;
-      const rx = net.r * 1.4, ry = net.r * .55;
+      const rx = net.r * 1.25, ry = net.r * .48;
       if (((fish.x - net.x) / rx) ** 2 + ((fish.y - net.y) / ry) ** 2 > 1) continue;
       fish.mode = 'trapped'; net.caught.push(fish);
     }
@@ -826,36 +824,33 @@
     const wig = Math.sin(s.wig) * width * .55;
     ctx.save(); ctx.translate(s.x, s.y); ctx.scale(1, .55); ctx.rotate(s.h);
     ctx.globalAlpha = s.alpha * (s.id === "goldkoi" ? .65 : BY[s.id].rarity >= 3 ? .53 : .42);
-    ctx.fillStyle = s.id === "goldkoi" ? "#bd9434" : "#142422";
+    const color = s.id === 'goldkoi' ? '#bd9434' : s.id === 'koi' ? '#76513c' : s.id === 'mandarin' ? '#334337' : '#142422';
+    const shade = ctx.createLinearGradient(0, -width, 0, width);
+    shade.addColorStop(0, color); shade.addColorStop(1, s.id === 'goldkoi' ? '#8b722f' : '#182d29');
+    ctx.fillStyle = shade;
     // Long, tapered body; broad-headed catfish and deep-bodied perch remain distinct.
     ctx.beginPath(); ctx.moveTo(half, 0);
     ctx.bezierCurveTo(half * .9, -width, -half * .15, -width, -half * .76, wig);
-    ctx.bezierCurveTo(-half * .12, width + wig, half * .86, width, half, 0); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(-half * .65, wig);
+    ctx.bezierCurveTo(-half * .12, width + wig, half * .86, width, half, 0); ctx.closePath();
+    ctx.moveTo(-half * .65, wig);
     if (f.tail === "fork") {
       ctx.lineTo(-half * 1.12, -width * .95 + wig); ctx.lineTo(-half * .96, wig);
       ctx.lineTo(-half * 1.12, width * .95 + wig);
     } else { ctx.quadraticCurveTo(-half * 1.35, -width + wig, -half * 1.1, wig); ctx.quadraticCurveTo(-half * 1.35, width + wig, -half * .65, wig); }
-    ctx.closePath(); ctx.fill();
+    ctx.closePath();
     for (const side of [-1, 1]) {
-      ctx.beginPath(); ctx.moveTo(half * .4, side * width * .5);
-      ctx.lineTo(half * .05, side * width * 1.55); ctx.lineTo(-half * .05, side * width * .55); ctx.fill();
+      ctx.moveTo(half * .4, side * width * .5);
+      ctx.lineTo(half * .05, side * width * 1.55); ctx.lineTo(-half * .05, side * width * .55); ctx.closePath();
     }
     if (f.dorsal === "spiny") {
-      ctx.beginPath(); ctx.moveTo(half * .3, -width * .7);
+      ctx.moveTo(half * .3, -width * .7);
       for (let i = 0; i < 8; i++) ctx.lineTo(half * (.3 - i * .12), -width * (i % 2 ? .9 : 1.5));
-      ctx.closePath(); ctx.fill();
+      ctx.closePath();
     }
+    ctx.fill();
     if (f.whiskers || f.barbels) {
       ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = Math.max(.7, len * .012);
       for (const side of [-1, 1]) { ctx.beginPath(); ctx.moveTo(half * .85, side * width * .2); ctx.quadraticCurveTo(half * 1.25, side * width * .8, half * (f.whiskers ? 1.42 : 1.1), side * width * 1.6); ctx.stroke(); }
-    }
-    if (s.koi || f.pattern === "mottle") {
-      ctx.fillStyle = s.id === "goldkoi" ? "#f4d989" : s.koi ? "#dbb5a0" : "#63705a";
-      for (let i = 0; i < 3; i++) {
-        ctx.beginPath(); ctx.ellipse(half * (.42 - i * .38), Math.sin(i * 2) * width * .3, len * .08, width * .6, .2, 0, TAU); ctx.fill();
-      }
-      if (s.id === "koi") { ctx.fillStyle = "#b75536"; ctx.beginPath(); ctx.ellipse(-half * .15, 0, len * .11, width * .72, -.2, 0, TAU); ctx.fill(); }
     }
     ctx.restore();
   }
@@ -1106,7 +1101,7 @@
   }
   function openLog() {
     document.getElementById("btnLog").classList.remove("glint");
-    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼影大小对应个体长度；锦鲤有红白斑块，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝在岸边有细长蛇形鱼影，也能用地笼捕获。Released fish still count." });
+    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼影大小对应个体长度；锦鲤鱼影呈暖褐色、分叉尾，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝在岸边有细长蛇形鱼影，也能用地笼捕获。Released fish still count." });
   }
   function scatterBait() {
     if (frozen()) { toast("The fish are slow under the ice. Bait won’t carry.", 2600); return; }
@@ -1203,7 +1198,7 @@
   document.getElementById("btnTips").addEventListener("click", () => Site.modal(`<h2>Angler’s tips · 钓鱼指南</h2>
     <p>浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
     <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。越稀有越少出现、游得越快，提竿窗口也越短。它挣扎很强，保持张力在安全区；同种鱼里，个体越大越难收线。</p>
-    <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。锦鲤带红白斑块；鳜鱼身宽、有斑纹和棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
+    <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。黄金锦鲤是完整的金色轮廓；锦鲤呈暖褐色、分叉尾；鳜鱼身宽、橄榄色、有棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
     <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝春夏秋在岸边有细长蛇形鱼影，可罩捕或下竿，也可放地笼约一分钟后回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
 
   function restoreSavedState() {
