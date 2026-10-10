@@ -44,7 +44,7 @@ function environment() {
     addEventListener: (type, handler) => lifecycle.addEventListener(type, handler),
     toast() {}, openJournal() {}, lookAround() {},
     openLog() {}, scatterBait() {}, seasonNote: () => '',
-    Wd: { back() {}, float() {}, season: () => ({ name: 'summer' }), seasonChip() {},
+    Wd: { back() {}, float() {}, catchName: name => name, season: () => ({ name: 'summer' }), seasonChip() {},
       store: { get: (key, fallback) => structuredClone(storage.has(key) ? storage.get(key) : fallback) } },
     season: { name: 'summer' }, fit: () => { sceneCalls.fit++; },
     applySeason: () => { sceneCalls.apply++; },
@@ -89,7 +89,7 @@ function pond() {
     rod, save, tool: 'rod', net: null, haul: null, busyCard: false, hoverTrap: -1, hover: null,
     busy: () => context.busyCard || rod.state !== 'idle' || !!context.net || !!context.haul,
     W: 700, H: 600, k: 1, HZ: .4, DOCK: { v0: .79 }, STAKES: stakes,
-    stage: {}, hint: {}, YUKI: ['hello'], sparkle() {},
+    stage: {}, hint: {}, reelEl: new Surface(), shadows: [], YUKI: ['hello'], sparkle() {},
     tools: { rod: { hint: 'rod' }, net: { hint: 'basket' }, trap: { hint: 'trap' } },
     frozen: () => false, scaleAt: () => 1, P: (u, v) => [u * 700, v * 600],
     yukiBox: () => ({ x: -500, y: -500, w: 80, h: 100, cx: -460 }),
@@ -105,7 +105,7 @@ function pond() {
   const source = fs.readFileSync(path.join(root, 'js', 'pond.js'), 'utf8');
   const toolStart = source.indexOf('  function setTool(t) {');
   const toolEnd = source.indexOf('  function renderCreel()', toolStart);
-  vm.runInContext(source.slice(toolStart, toolEnd) + '\n' +
+  vm.runInContext(sourceSection('pond.js', '  const canRetrieve =', '  function landBobber() {') + '\n' + source.slice(toolStart, toolEnd) + '\n' +
     inputSource('pond.js', '  /* ================= sizing & loop ================= */'), context);
   return { ...fixture, rod, save };
 }
@@ -266,10 +266,12 @@ test('pond switching tools cancels the pending tap and releases capture', () => 
   assert.equal(f.calls[0][0], 'basket');
 });
 
-test('pond waiting-to-approach transition accepts a repositioning tap', () => {
+test('pond waiting-to-approach tap retrieves without immediately casting again', () => {
   const f = pond(); f.rod.state = 'waiting'; f.cv.emit('pointerdown', 300, 330);
-  f.rod.state = 'approach'; f.cv.emit('pointerup', 300, 330);
-  assert.equal(f.calls[0][0], 'cast');
+  f.rod.state = 'approach'; f.rod.fish = {mode:'approach'}; const fish=f.rod.fish; f.cv.emit('pointerup', 300, 330);
+  assert.equal(f.rod.state, 'idle'); assert.equal(f.rod.bob, null); assert.equal(f.rod.fish, null);
+  assert.equal(fish.mode, 'wander'); assert.equal(f.calls.length, 0);
+  f.cv.emit('pointerdown', 300, 330); f.cv.emit('pointerup', 300, 330); assert.equal(f.calls[0][0], 'cast');
 });
 
 test('pond a bite arriving after an idle tap began does not become a cast or late strike', () => {
@@ -394,4 +396,15 @@ test('initial pageshow leaves current state intact and pagehide clears only acti
   assert.equal(f.rod.hold, false); assert.equal(f.rod.state, 'reeling'); assert.equal(f.cv.hasPointerCapture(1), false);
   const w = woods(); w.cv.emit('pointerdown', 100, 100); w.cv.emit('pointermove', 190, 100);
   w.lifecycle.emit('pagehide', 0, 0); assert.equal(w.cover.off, 0); assert.equal(w.cover.drag, false);
+});
+
+test('pond casting-to-waiting tap retrieves and a scroll gesture keeps the line out', () => {
+ const f=pond(); f.rod.state='casting'; f.cv.emit('pointerdown',300,330); f.rod.state='waiting'; f.cv.emit('pointerup',300,330);
+ assert.equal(f.rod.state,'idle'); assert.equal(f.calls.length,0);
+ f.rod.state='waiting'; f.cv.emit('pointerdown',300,330); f.cv.emit('pointermove',300,355); f.cv.emit('pointerup',300,355); assert.equal(f.rod.state,'waiting');
+});
+test('pond rod button retrieves without recasting and clears an invisible ice fish', () => {
+ const f=pond(); f.rod.state='approach'; const fish={mode:'approach',hidden:true}; f.rod.fish=fish; f.context.shadows=[fish];
+ f.toolButtons.find(b=>b.dataset.tool==='rod').emit('click',0,0);
+ assert.equal(f.rod.state,'idle'); assert.equal(f.context.shadows.length,0); assert.equal(f.calls.length,0);
 });

@@ -520,11 +520,23 @@
     rod.state = "casting"; rod.t0 = time; rod.target = { x, y }; rod.bob = null; rod.fish = null;
     hint.textContent = "The float sails out…";
   }
+  const canRetrieve = () => ["casting", "waiting", "approach"].includes(rod.state);
+  function retrieveLine() {
+    if (!canRetrieve()) return;
+    cancelGesture();
+    if (rod.fish) {
+      rod.fish.mode = "wander";
+      if (rod.fish.hidden) shadows = shadows.filter(f => f !== rod.fish);
+    }
+    rod.state = "idle"; rod.bob = null; rod.target = null; rod.fish = null;
+    rod.hookAt = null; rod.hold = false; reelEl.hidden = true; cv.style.touchAction = "";
+    hint.textContent = "Line retrieved. Tap the water when you’re ready to cast again.";
+  }
   function landBobber() {
     rod.state = "waiting"; rod.bob = { x: rod.target.x, y: rod.target.y, dip: 0 };
     splash(rod.bob.x, rod.bob.y, 6, 0.4);
     rod.next = time + (time < bait.until ? 0.6 : 1.2) + Math.random() * (time < bait.until ? 1.2 : 2.6);
-    hint.textContent = "Watch the float. Strike when it goes under — not before.";
+    hint.textContent = "Watch the float. Tap to retrieve; strike when it goes under.";
   }
   function fishApproach() {
     let f = null, best = 1e9;
@@ -1103,7 +1115,7 @@
 
   /* ================= HUD & tools ================= */
   const tools = {
-    rod: { hint: "Tap the water to cast. Strike when the float goes under, then hold to reel." },
+    rod: { hint: "Tap the water to cast; tap again to retrieve. Strike when the float goes under, then hold to reel." },
     net: { hint: "Tap the shallows to press the open bamboo cover over fish, then gather them through its top." },
     trap: { hint: "Tap a stake to set a crab trap. It soaks for about a minute — even if you leave." }
   };
@@ -1188,14 +1200,14 @@
     if (!tap || e.pointerId !== tap.pointerId) return;
     const candidate = tap; tap = null;
     const [x, y] = local(e), w = whatIsAt(x, y);
-    const stillWaiting = ["waiting", "approach"].includes(candidate.rodState) && ["waiting", "approach"].includes(rod.state);
+    const stillWaiting = ["casting", "waiting", "approach"].includes(candidate.rodState) && canRetrieve();
     if (candidate.moved || Math.hypot(x - candidate.x, y - candidate.y) > 10 || busyCard || haul || tool !== candidate.tool
       || (rod.state !== candidate.rodState && !stillWaiting) || !w || w.kind !== candidate.target.kind
       || (w.kind === "trap" && w.i !== candidate.target.i)) return;
     if (w.kind === "yuki") { companion.open(Wd.keeperLine(YUKI[(Math.random() * YUKI.length) | 0])); tip.classList.remove("on"); return; }
     if (w.kind === "trap") { const st = trapState(w.i); if (st === "free") setTrap(w.i); else if (st === "ready") haulTrap(w.i); else Wd.float(stage, x, y - 20, `Soaking… ${Math.ceil((save.traps[w.i].t0 + save.traps[w.i].dur - Date.now()) / 1000)}s`, "soft"); return; }
     if (tool === "rod" && rod.state === "idle") castTo(x, y);
-    else if (tool === "rod" && (rod.state === "waiting" || rod.state === "approach")) { rod.state = "idle"; rod.bob = null; if (rod.fish) rod.fish.mode = "wander"; rod.fish = null; castTo(x, y); }
+    else if (tool === "rod" && canRetrieve()) retrieveLine();
     else if (tool === "net") throwNet(x, y);
     else if (tool === "trap") Wd.float(stage, x, y - 16, "Tap one of the wooden stakes", "soft");
   });
@@ -1206,17 +1218,21 @@
     e.preventDefault();
     if (rod.state === "reeling") rod.hold = true;
     else if (rod.state === "bite" || rod.state === "nibble") strike();
+    else if (tool === "rod" && canRetrieve()) retrieveLine();
     else if (rod.state === "idle" && tool === "rod") castTo(W * (0.3 + Math.random() * 0.4), H * (0.55 + Math.random() * 0.25));
   });
   addEventListener("keyup", (e) => { if (e.code === "Space") rod.hold = false; });
 
-  document.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => setTool(b.dataset.tool)));
+  document.querySelectorAll("[data-tool]").forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.tool === "rod" && tool === "rod" && canRetrieve()) retrieveLine();
+    else setTool(b.dataset.tool);
+  }));
   document.getElementById("btnBack").addEventListener("click", () => Wd.back("pond"));
   document.getElementById("btnBack2").addEventListener("click", () => Wd.back("pond"));
   document.getElementById("btnLog").addEventListener("click", openLog);
   document.getElementById("btnBait").addEventListener("click", scatterBait);
   document.getElementById("btnTips").addEventListener("click", () => Site.modal(`<h2>Angler’s tips · 钓鱼指南</h2>
-    <p>浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
+    <p>点击水面抛竿；等待时再次点击水面或鱼竿按钮，可以提前收线，下一次点击才重新抛竿。浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
     <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。越稀有越少出现、游得越快，提竿窗口也越短。它挣扎很强，保持张力在安全区；同种鱼里，个体越大越难收线。</p>
     <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。黄金锦鲤是完整的金色轮廓；锦鲤呈暖褐色、分叉尾；鳜鱼身宽、橄榄色、有棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
     <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝春夏秋在岸边有细长蛇形鱼影，可罩捕或下竿，也可放地笼约一分钟后回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
