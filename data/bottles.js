@@ -6,13 +6,13 @@
    ------------------------------------------------------------------ */
 window.BOTTLES = [
   {
-    from: "Titan · Host",
+    from: "Chen · Host",
     date: "2026-10-01",
     text: "If you found this bottle, hello.\nI built this little corner of the sky to keep the things I love: papers, places, stars, and a farm with a very serious snow leopard cat.\nIf something here caught your attention, send me a note.",
     reply: ""
   },
   {
-    from: "Titan · Host",
+    from: "Chen · Host",
     date: "2026-10-08",
     text: "To whoever is reading this at 3 a.m. with a deadline:\nthe night sky has room for slow journeys. Yours can take its time, too.\nGo to sleep soon.",
     reply: ""
