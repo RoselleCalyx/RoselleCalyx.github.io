@@ -301,7 +301,8 @@
   let layoutDirty = false;
   const P = (x, y) => [(F.left + x * F.S) * dpr, (F.top + y * F.S) * dpr];
   function layout() {
-    // On phones the art uses the stable large viewport; the hero clips it to 100dvh.
+    // Only width/orientation changes resize phone art; toolbar motion changes its visible crop.
+    window.HOME_ART_SIZE?.();
     const r = cvS.getBoundingClientRect();
     if (r.width < 10 || r.height < 10) return;
     const nextDpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
@@ -751,7 +752,7 @@
     drawRingDust(cR, S, motionTime);
     // Cassini is foreground: all near-side ring surfaces must be behind it.
     drawArrival(cR, p, S, motionTime);
-    if (cosmos) cosmos.style.transform = calm ? "none" : `translate3d(${Math.sin(time*.025)*.35}%, ${-p*1.5}%, 0) scale(1.02)`;
+    if (cosmos) cosmos.style.transform = calm ? "none" : `translate3d(${Math.sin(time*.025)*.35}%, ${-p*1.5}%, 0)`;
 
     // ---- the page around the story ----
     const uiA = 1 - smooth(0.02, 0.1, p);
@@ -768,6 +769,7 @@
 
   const invalidateLayout = () => { layoutDirty = true; };
   addEventListener("resize", invalidateLayout);
+  addEventListener("orientationchange", invalidateLayout);
   window.visualViewport?.addEventListener("resize", invalidateLayout);
   if ("ResizeObserver" in window) new ResizeObserver(invalidateLayout).observe(cvS);
   if ("IntersectionObserver" in window) new IntersectionObserver((e) => { visible = e[0].isIntersecting; }).observe(story);

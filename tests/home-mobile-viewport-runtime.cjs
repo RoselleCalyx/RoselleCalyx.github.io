@@ -1,5 +1,6 @@
 // HOME_PREVIEW_URL=http://127.0.0.1:4174 node tests/home-mobile-viewport-runtime.cjs
-// Chrome viewport changes emulate screen resizing; fixed lvh/vh CSS emulates browser toolbar resizing.
+// Height-only viewport changes exercise browsers whose lvh moves with toolbars.
+// A second case fixes lvh/vh to emulate browsers whose large viewport stays stable.
 'use strict';
 const { chromium } = require('playwright');
 const fs = require('node:fs/promises');
@@ -98,23 +99,57 @@ function assertCovered(samples, label) {
   }
 }
 
+function assertSceneStable(samples, initial, label, stableProgress = false) {
+  for (const [index, s] of samples.entries()) {
+    const frame = `${label} frame ${index}`;
+    assert.deepEqual(s.frame, initial.frame, `${frame}: toolbar motion preserves the painting frame`);
+    assert.deepEqual(s.anchor, initial.anchor, `${frame}: toolbar motion preserves the final burn anchor`);
+    assert.equal(s.vh, initial.vh, `${frame}: toolbar motion preserves the drawing height`);
+    assert.equal(s.land.width, initial.land.width, `${frame}: toolbar motion never zooms the landscape width`);
+    assert.equal(s.land.height, initial.land.height, `${frame}: toolbar motion never zooms the landscape height`);
+    assert.deepEqual(s.canvases, initial.canvases, `${frame}: every canvas keeps its CSS and bitmap dimensions`);
+    assert.deepEqual(s.writes, initial.writes, `${frame}: toolbar motion never resets unchanged canvas bitmaps`);
+    assert.equal(s.cosmosHeight, initial.cosmosHeight, `${frame}: toolbar motion preserves the galaxy surface`);
+    if (stableProgress) assert.equal(s.pTarget, initial.pTarget, `${frame}: toolbar motion preserves story progress`);
+  }
+}
+
 (async () => {
   await fs.mkdir(out, { recursive: true });
   const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
   const errors = [], results = {};
   try {
-    const phone = await browser.newPage({ viewport: { width: 390, height: 700 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const phone = await browser.newPage({ viewport: { width: 390, height: 700 }, screen: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
     phone.on('pageerror', e => errors.push(e.message));
+    // Playwright keeps the configured physical screen when only viewport dimensions change.
+    // Mirror a real orientation event when the subsequent width change rotates the phone.
+    await phone.addInitScript(() => {
+      window.__screenOrientationType = 'portrait-primary';
+      Object.defineProperty(screen.orientation, 'type', { configurable: true, get: () => __screenOrientationType });
+      Object.defineProperty(screen.orientation, 'angle', { configurable: true, get: () => __screenOrientationType.startsWith('landscape') ? 90 : 0 });
+    });
     await installHooks(phone); await phone.goto(base + '/index.html'); await ready(phone);
     await phone.screenshot({ path: out + '/phone-visible-700.png' });
-    for (const [width, height] of [[390, 844], [844, 390]]) {
-      const samples = await resizeSamples(phone, width, height);
-      assertCovered(samples, `phone ${width}x${height}`);
-      results[`${width}x${height}`] = { frames: samples.length, maxBottomGap: Math.max(...samples.map(s => s.hero.bottom - s.land.bottom)) };
+    await startSamples(phone);
+    const initialPhone = await phone.evaluate(() => { __viewportSampling = false; return __viewportSnapshot(); });
+    assert.equal(initialPhone.vh, 844, 'physical screen height prepares the full picture before the toolbar first retracts');
+    for (const height of [844, 700, 844]) {
+      const samples = await resizeSamples(phone, 390, height);
+      assertCovered(samples, `moving lvh toolbar ${height}`);
+      assertSceneStable(samples, initialPhone, `moving lvh toolbar ${height}`);
+      results[`toolbar-${height}`] = { frames: samples.length, maxBottomGap: Math.max(...samples.map(s => s.hero.bottom - s.land.bottom)) };
     }
+    await phone.screenshot({ path: out + '/phone-moving-lvh-visible-844.png' });
+    await phone.evaluate(() => { __screenOrientationType = 'landscape-primary'; });
+    const rotated = await resizeSamples(phone, 844, 390);
+    assertCovered(rotated, 'phone orientation 844x390');
+    assert.equal(rotated.at(-1).vw, 844, 'orientation recomputes drawing width');
+    assert.equal(rotated.at(-1).vh, 390, 'orientation recomputes drawing height');
+    assert.notDeepEqual(rotated.at(-1).writes, initialPhone.writes, 'orientation rebuilds the canvas bitmaps');
+    results['844x390'] = { frames: rotated.length, maxBottomGap: Math.max(...rotated.map(s => s.hero.bottom - s.land.bottom)) };
     await phone.close();
 
-    const toolbar = await browser.newPage({ viewport: { width: 390, height: 700 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const toolbar = await browser.newPage({ viewport: { width: 390, height: 700 }, screen: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
     toolbar.on('pageerror', e => errors.push(e.message));
     await installHooks(toolbar, true); await toolbar.goto(base + '/index.html');
     await toolbar.waitForFunction(() => window.__homeViewport && document.querySelector('#heroLand').width === 1672);
@@ -128,14 +163,7 @@ function assertCovered(samples, label) {
     for (const height of [844, 700, 844]) {
       const samples = await resizeSamples(toolbar, 390, height);
       assertCovered(samples, `toolbar ${height}`);
-      for (const s of samples) {
-        assert.deepEqual(s.frame, initial.frame, 'toolbar motion preserves the painting frame');
-        assert.deepEqual(s.anchor, initial.anchor, 'toolbar motion preserves the final burn anchor');
-        assert.equal(s.vh, initial.vh, 'toolbar motion preserves the drawing height');
-        assert.equal(s.pTarget, initial.pTarget, 'toolbar motion preserves story progress');
-        assert.deepEqual(s.writes, initial.writes, 'toolbar motion never resets unchanged canvas bitmaps');
-        assert.equal(s.cosmosHeight, initial.cosmosHeight, 'toolbar motion preserves the galaxy surface');
-      }
+      assertSceneStable(samples, initial, `fixed lvh toolbar ${height}`, true);
     }
     await toolbar.screenshot({ path: out + '/phone-visible-844-large-844.png' });
     await toolbar.close();
@@ -146,6 +174,6 @@ function assertCovered(samples, label) {
     assertCovered(await resizeSamples(desktop, 1024, 768), 'desktop resize');
     await desktop.close();
     assert.deepEqual(errors, [], 'no runtime errors');
-    console.log(JSON.stringify({ passed: true, phone: results, toolbarStable: true, canvasResetsAvoided: true, desktopFirstFrame: true, screenshots: out }));
+    console.log(JSON.stringify({ passed: true, phone: results, movingLvhToolbarStable: true, fixedLvhToolbarStable: true, canvasResetsAvoided: true, desktopFirstFrame: true, screenshots: out }));
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

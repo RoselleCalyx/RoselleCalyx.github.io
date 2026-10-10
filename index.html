@@ -3,6 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    // Set the painting's final height before first paint, including the area behind browser toolbars.
+    window.HOME_ART_SIZE = (() => {
+      const touch = matchMedia("(pointer: coarse)");
+      let size, direction;
+      return () => {
+        if (!touch.matches) return null;
+        const width = document.documentElement.clientWidth || innerWidth;
+        const orientation = screen.orientation?.type || (typeof window.orientation === "number"
+          ? (Math.abs(window.orientation) === 90 ? "landscape" : "portrait")
+          : (screen.width > screen.height ? "landscape" : "portrait"));
+        if (!size || width !== size.width || orientation !== direction) {
+          direction = orientation;
+          const sides = [screen.width, screen.height];
+          const screenHeight = orientation.startsWith("landscape") ? Math.min(...sides) : Math.max(...sides);
+          size = { width, height: Math.max(innerHeight, screenHeight || 0) };
+          document.documentElement.style.setProperty("--home-art-height", size.height + "px");
+        }
+        return size;
+      };
+    })();
+    HOME_ART_SIZE();
+  </script>
   <title>Chen Jia · A Lonely Voyager</title>
   <meta name="description" content="Chen Jia. PhD researcher in medical AI at TUM & relAI. Papers, footprints, and a small farm under the stars." />
   <meta name="theme-color" content="#04060d" />
@@ -12,7 +35,7 @@
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
-  <link rel="stylesheet" href="css/home.css?v=20261010-stable-mobile-viewport" />
+  <link rel="stylesheet" href="css/home.css?v=20261010-fixed-mobile-art" />
   <link rel="preload" href="assets/home-landscape.webp" as="image" fetchpriority="high" />
 </head>
 <body data-page="home">
@@ -188,7 +211,7 @@
   <script type="text/plain" data-site-src="js/sky.js"></script>
   <script type="text/plain" data-site-src="js/common.js?v=20261010-owner-polish1"></script>
   <script type="text/plain" data-site-src="js/cassini-art.js?v=20261009-scene2"></script>
-  <script type="text/plain" data-site-src="js/saturn.js?v=20261010-straight-fall"></script>
+  <script type="text/plain" data-site-src="js/saturn.js?v=20261010-fixed-mobile-art"></script>
   <script src="js/site-content.js?v=20261010-perf1"></script>
 </body>
 </html>
