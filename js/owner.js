@@ -307,6 +307,11 @@
       const result = await api.saveContent(revision, submitted);
       if (version !== generation || !api.signedIn) return;
       revision = result.revision; updatedAt = result.updatedAt; draft = merged(result.content); newAnimalIds.clear();
+      // A host publication must be visible on the very next public page.
+      try {
+        const base = new URL(window.SITE.messageApi).href.replace(/\/+$/, '');
+        sessionStorage.setItem('site-public-content-v1:' + base, JSON.stringify({revision:result.revision, updatedAt:result.updatedAt, content:result.content, savedAt:Date.now()}));
+      } catch (_) {}
       $("ownerRevision").textContent = "Version " + revision + " · " + new Date(updatedAt).toLocaleString();
       render(); setDirty(false); status("Published. Visitors will see your changes when they open or refresh a page.");
     } catch (error) {

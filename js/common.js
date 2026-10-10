@@ -553,5 +553,36 @@
     return { ok: true, via: "mail" };
   }
 
-  window.Site = { ICON, esc, store, toast, modal, lightbox, send, reveal, tabs, keeper };
+  /* Warm a public destination only after navigation intent, without running it. */
+  const warmedPages = new Set(), warmedResources = new Set();
+  function preparePage(href) {
+    const connection = navigator.connection;
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType || "")) return;
+    let target;
+    try { target = new URL(href, location.href); } catch (_) { return; }
+    if (target.origin !== location.origin || !/\/(index|papers|gallery|message|starmap|voyager|farm|pond|woods)\.html$/.test(target.pathname) || target.pathname === location.pathname || warmedPages.has(target.href) || warmedPages.size >= 3) return;
+    warmedPages.add(target.href);
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 2500);
+    fetch(target.href, { cache: "force-cache", signal: controller.signal }).then(response => response.ok ? response.text() : "").then(html => {
+      if (!html) return;
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      doc.querySelectorAll('link[rel="stylesheet"], script[src], script[data-site-src]').forEach(node => {
+        const href = new URL(node.getAttribute('href') || node.getAttribute('src') || node.getAttribute('data-site-src'), target);
+        if (href.origin !== location.origin || warmedResources.has(href.href)) return;
+        warmedResources.add(href.href);
+        const link = document.createElement('link'); link.rel = 'prefetch'; link.href = href.href; link.as = node.tagName === 'LINK' ? 'style' : 'script'; document.head.appendChild(link);
+      });
+    }).catch(() => {}).finally(() => clearTimeout(timer));
+    const forced = target.searchParams.get('season'), seasons = ['spring','summer','autumn','winter'];
+    const season = seasons.includes(forced) ? forced : seasons[Math.floor(Date.now()/480000)%4];
+    const page = target.pathname.split('/').pop();
+    const src = page === 'farm.html' ? `assets/farm/meadow-${season === 'summer' ? 'spring' : season}.webp` :
+      page === 'pond.html' || page === 'woods.html' ? `assets/wild/${page === 'pond.html' ? 'pond-water' : 'woods-clearing'}${season === 'winter' ? '-winter' : ''}-v2.webp` : '';
+    if (src) { const image = new Image(); image.decoding = 'async'; image.fetchPriority = 'low'; image.src = new URL(src, target).href; image.onload = () => image.decode().catch(() => {}); }
+  }
+  const prepareLink = e => { const a = e.target.closest('a[href]'); if (a) preparePage(a.href); };
+  document.addEventListener('pointerover', prepareLink, { passive: true });
+  document.addEventListener('focusin', prepareLink);
+  document.addEventListener('pointerdown', prepareLink, { passive: true });
+  window.Site = { ICON, esc, store, toast, modal, lightbox, send, reveal, tabs, keeper, preparePage };
 })();

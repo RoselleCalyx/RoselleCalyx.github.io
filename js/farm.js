@@ -1273,11 +1273,12 @@
 
   let leaving = false;
   function portal(kind, cx, cy, dir) {
+    if (matchMedia("(pointer: coarse)").matches) return;
     const ov = document.createElement("div");
     ov.className = "farm-portal"; ov.style.setProperty("--c", WAYS[kind].c);
     document.body.appendChild(ov);
     const far = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) + 120, feather = 90;
-    const dur = dir === "in" ? 1000 : 1250, t0 = performance.now(), c = WAYS[kind].c;
+    const dur = dir === "in" ? 700 : 1250, t0 = performance.now(), c = WAYS[kind].c;
     const ease = dir === "in" ? (t) => t * t * t : (t) => 1 - Math.pow(1 - t, 3);
     (function iris(now) {
       const t = Math.min(1, (now - t0) / dur), e = ease(t), r = Math.max(0, (dir === "in" ? 1 - e : e) * far);
@@ -1303,6 +1304,11 @@
     }
     if (dir === "out") setTimeout(() => ov.remove(), 1500);
   }
+  for (const [id,kind] of [['btnWoods','woods'],['btnPond','pond']]) {
+    const prepare=()=>Site.preparePage?.(WAYS[kind].url + (forced ? '?season='+forced : ''));
+    const button=document.getElementById(id);
+    for (const event of ['pointerenter','focus','pointerdown']) button.addEventListener(event,prepare,{passive:true});
+  }
   function goWild(kind, xp, yp) {
     if (leaving) return;
     leaving = true;
@@ -1310,6 +1316,7 @@
     sessionStorage.setItem("wild-arrive", kind);
     sessionStorage.setItem("farm-zone", JSON.stringify({ kind, x: xp, y: yp }));
     const url = WAYS[kind].url + (forced ? "?season=" + forced : "");
+    Site.preparePage?.(url);
     if (reduce) { location.href = url; return; }
     let r = world.getBoundingClientRect();
     const px = (xp / 100) * r.width;
@@ -1318,7 +1325,7 @@
     world.style.transformOrigin = `${xp}% ${yp}%`;
     world.classList.add("portal-in");
     portal(kind, Math.max(0, Math.min(innerWidth, wx)), Math.max(0, Math.min(innerHeight, wy)), "in");
-    setTimeout(() => { location.href = url; }, 1050);
+    setTimeout(() => { location.href = url; }, matchMedia("(pointer: coarse)").matches ? 450 : 700);
   }
   function comeBack() {
     const kind = sessionStorage.getItem("farm-return");

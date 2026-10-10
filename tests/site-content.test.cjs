@@ -7,15 +7,16 @@ const defaults = JSON.parse(fs.readFileSync(require('node:path').join(__dirname,
 const newSpecies = ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'];
 const plain = value => JSON.parse(JSON.stringify(value));
 
-function page({ fetch, settings = {}, placeholders = [], timeout = false } = {}) {
+function page({ fetch, settings = {}, placeholders = [], timeout = false, startupTimeout = false, storage } = {}) {
   const order = [], preloads = [], timers = new Map(); let nextTimer = 0;
   const context = {
     window: { SITE: { name: 'Static host', links: { github: 'https://github.com/static' }, messageApi: 'https://content.example', ...settings },
       PAPERS: [{ title: 'Static paper' }], GALLERY: [{ id: 'static' }], BOTTLES: [{ text: 'Static note' }],
       FARM: { keeper: { species: 'snowcat', name: 'Matcha' }, residents: [{ species: 'rabbit', name: 'Mochi' }] },
       location: { href: 'https://public.example/index.html' } },
+    sessionStorage: storage || { getItem: () => null, setItem() {} },
     fetch: fetch || (async () => { throw new Error('offline'); }), URL, TextEncoder, AbortController,
-    setTimeout(callback) { const id = ++nextTimer; timers.set(id, callback); if (timeout) queueMicrotask(() => timers.has(id) && callback()); return id; },
+    setTimeout(callback, ms) { const id = ++nextTimer; timers.set(id, callback); if (timeout || (startupTimeout && ms === 450)) queueMicrotask(() => timers.has(id) && callback()); return id; },
     clearTimeout(id) { timers.delete(id); },
     CustomEvent: function (type, options) { this.type = type; this.detail = options.detail; },
     document: { head: { appendChild(link) { preloads.push(link); } }, querySelectorAll: () => placeholders.map(src => ({ getAttribute: () => src, replaceWith(script) { order.push(script.src); queueMicrotask(script.onload); } })),
@@ -186,4 +187,22 @@ test('Voyager IDs accepted by the service survive public parsing; unsafe attribu
   for (const id of ['_leading', '-leading', 'A'.repeat(65), 'stop"onclick="alert(1)', '<stop>']) {
     assert.equal(Object.hasOwn(p.api.normalize({ voyager: [{ ...base, id }] }), 'voyager'), false);
   }
+});
+
+
+test('warm public snapshots start without waiting and refresh only the next page', async () => {
+ const values=new Map(),storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)};
+ const first=page({storage,fetch:async()=>response({site:{name:'Cached host'}})});await first.api.started;
+ let resolve;const next=new Promise(done=>resolve=done);
+ const warm=page({storage,fetch:async()=>{await next;return response({site:{name:'Updated host'}})}});
+ await warm.api.started;assert.equal(warm.api.source,'cache');assert.equal(warm.context.window.SITE.name,'Cached host');
+ resolve();await warm.api.refreshed;assert.equal(warm.context.window.SITE.name,'Cached host');
+ const last=page({storage,fetch:()=>new Promise(()=>{})});await last.api.started;assert.equal(last.context.window.SITE.name,'Updated host');
+});
+test('a late response is saved for the next page without replacing the running scene', async () => {
+ const values=new Map(),storage={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)};let resolve;
+ const p=page({storage,startupTimeout:true,fetch:()=>new Promise(done=>resolve=done)});await p.api.started;
+ assert.equal(p.api.source,'static');resolve(response({site:{name:'Late host'}}));await p.api.refreshed;
+ assert.equal(p.context.window.SITE.name,'Static host');
+ const next=page({storage,fetch:()=>new Promise(()=>{})});await next.api.started;assert.equal(next.context.window.SITE.name,'Late host');
 });

@@ -1,9 +1,11 @@
 /* Public content is read from the same service as the private host dashboard.
    Static data remains the fallback. Runtime scripts start in their original order
-   after the bounded read, so every page sees one consistent content snapshot. */
+   after a short bounded read or cached snapshot. Background updates are kept for
+   the next page, avoiding mid-scene replacement of content and game state. */
 (function () {
   "use strict";
   const TIMEOUT_MS = 2500, MAX_BYTES = 2 * 1024 * 1024;
+  const STARTUP_MS = 450, CACHE_MS = 30 * 60 * 1000;
   const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
   const string = value => typeof value === "string" ? value : "";
@@ -157,10 +159,28 @@
     finally { clearTimeout(timer); }
   }
   const api = window.SiteContent = { revision: 0, updatedAt: null, content: {}, source: "static", normalize, apply, url };
-  api.ready = read().then(value => {
+  const cacheKey = "site-public-content-v1:" + apiBase();
+  let cached = null;
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(cacheKey) || "null");
+    if (record(saved) && Date.now() - saved.savedAt >= 0 && Date.now() - saved.savedAt < CACHE_MS &&
+        Number.isSafeInteger(saved.revision) && saved.revision >= 0 && record(saved.content)) cached = saved;
+  } catch (_) { /* Storage may be unavailable; the static page still starts. */ }
+  const fresh = read().then(value => {
+    if (value && (!cached || value.revision >= cached.revision)) {
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ ...value, content: normalize(value.content), savedAt: Date.now() })); } catch (_) {}
+    }
+    return value;
+  });
+  api.refreshed = fresh;
+  let startupTimer;
+  const reload = window.performance?.getEntriesByType?.("navigation")[0]?.type === "reload";
+  const snapshot = cached && !reload ? Promise.resolve(cached) : Promise.race([fresh.then(value => value || cached), new Promise(resolve => { startupTimer = setTimeout(() => resolve(cached), STARTUP_MS); })]);
+  api.ready = snapshot.then(value => {
+    clearTimeout(startupTimer);
     if (value) {
       api.content = apply(value.content); api.revision = value.revision;
-      api.updatedAt = typeof value.updatedAt === "string" ? value.updatedAt : null; api.source = "cloud";
+      api.updatedAt = typeof value.updatedAt === "string" ? value.updatedAt : null; api.source = value === cached ? "cache" : "cloud";
     }
     return api;
   });

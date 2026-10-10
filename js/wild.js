@@ -39,16 +39,18 @@
     sessionStorage.removeItem("wild-arrive");
     if (from !== kind || reduce) return;
     document.body.classList.add("wild-arriving");
-    setTimeout(() => document.body.classList.remove("wild-arriving"), 1600);
+    setTimeout(() => document.body.classList.remove("wild-arriving"), 700);
   }
   function back(kind) {
+    if (document.body.classList.contains("wild-leaving")) return;
+    window.Site?.preparePage?.(withSeason("farm.html"));
     sessionStorage.setItem("farm-return", kind);
     document.body.classList.add("wild-leaving");
     let fromFarm = false;
     try { fromFarm = history.length > 1 && /farm\.html/.test(new URL(document.referrer).pathname); } catch (e) {}
-    setTimeout(() => (fromFarm ? history.back() : (location.href = withSeason("farm.html"))), reduce ? 0 : 620);
+    setTimeout(() => (fromFarm ? history.back() : (location.href = withSeason("farm.html"))), reduce ? 0 : 280);
   }
-  addEventListener("pageshow", (e) => { if (e.persisted) document.body.classList.remove("wild-leaving"); });
+  addEventListener("pageshow", (e) => { if (e.persisted) document.body.classList.remove("wild-leaving", "wild-arriving"); });
 
   /* ---------- small tools ---------- */
   function rng(seed) {                         // mulberry32

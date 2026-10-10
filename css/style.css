@@ -930,12 +930,12 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 .wild-actions button.glint { box-shadow: 0 0 0 1px rgba(255, 220, 150, .6), 0 0 26px rgba(255, 210, 130, .35); }
 .wild-actions button.glint .farm-action-icon { color: #f4d48a; }
 /* coming in from the farm, and walking back */
-.wild-arriving .wild-stage canvas { animation: wild-arrive 1.3s cubic-bezier(.2, .7, .2, 1) both; }
-.wild-arriving .wild-stage::after { content: ""; position: absolute; inset: -20%; z-index: 6; pointer-events: none; background: radial-gradient(circle at 50% 55%, transparent 0, transparent 18%, #04070b 46%); animation: wild-iris 1.3s cubic-bezier(.3, .6, .2, 1) both; }
+.wild-arriving .wild-stage canvas { animation: wild-arrive .65s cubic-bezier(.2, .7, .2, 1) both; }
+.wild-arriving .wild-stage::after { content: ""; position: absolute; inset: -20%; z-index: 6; pointer-events: none; background: radial-gradient(circle at 50% 55%, transparent 0, transparent 18%, #04070b 46%); animation: wild-iris .65s cubic-bezier(.3, .6, .2, 1) both; }
 body[data-wild="pond"].wild-arriving .wild-stage::after { background: radial-gradient(circle at 50% 60%, transparent 0, transparent 18%, #030812 46%); }
 @keyframes wild-arrive { from { transform: scale(1.45); filter: blur(12px) brightness(.35); } to { transform: none; filter: none; } }
 @keyframes wild-iris { from { transform: scale(.5); opacity: 1; } 70% { opacity: .9; } to { transform: scale(3.4); opacity: 0; } }
-.wild-leaving .wild-stage canvas { animation: wild-leave .62s ease-in both; }
+.wild-leaving .wild-stage canvas { animation: wild-leave .28s ease-in both; }
 .wild-leaving .farm-head, .wild-leaving .wild-actions { transition: opacity .5s; opacity: .2; }
 @keyframes wild-leave { to { transform: scale(.86); filter: blur(7px) brightness(.2); } }
 /* tools at the pond */
@@ -1032,7 +1032,7 @@ body[data-wild="pond"].wild-arriving .wild-stage::after { background: radial-gra
 .farm-sign:hover, .farm-sign:focus-visible { filter: drop-shadow(0 0 12px rgba(255, 220, 150, .7)); }
 .farm-sign:hover svg { transform: translateY(-3%) rotate(-2deg); }
 .farm-calm .farm-sign svg { animation: none; }
-.farm-world.portal-in { transition: transform 1.05s cubic-bezier(.55, 0, .75, .25), filter 1.05s ease-in; transform: scale(2.6); filter: blur(4px) brightness(.55); }
+.farm-world.portal-in { transition: transform .7s cubic-bezier(.55, 0, .75, .25), filter .7s ease-in; transform: scale(2.6); filter: blur(4px) brightness(.55); }
 .farm-world.portal-from { transform: scale(2.6); filter: blur(4px) brightness(.55); }
 .farm-world.portal-back { transition: transform 1.3s cubic-bezier(.2, .7, .2, 1), filter 1.3s ease-out; }
 .farm-portal { position: fixed; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden; }
@@ -1157,3 +1157,15 @@ body[data-page="farm"] .bubble.below::after { border-bottom-color: #f6f0e3; }
 .farm-calm:not(.farm-reduced-motion) .actor:is(.react-happy-hop,.react-binky,.react-pounce) .bob { animation:reaction-hop 2.4s ease-in-out both !important; }
 .farm-calm:not(.farm-reduced-motion) .actor.react:not(.reaction-ready) .bob { animation:var(--ra,react-munch) 2.4s ease-in-out both !important; }
 .farm-reduced-motion .actor.react .bob { animation:none !important; }
+
+/* Touch navigation keeps the scene visible while avoiding large blurred layers. */
+@media (pointer: coarse) {
+  .farm-world.portal-in { transition: transform .45s ease, filter .45s ease; transform: scale(1.12); filter: brightness(.88); }
+  .farm-world.portal-from { transform: scale(1.08); filter: brightness(.9); }
+  .farm-world.portal-back { transition: transform .45s ease, filter .45s ease; }
+  .wild-arriving .wild-stage canvas { animation: scene-soft-in .25s ease both; }
+  .wild-arriving .wild-stage::after { display: none; }
+  .wild-leaving .wild-stage canvas { animation: scene-soft-out .28s ease both; }
+  @keyframes scene-soft-in { from { opacity: .7; } to { opacity: 1; } }
+  @keyframes scene-soft-out { to { opacity: .7; } }
+}
