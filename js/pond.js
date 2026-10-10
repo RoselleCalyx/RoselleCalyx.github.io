@@ -243,6 +243,11 @@
   const P = (u, v) => [u * W, v * H];
   const frozen = () => season.name === "winter";
   const HOLE = { u: 0.46, v: 0.69 };
+  function withinHole(x,y) {
+    const [hx,hy]=P(HOLE.u,HOLE.v),rx=45*k,ry=12*k;
+    const dx=x-hx,dy=y-hy,reach=Math.hypot(dx/rx,dy/ry),scale=reach>.9?.9/reach:1;
+    return {x:hx+dx*scale,y:hy+dy*scale};
+  }
   const iceRim = new Image(); iceRim.decoding = 'async';
   iceRim.src = 'assets/wild/equipment/ice-hole-rim-v1.webp';
   function holePath(g, x, y, rx, ry) {
@@ -572,8 +577,9 @@
       if (rod.tension >= 1) { scare("Snap! The line broke."); return; }
       if (rod.slack > 2.6 || rod.progress < 0) { scare("The hook slipped — it got away."); return; }
       const [ex, ey] = frozen() ? P(HOLE.u, HOLE.v) : [W * 0.74, H * 0.9];
-      f.x = lerp(rod.hookAt.x, ex, rod.progress) + Math.sin(time * 2.3) * (frozen() ? 12 : 40) * k * (1 - rod.progress);
-      f.y = lerp(rod.hookAt.y, ey, rod.progress) + Math.sin(time * 3.1) * (frozen() ? 4 : 8) * k;
+      f.x = lerp(rod.hookAt.x, ex, rod.progress) + Math.sin(time * 2.3) * (frozen() ? 32 : 40) * k * (1 - rod.progress);
+      f.y = lerp(rod.hookAt.y, ey, rod.progress) + Math.sin(time * 3.1) * (frozen() ? 7 : 8) * k;
+      if(frozen()){const point=withinHole(f.x,f.y);f.x=point.x;f.y=point.y;}
       f.h = Math.atan2(Math.cos(time * 2.3), 1) + Math.PI;
       if (rod.progress >= 1) land();
       renderReel();
@@ -884,9 +890,24 @@
       if (s.mode === "trapped") s.x += Math.sin(time * 20 + s.wig) * 0.6;
     });
   }
+  function plantDrift(x,y,phase) {
+    if(Wd.reduce||window.Sky?.calm)return {x:0,y:0};
+    let dx=(Math.sin(time*.47+x/W*3)*1.7+Math.sin(time*.81+phase)*.65)*k;
+    let dy=(Math.sin(time*.68+x/W*2+phase*.2)*.85)*k;
+    for(const r of ripples){
+      const px=x-r.x,py=(y-r.y)/.34,distance=Math.hypot(px,py),age=r.t/2.2;
+      const front=(8+age*70)*k*r.size;
+      const push=Math.exp(-Math.abs(distance-front)/(15*k))*Math.max(0,1-age)*r.a*2.2*k;
+      if(distance>1){dx+=px/distance*push;dy+=py/distance*push*.34;}
+    }
+    return {x:dx,y:dy};
+  }
   function drawPads() {
     const botanicals=[['hyacinth',.14,.69,58],['hyacinth',.21,.81,74],['hyacinth',.49,.58,38],['ottelia',.32,.72,58],['ottelia',.55,.66,49],['ottelia',.1,.84,66]];
-    botanicals.forEach(([kind,u,v,w],i)=>window.PondPlants?.floating(ctx,kind,W*u,H*v,w*k,time*.7+i*1.8,season.name));
+    botanicals.forEach(([kind,u,v,w],i)=>{
+      const phase=i*1.8,drift=plantDrift(W*u,H*v,phase);
+      window.PondPlants?.floating(ctx,kind,W*u+drift.x,H*v+drift.y,w*k,(Wd.reduce||window.Sky?.calm?phase:time*.7+phase),season.name);
+    });
     pads.forEach((p) => {
       const bob = Math.sin(time * 0.8 + p.ph) * 0.8 * k;
       const textured=window.PondPlants?.leaf(ctx,p.x,p.y+bob,p.r,p.a+Math.sin(time*.16+p.ph)*.035,season.name);
@@ -935,12 +956,17 @@
       const p = clamp((time - rod.t0 - 0.3) / 0.45, 0, 1);
       if (p > 0) { end = { x: lerp(tipP.x, rod.target.x, p), y: lerp(tipP.y, rod.target.y, p) - Math.sin(p * Math.PI) * Math.min(90 * k, Math.abs(tipP.y - rod.target.y) * 0.5 + 30 * k) }; }
     } else if (rod.bob && rod.state !== "reeling") end = { x: rod.bob.x, y: rod.bob.y + rod.bob.dip * 3 * k };
-    else if (rod.state === "reeling") { const [hx,hy] = P(HOLE.u, HOLE.v); end = frozen() ? {x:hx,y:hy} : { x: rod.fish.x, y: rod.fish.y }; }
+    else if (rod.state === "reeling") end = { x: rod.fish.x, y: rod.fish.y };
+    if(end && frozen() && rod.state !== "casting"){
+      const calm=Wd.reduce||window.Sky?.calm;
+      if(rod.state !== "reeling" && !calm){end.x+=Math.sin(time*1.25)*5*k;end.y+=Math.sin(time*1.7)*1.3*k;}
+      end=withinHole(end.x,end.y);
+    }
     if (end) {
       ctx.strokeStyle = "rgba(235,235,225,.55)"; ctx.lineWidth = 0.8;
       const sag = rod.state === "reeling" ? (1 - rod.tension) * 40 * k : 30 * k;
       ctx.beginPath(); ctx.moveTo(tipP.x, tipP.y);
-      if (frozen() && rod.state !== 'casting') ctx.lineTo(end.x, end.y);
+      if (frozen() && rod.state !== 'casting') ctx.quadraticCurveTo((tipP.x+end.x)/2 + (Wd.reduce||window.Sky?.calm?0:Math.sin(time*1.4)*3*k), (tipP.y+end.y)/2-4*k, end.x, end.y);
       else ctx.quadraticCurveTo((tipP.x + end.x) / 2, Math.max(tipP.y, end.y) + sag, end.x, end.y);
       ctx.stroke();
       if (rod.state !== "reeling") {

@@ -40,8 +40,7 @@
     if(season==='winter')return false;
     const img=art(kind,season);if(!img)return false;
     const h=w*(img.naturalHeight||img.height)/(img.naturalWidth||img.width);
-    const bob=Math.sin(phase)*.8;
-    g.save();g.translate(x,y+bob);
+    g.save();g.translate(x,y);
     g.fillStyle='rgba(13,34,25,.2)';g.beginPath();g.ellipse(0,0,w*.38,w*.045,0,0,Math.PI*2);g.fill();
     // A muted reflection connects the cutout to the water surface.
     g.save();g.scale(1,-.35);g.globalAlpha=.13;g.drawImage(img,-w/2,-h,w,h);g.restore();
