@@ -12,6 +12,7 @@
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
+  <link rel="stylesheet" href="css/home.css?v=20261010-orbit" />
 </head>
 <body data-page="home">
   <header id="site-header"></header>
@@ -37,8 +38,8 @@
             <p class="hero-kicker" data-site="tagline">A Lonely Voyager</p>
             <h1 class="hero-title">Exploring<br />the Unknown.</h1>
             <p class="hero-lede">
-              A PhD researcher exploring<br />
-              data, stars, and the unknown.
+              A PhD researcher in medical AI.<br />
+              Still looking up.
             </p>
             <span class="hero-rule"></span>
             <nav class="social" aria-label="Elsewhere">
@@ -62,7 +63,7 @@
         <div class="finale" id="finale" aria-hidden="true">
           <p class="kicker">15 September 2017</p>
           <h2>Cassini became part of Saturn.</h2>
-          <p>Thirteen years of looking, then becoming the sky.</p>
+          <p>Thirteen years of discovery. A final gift of data.</p>
         </div>
       </div>
     </section>
@@ -70,37 +71,39 @@
 
     <div class="home-sections">
       <div class="coda reveal">
-        <p>For thirteen years, Cassini looked outward.<br /><em>Down here, on a small blue world, I am still looking up.</em></p>
+        <p>For thirteen years, Cassini studied Saturn.<br /><em>Here on Earth, I’m still looking up.</em></p>
       </div>
 
-      <section class="about glass reveal" id="about">
-        <div class="avatar-frame">
-          <span class="avatar-orbit back" aria-hidden="true"></span>
-          <img src="assets/avatar.jpg" alt="Portrait of Chen Jia" loading="lazy" />
-          <span class="avatar-orbit front" aria-hidden="true"><i></i></span>
+      <section class="about glass reveal" id="about" aria-labelledby="bioName">
+        <div class="bio-portrait">
+          <div class="avatar-frame">
+            <span class="avatar-orbit back" aria-hidden="true"></span>
+            <img src="assets/avatar.jpg" alt="Portrait of Chen Jia" loading="lazy" />
+            <span class="avatar-orbit front" aria-hidden="true"><i></i></span>
+          </div>
+          <p class="bio-location"><span data-icon="pin" aria-hidden="true"></span><span data-site="location">Munich, Germany</span></p>
         </div>
-        <div>
+        <div class="bio-content">
           <p class="kicker">About</p>
-          <h2 class="section-title">I’m <span data-site="name">Chen Jia</span>. A PhD researcher in medical AI.</h2>
-          <p>
-            I work on medical image analysis, reliable AI, and multi-view learning at the
-            Technical University of Munich and relAI.
-          </p>
-          <p>
-            My focus is on robust, interpretable methods that fit clinical workflows. Previous work
-            includes medical report generation, retrieval-augmented methods, and multi-view anatomical
-            correspondence learning for coronary stenosis reporting.
-          </p>
-          <p>
-            Outside research, I look for forests, flowers and dark skies. They keep me
-            balanced and curious.
-          </p>
+          <h2 class="section-title" id="bioName">I’m <span data-site="name">Chen Jia</span>.</h2>
+          <p class="bio-role">PhD researcher in medical AI</p>
+          <p class="bio-affiliation" data-site="affiliation">Technical University of Munich · relAI</p>
+          <div class="bio-copy">
+            <p>I work on medical image analysis, reliable AI, and multi-view learning,
+              with a focus on robust, interpretable methods that fit clinical workflows.</p>
+            <p>My work spans medical report generation, retrieval-augmented methods, and
+              multi-view anatomical correspondence learning for coronary stenosis reporting.</p>
+          </div>
           <div class="chips" aria-label="Research interests">
             <span class="chip">Medical Imaging</span>
             <span class="chip">Reliable AI</span>
             <span class="chip">Multi-view Learning</span>
             <span class="chip">Report Generation</span>
             <span class="chip">Clinical AI</span>
+          </div>
+          <div class="bio-earth">
+            <p class="kicker">Beyond the lab</p>
+            <p>Forests, flowers, and dark skies keep me grounded and curious.</p>
           </div>
           <div class="about-links">
             <a class="btn gold" data-link="cv" href="assets/cv.pdf" target="_blank" data-icon="cv">Download CV</a>
@@ -129,7 +132,6 @@
             <li>
               <div class="t-date">2018 to 2022</div>
               <div class="t-title">B.Sc. Computer Science</div>
-              <div class="t-sub">Your University Name. Add a short note here.</div>
             </li>
           </ul>
         </section>
@@ -184,6 +186,6 @@
   <script src="js/sky.js"></script>
   <script src="js/common.js?v=20261009-mobile4"></script>
   <script src="js/cassini-art.js?v=20261009-scene2"></script>
-  <script src="js/saturn.js?v=20261010-slow-ember"></script>
+  <script src="js/saturn.js?v=20261010-orbit-ash"></script>
 </body>
 </html>

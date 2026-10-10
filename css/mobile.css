@@ -35,6 +35,9 @@
   .bubble.mobile-sheet .feed-tray button { min-height: 44px; }
 }
 @media (max-width: 760px) {
+  .tool-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tool-row .tool { flex-direction: column; justify-content: center; min-width: 0; gap: 5px; padding: 8px 4px; text-align: center; font-size: .76rem; line-height: 1.35; }
+  .tool-row .tool > span:last-child { min-width: 0; overflow-wrap: break-word; }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   textarea, select, .search .input, .shore-fields input, #bText, .login-panel input {
     font-size: 16px;

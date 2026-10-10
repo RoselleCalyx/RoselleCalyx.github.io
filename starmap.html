@@ -7,7 +7,7 @@
   <meta name="description" content="Choose a star. Meet its story. An interactive star map with constellations, planets and deep-sky objects." />
   <meta name="theme-color" content="#04060d" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/style.css?v=20261009-scene2" />
+  <link rel="stylesheet" href="css/style.css?v=20261010-starmap-scroll" />
   <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
@@ -38,7 +38,7 @@
       </aside>
 
       <div class="chart-wrap">
-        <canvas id="chart" aria-label="Interactive star map. Drag to pan and pinch to zoom. Use the constellation list to choose objects or answer the game with a keyboard."></canvas>
+        <canvas id="chart" aria-label="Interactive star map. Drag to pan. Pinch, use the zoom buttons, or hold Ctrl or Command while scrolling to zoom. Scroll firmly to move the page. Use the constellation list to choose objects or answer the game with a keyboard."></canvas>
         <div class="quiz-bar glass" id="quizBar" aria-live="polite"></div>
         <div class="chart-ctrl">
           <button type="button" id="zoomIn" aria-label="Zoom in" data-icon="plus"></button>
@@ -86,6 +86,6 @@
   <script src="data/sky.js"></script>
   <script src="js/planet-globe.js?v=20261009-maps"></script>
   <script src="js/orrery.js?v=20261009-orrery"></script>
-  <script src="js/starmap.js?v=20261009-mobile4"></script>
+  <script src="js/starmap.js?v=20261010-wheel-intent"></script>
 </body>
 </html>

@@ -91,9 +91,13 @@ async function main() {
     assert.equal(nap.pose,'sleep');assert.equal(nap.held,true);assert.equal(nap.speed,0);
     await page.evaluate(()=>Sky.setCalm(true));
     await page.waitForFunction(()=>document.body.classList.contains('farm-calm'));
-    assert.equal(await page.locator('.actor.keeper .bob').evaluate(e=>getComputedStyle(e).animationName),'none');
+    // Calm sky still responds to deliberate interactions; reduced motion quiets the nap.
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.waitForFunction(()=>document.body.classList.contains('farm-reduced-motion'));
+    assert.equal(await page.locator('.actor.keeper .bob').evaluate(e=>getComputedStyle(e).animationName),'none','a feeding nap respects reduced motion');
     await page.waitForTimeout(200);
     assert.equal(await page.evaluate(()=>__farmTest.animals.find(a=>a.keeper).x),nap.x,'closing the bubble cannot interrupt a feeding nap');
+    await page.emulateMedia({reducedMotion:'no-preference'});
     await page.evaluate(()=>Sky.setCalm(false));
     await page.waitForTimeout(8900);
     assert.equal(await page.evaluate(()=>__farmTest.animals.find(a=>a.keeper).held),false,'feeding nap releases its hold');

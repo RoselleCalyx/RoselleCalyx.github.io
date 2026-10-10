@@ -3,7 +3,8 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),assert=req
 const base=process.env.HOME_PREVIEW_URL||'http://127.0.0.1:4173',out='/tmp/home-handoff-qa';
 const instrument=`
   window.__homeHandoff={
-    state:()=>({p,pTarget,fall,dpr,width:cvFall.width,height:cvFall.height}),
+    state:()=>({p,pTarget,fall,fallTarget,dpr,width:cvFall.width,height:cvFall.height,scroll:scrollY,descent:descent&&{...descent}}),
+    geometry:()=>({...descentGeometry()}),
     finalAnchor:()=>{const f=burnFlight(FINAL_ENTRY),[x,y]=P(f.x,f.y);return {x,y};},
     pose:(q,calm=false)=>handoffPose(q,calm),
     arrivalLayer:progress=>{const layer=document.createElement('canvas');layer.width=cvR.width;layer.height=cvR.height;drawArrival(layer.getContext('2d'),progress,F.S*dpr,0);return layer;}
@@ -18,31 +19,61 @@ async function installHooks(page){
 }
 async function ready(page){
   await page.waitForFunction(()=>window.__homeHandoff&&document.querySelector('#heroLand').width===1672);
+  await page.evaluate(()=>document.fonts.ready);
   await page.waitForTimeout(1600);
 }
 async function light(page){
   return page.evaluate(()=>{
-    const el=document.querySelector('#starFall'),data=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
-    let lit=0,bright=0,warm=0,maxAlpha=0;
-    for(let i=0;i<data.length;i+=4){if(data[i+3]>8)lit++;if(data[i+3]>180&&data[i]>230&&data[i+1]>180)bright++;if(data[i+3]>8&&data[i]>220&&data[i+1]>110&&data[i+2]<180)warm++;maxAlpha=Math.max(maxAlpha,data[i+3]);}
-    return {...__homeHandoff.state(),opacity:+getComputedStyle(el).opacity,lit,bright,warm,maxAlpha};
+    const el=document.querySelector('#starFall'),data=el.getContext('2d').getImageData(0,0,el.width,el.height).data,state=__homeHandoff.state();
+    const ceiling=state.descent?(state.descent.border-scrollY-state.descent.clearance)*state.dpr:el.height;
+    const bioTop=document.querySelector('#about').getBoundingClientRect().top;
+    let lit=0,bright=0,warm=0,maxAlpha=0,belowBoundary=0,lowestPixel=-1;
+    for(let i=0;i<data.length;i+=4){
+      const row=Math.floor(i/4/el.width),alpha=data[i+3];
+      if(alpha){lowestPixel=Math.max(lowestPixel,row);if(row>=Math.ceil(ceiling))belowBoundary++;}
+      if(alpha>8)lit++;
+      if(alpha>180&&data[i]>230&&data[i+1]>180)bright++;
+      if(alpha>8&&data[i]>220&&data[i+1]>110&&data[i+2]<180)warm++;
+      maxAlpha=Math.max(maxAlpha,alpha);
+    }
+    return {...state,opacity:+getComputedStyle(el).opacity,lit,bright,warm,maxAlpha,ceiling,bioTop,belowBoundary,lowestPixel};
   });
 }
 async function scrollQ(page,q){
-  await page.evaluate(q=>scrollTo({top:document.querySelector('.story').offsetHeight-innerHeight*(1.02-1.15*q),behavior:'instant'}),q);
+  assert.ok(q>=0&&q<1,'settled descent samples precede completion');
+  await page.evaluate(q=>{const g=__homeHandoff.geometry();scrollTo({top:g.start+g.distance*q,behavior:'instant'});},q);
   await page.waitForFunction(q=>{const s=__homeHandoff.state();return Math.abs(s.fall-q)<.005&&s.p>.9&&Math.abs(s.p-s.pTarget)<.002;},q);
-  return light(page);
+  const sample=await light(page);
+  assert.equal(sample.belowBoundary,0,'all light, wake, and ash pixels stay above the biography clearance');
+  if(sample.lowestPixel>=0)assert.ok(sample.lowestPixel/sample.dpr<sample.bioTop,'the rendered light never reaches the visible biography border');
+  return sample;
 }
 async function finalGeometry(page){
-  const values=await page.evaluate(()=>({anchor:__homeHandoff.finalAnchor(),zero:__homeHandoff.pose(0),tiny:__homeHandoff.pose(.001),middle:__homeHandoff.pose(.3),late:__homeHandoff.pose(.7),calm:__homeHandoff.pose(.7,true),state:__homeHandoff.state()}));
-  const {anchor,zero,tiny,middle,late,calm,state}=values;
+  const values=await page.evaluate(()=>({anchor:__homeHandoff.finalAnchor(),zero:__homeHandoff.pose(0),tiny:__homeHandoff.pose(.001),early:__homeHandoff.pose(.25),middle:__homeHandoff.pose(.5),late:__homeHandoff.pose(.8),end:__homeHandoff.pose(1),calm:__homeHandoff.pose(.7,true),geometry:__homeHandoff.geometry(),state:__homeHandoff.state()}));
+  const {anchor,zero,tiny,early,middle,late,end,calm,geometry,state}=values;
   assert.ok(Math.hypot(anchor.x-zero.x,anchor.y-zero.y)<.001,'retained flare and falling remnant share exactly the final burn anchor');
   assert.ok(Math.hypot(tiny.x-zero.x,tiny.y-zero.y)<state.height*.001,'the first downward motion cannot teleport');
-  assert.ok(middle.y>zero.y&&late.y>middle.y,'the remnant descends steadily');
-  assert.ok(middle.scale<zero.scale&&late.scale<middle.scale&&late.scale>0,'the large flare becomes a small ember');
+  assert.ok(early.y>zero.y&&middle.y>early.y&&late.y>middle.y&&end.y>late.y,'the remnant descends steadily');
+  assert.ok(early.scale>.35&&early.scale<zero.scale,'the opening flare shrinks gradually over the first quarter of descent');
+  assert.ok(middle.scale<early.scale&&late.scale<middle.scale&&end.scale<late.scale&&end.scale>0,'the large flare becomes a small ember');
   assert.equal(calm.y,zero.y,'reduced motion keeps the remnant at the burn altitude');
   assert.ok(zero.x>=0&&zero.x<=state.width&&zero.y>=0&&zero.y<=state.height,'final flare remains on screen');
+  assert.equal(geometry.clearance,state.width/state.dpr<680?18:24,'the clearance adapts to phone and desktop layouts');
+  const terminalBorder=geometry.border-(geometry.start+geometry.distance);
+  assert.ok(Math.abs(terminalBorder-end.y/state.dpr-geometry.clearance)<1,'the end of descent is just above the actual biography border');
+  assert.ok(geometry.distance>state.height/state.dpr*.25,'the descent has room for its gradual transformation');
   return values;
+}
+async function finishDescent(page,overshoot=0){
+  await page.evaluate(async overshoot=>{
+    const g=__homeHandoff.geometry();scrollTo({top:g.start+g.distance+overshoot,behavior:'instant'});
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  },overshoot);
+  const sample=await light(page);
+  assert.equal(sample.opacity,0,'a fast jump to the end clears the light without waiting for scroll smoothing');
+  assert.equal(sample.lit,0,'completion clears the canvas instead of leaving invisible particles');
+  assert.equal(sample.belowBoundary,0);
+  return sample;
 }
 (async()=>{
   await fs.mkdir(out,{recursive:true});
@@ -78,19 +109,24 @@ async function finalGeometry(page){
     await page.goto(base+'/index.html');await ready(page);
     const start=await scrollQ(page,0);assert.ok(start.opacity>.99&&start.lit>20000,'the final light is present at the real story exit');
     await finalGeometry(page);
-    // A half-screen scroll now covers less than half the descent, preserving the ember near its source.
-    await page.evaluate(()=>scrollBy({top:innerHeight*.5,behavior:'instant'}));
-    await page.waitForTimeout(1600);
-    const slowed=await light(page);assert.ok(slowed.fall>.4&&slowed.fall<.45,'the descent spans more than a full viewport of scrolling');
-    await scrollQ(page,0);
     const first=await scrollQ(page,.25);await page.screenshot({path:out+'/remnant-early.png'});
-    const second=await scrollQ(page,.65);await page.screenshot({path:out+'/fall-into-bio.png'});
+    const middle=await scrollQ(page,.5);await page.screenshot({path:out+'/remnant-middle.png'});
+    const second=await scrollQ(page,.78);await page.screenshot({path:out+'/fall-into-bio.png'});
     const ashes=await scrollQ(page,.94);await page.screenshot({path:out+'/remnant-ash.png'});
-    assert.ok(first.opacity>.99&&second.fall>first.fall&&second.lit<first.lit,'the same flare shrinks into the descending remnant');
-    assert.ok(ashes.opacity<.25&&ashes.warm<second.warm&&ashes.bright<=second.bright&&ashes.lit<second.lit,`the remnant cools and fades into ash: ${JSON.stringify({second,ashes})}`);
+    assert.ok(first.opacity>.99&&middle.lit<first.lit&&second.fall>middle.fall&&second.lit<middle.lit,'the same flare shrinks progressively into the descending remnant');
+    assert.ok(ashes.lit>0&&ashes.warm<second.warm&&ashes.bright<=second.bright&&ashes.lit<second.lit,`the remnant cools into sparse ash while a tiny ember remains near the frame: ${JSON.stringify({second,ashes})}`);
     const back=await scrollQ(page,.25);assert.ok(back.fall<second.fall&&back.lit>second.lit,'reversing scroll restores the earlier remnant');
     const restored=await scrollQ(page,0);assert.ok(restored.opacity>.99&&restored.lit>20000,'scrolling back restores the large retained light');
-    await page.evaluate(()=>scrollTo({top:document.querySelector('.story').offsetHeight+innerHeight,behavior:'instant'}));await page.waitForTimeout(900);
+    await finishDescent(page);
+    await scrollQ(page,.5);
+    const geometryBefore=await page.evaluate(()=>__homeHandoff.geometry());
+    await page.setViewportSize({width:1024,height:768});
+    await page.waitForTimeout(1000);
+    await scrollQ(page,.7);await finalGeometry(page);
+    const geometryAfter=await page.evaluate(()=>__homeHandoff.geometry());
+    assert.notEqual(geometryAfter.border,geometryBefore.border,'resizing recomputes the biography boundary');
+    await page.screenshot({path:out+'/remnant-resized.png'});
+    await finishDescent(page,768);
     assert.equal((await light(page)).opacity,0,'no fixed light overlay remains far into the biography');
     await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await page.waitForTimeout(1900);
     assert.equal((await light(page)).opacity,0,'returning to the opening clears the final light');
@@ -102,10 +138,13 @@ async function finalGeometry(page){
     const phoneLight=await light(phone);assert.ok(phoneLight.opacity>.99&&phoneLight.lit>10000&&phoneLight.bright>100,'the retained light is visible on a phone');
     await phone.screenshot({path:out+'/retained-flare-mobile.png'});
     await phone.goto(base+'/index.html');await ready(phone);await scrollQ(phone,.25);await phone.screenshot({path:out+'/remnant-mobile.png'});
+    await scrollQ(phone,.78);await finalGeometry(phone);await finishDescent(phone);
     await phone.emulateMedia({reducedMotion:'reduce'});await phone.reload();await ready(phone);await scrollQ(phone,.65);
     assert.equal(await phone.locator('.hero').evaluate(el=>el.style.getPropertyValue('--fall')),'0','reduced motion uses a quiet fade');
-    await phone.screenshot({path:out+'/reduced-motion-mobile.png'});await phone.close();
+    const quiet=await phone.evaluate(()=>({zero:__homeHandoff.pose(0,true),current:__homeHandoff.pose(__homeHandoff.state().fall,true)}));
+    assert.equal(quiet.current.y,quiet.zero.y,'reduced motion replaces downward movement with a stationary fade');
+    await phone.screenshot({path:out+'/reduced-motion-mobile.png'});await finishDescent(phone);await phone.close();
     assert.deepEqual(errors,[]);
-    console.log(JSON.stringify({passed:true,sizes,plasmaPixels,retainedFinale:true,sameAnchor:true,coolingAsh:true,reversible:true,phone:true,reducedMotion:true,screenshots:out}));
+    console.log(JSON.stringify({passed:true,sizes,plasmaPixels,retainedFinale:true,sameAnchor:true,bioClearance:true,allPixelsClipped:true,gradualCooling:true,reversible:true,fastJump:true,resize:true,phone:true,reducedMotion:true,screenshots:out}));
   }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

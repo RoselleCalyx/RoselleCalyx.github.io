@@ -924,7 +924,7 @@
     if (info.poison) {
       it.shake = time;
       if (!save.seen.amanita) { save.seen.amanita = 1; persist(); document.getElementById("btnJournal").classList.add("glint"); }
-      Wd.float(stage, x, y - it.s - 10, "Poisonous! 毒蝇伞 — just look", "warn");
+      Wd.float(stage, x, y - it.s - 10, "Poisonous fly agaric · 毒蝇伞", "warn");
       toast("Fly agaric: beautiful, and poisonous. Matcha says leave it for the fairies.", 3400);
       return;
     }
@@ -1015,7 +1015,7 @@
   const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   const COVER_TIP = { rock: "Roll the rock aside", grass: "Part the grass", snow: "Brush the snow away", leaves: "Sweep the needles aside" };
   function label(h) {
-    if (h === "yuki") return "Matcha · 雪山豹猫";
+    if (h === "yuki") return "Matcha · snow leopard cat · 雪山豹猫";
     if (h.coverHit) return h.coverHit.target > 0.5 ? "Put it back" : COVER_TIP[h.coverHit.kind];
     if (berries.includes(h)) return h.ripe >= 0.75 ? "Wild bayberry · 野杨梅" : h.ripe < 0.15 ? "Bayberry blossom" : `Bayberry · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
     if (hips.includes(h)) return h.ripe >= 0.75 ? "Rose hip · 野蔷薇果" : `Rose hip · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
@@ -1052,7 +1052,12 @@
     const h = hitTest(x, y);
     hover = h && h.coverHit ? h.coverHit : h;
     cv.style.cursor = h ? (h.coverHit ? "grab" : "pointer") : "default";
-    if (h && e.pointerType === "mouse") { tip.textContent = label(h); tip.style.left = x + "px"; tip.style.top = y + "px"; tip.classList.add("on"); }
+    if (h && e.pointerType === "mouse") {
+      tip.textContent = label(h);
+      const half = tip.offsetWidth / 2 + 8;
+      tip.style.left = Math.max(half, Math.min(stage.clientWidth - half, x)) + "px";
+      tip.style.top = Math.max(tip.offsetHeight + 24, y) + "px"; tip.classList.add("on");
+    }
     else tip.classList.remove("on");
   });
   const endDrag = (e, cancelled = false) => {

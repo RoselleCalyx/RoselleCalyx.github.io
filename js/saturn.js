@@ -30,6 +30,7 @@
   const finale = document.getElementById("finale");
   const logEl = document.getElementById("missionLog");
   const cvFall=document.getElementById('starFall'),cFall=cvFall?.getContext('2d');
+  const bio = document.getElementById('about');
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const lowPower = (navigator.hardwareConcurrency || 4) <= 4 || matchMedia("(pointer: coarse)").matches;
 
@@ -47,10 +48,10 @@
     [0.1, "1997 · Cape Canaveral", "Cassini leaves Earth — a small light on a long road."],
     [0.2, "2004 · Saturn", "Seven years across the dark, it arrives."],
     [0.31, "13 years · 294 orbits", "Oceans beneath Enceladus' ice. Methane seas on Titan."],
-    [0.42, "2017 · The Grand Finale", "Twenty-two dives between the rings and the sky."],
+    [0.42, "2017 · The Grand Finale", "Twenty-two dives between Saturn and its rings."],
     [0.53, "Fuel nearly gone", "To keep those worlds pristine, it turns toward Saturn itself."],
     [0.63, "15 September 2017", "Entering the atmosphere at 120,000 km/h."],
-    [0.74, "Final signal · received on Earth 11:55 UTC", "The voice falls silent. The light goes on."],
+    [0.74, "Final signal · received on Earth 11:55 UTC", "The signal ends. Discovery continues."],
     [0.84, "", ""]
   ];
 
@@ -491,13 +492,31 @@
 
   /* ---------- scroll progress ---------- */
   let pTarget = 0, p = 0, fallTarget=0, fall=0;
+  let descent = null;
   const pinned = parseFloat(new URLSearchParams(location.search).get("p"));   // ?p=0.7 freezes the story (for previews)
+  const pinnedFall = parseFloat(new URLSearchParams(location.search).get("fall")); // ?fall=0.6 previews the transition
+  // Layout coordinates stay stable while the reveal transform settles or fonts load.
+  function documentTop(el) {
+    let y = 0;
+    for (let node = el; node; node = node.offsetParent) y += node.offsetTop;
+    return y;
+  }
+  function descentGeometry() {
+    if (!F || !bio) return null;
+    const f = burnFlight(FINAL_ENTRY), [sx, sy] = P(f.x, f.y);
+    const clearance = vw < 680 ? 18 : 24;
+    const start = documentTop(story) + story.offsetHeight - vh * 1.02;
+    const border = documentTop(bio);
+    const endY = Math.min(vh * .8, Math.max(sy / dpr + vh * .18, vh * .52));
+    return { sx, sy, start, border, clearance, endY: endY * dpr,
+      distance: Math.max(vh * .25, border - start - endY - clearance) };
+  }
   function readScroll() {
     const r = story.getBoundingClientRect();
     const total = story.offsetHeight - (vh || innerHeight);
     pTarget = total > 0 ? clamp(-r.top / total, 0, 1) : 0;
-    // Give the ember a longer descent through the biography entrance.
-    fallTarget=clamp((innerHeight*1.02-r.bottom)/(innerHeight*1.15),0,1);
+    descent = descentGeometry();
+    fallTarget = descent ? clamp((scrollY - descent.start) / descent.distance, 0, 1) : 0;
     leaving(r);
   }
   let leaveLast = -1;
@@ -515,36 +534,64 @@
   // One light, one anchor: the retained entry flare becomes the falling remnant.
   function handoffPose(q,calm) {
     const f=burnFlight(p),[sx,sy]=P(f.x,f.y),w=cvFall.width,h=cvFall.height;
-    const travel=calm?0:Math.pow(q,1.5);
-    return {x:sx+(w*.52-sx)*smooth(.08,.85,q),y:sy+h*.88*travel,
-      sx,sy,scale:1-.90*smooth(0,.28,q)-.06*smooth(.28,.9,q)};
+    const travel=calm?0:Math.pow(q,1.35);
+    const endY = descent ? descent.endY : sy + h * .18;
+    return {x:sx+(w*.52-sx)*smooth(0,1,q),y:sy+(endY-sy)*travel,
+      sx,sy,scale:Math.pow(1-smooth(0,1,q),2)*.96+.04};
   }
   function drawHandoff(calm){
     if(!cFall)return;
     cFall.clearRect(0,0,cvFall.width,cvFall.height);
-    const q=fall,ignition=smooth(.715,.80,p),a=ignition*(1-smooth(.78,1,q));
+    const q=fall,ignition=smooth(.715,.80,p);
+    // Actual scroll also gates visibility, so a quick jump cannot leave light over the bio.
+    const a=ignition*(1-smooth(.94,1,Math.max(q,fallTarget)));
     cvFall.style.opacity=a.toFixed(3);cvFall.dataset.progress=q.toFixed(3);
     hero.style.setProperty('--fall',calm?'0':smooth(0,.8,q).toFixed(3));
     if(a<.002)return;
     const {x,y,scale}=handoffPose(q,calm),S=F.S*dpr;
-    const retained=1-smooth(.48,.9,q);
-    drawFinalLight(cFall,x,y,S,retained,scale);
-    if(q<=0)return;
+    const ceiling = descent ? (descent.border-scrollY-descent.clearance)*dpr : cvFall.height;
+    if(ceiling<=0)return;
+    // Every halo, filament, and ash mote stays above the real biography border.
     cFall.save();
-    const cooling=smooth(.24,.9,q),length=(25+105*smooth(0,.45,q))*dpr;
+    cFall.beginPath();cFall.rect(0,0,cvFall.width,ceiling);cFall.clip();
+    const retained=1-smooth(.08,.74,q);
+    drawFinalLight(cFall,x,y,S,retained,scale);
+    if(q<=0){cFall.restore();return;}
+    const cooling=smooth(.18,.96,q),heat=1-cooling;
+    const length=(28+100*smooth(0,.4,q))*(1-.48*smooth(.48,1,q))*dpr;
+    const wind=calm?0:Math.sin(time*.4)*2*dpr;
     cFall.globalCompositeOperation='lighter';
-    const trail=cFall.createLinearGradient(x,y-length,x,y);
-    trail.addColorStop(0,'rgba(162,143,121,0)');trail.addColorStop(.7,`rgba(255,183,109,${.24*(1-cooling)})`);trail.addColorStop(1,`rgba(255,226,178,${.7*(1-cooling)})`);
-    cFall.strokeStyle=trail;cFall.lineWidth=(1.6+scale*3)*dpr;cFall.beginPath();cFall.moveTo(x,y-length);cFall.quadraticCurveTo(x-3*dpr,y-length*.3,x,y);cFall.stroke();
-    // Fragments cool from bright metal to charcoal, spreading into a thin ash wake.
+    // A slender amber wake replaces the broad white flare without a sudden size change.
+    for(let i=0;i<(lowPower?3:5);i++){
+      const side=(i-2)*1.6*dpr;
+      const trail=cFall.createLinearGradient(x,y-length,x,y);
+      trail.addColorStop(0,'rgba(162,143,121,0)');
+      trail.addColorStop(.5,`rgba(232,127,64,${heat*.13})`);
+      trail.addColorStop(1,`rgba(255,221,165,${heat*.48})`);
+      cFall.globalAlpha=1;cFall.strokeStyle=trail;cFall.lineWidth=(.65+scale*1.7)*dpr;
+      cFall.beginPath();cFall.moveTo(x+side+wind,y-length);
+      cFall.bezierCurveTo(x+side*3-wind,y-length*.7,x-side,y-length*.2,x,y);cFall.stroke();
+    }
+    const glow=(12+50*scale)*dpr;
+    spr(cFall,x,y,glow,heat*.7);
+    spr(cFall,x,y,glow*.18,heat);
+    // The last warm point survives among the ash until it nears the frame.
+    const lastEmber=smooth(.5,.72,q)*(1-smooth(.92,1,q));
+    spr(cFall,x,y,18*dpr,lastEmber*.3);
+    spr(cFall,x,y,5.5*dpr,lastEmber*.7);
+    // Seeded fragments cool continuously from pale gold through copper to soft grey.
+    // Their geometry depends on scroll; only the tiny air drift depends on elapsed time.
     for(let i=0;i<(lowPower?24:48);i++){
-      const t=h1(i+312),spread=(5+27*cooling)*dpr*t;
-      const drift=calm?0:Math.sin(time*.55+i)*1.1*dpr;
-      const xx=x+(h1(i+184)-.5)*spread+drift,yy=y-t*length;
-      const size=(.7+h1(i+4)*2.6)*dpr*(1-.5*cooling);
+      const t=h1(i+312),spread=(5+42*cooling)*dpr*t;
+      const drift=calm?0:Math.sin(time*.35+i)*1.4*dpr;
+      const xx=x+(h1(i+184)-.5)*spread+drift+t*wind,yy=y-t*length;
+      const size=(.85+h1(i+4)*1.9)*dpr*(1-.35*cooling);
+      const rgb=[255-44*cooling,210-7*cooling,133+58*cooling].map(Math.round);
+      const opacity=(1-t)*(.7-.18*cooling)*smooth(0,.16,q)*(1-smooth(.9,1,q));
       cFall.globalCompositeOperation='source-over';
-      const col=cooling>.6?`rgba(164,153,143,${(1-t)*.35*(1-smooth(.78,1,q))})`:`rgba(255,${150+Math.round(t*55)},${72+Math.round(t*65)},${(1-t)*.75})`;
-      cFall.fillStyle=col;cFall.save();cFall.translate(xx,yy);cFall.rotate(i*.8+q);cFall.fillRect(-size/2,-size/2,size,size*.65);cFall.restore();
+      cFall.globalAlpha=1;cFall.fillStyle=`rgba(${rgb.join(',')},${opacity})`;
+      cFall.save();cFall.translate(xx,yy);cFall.rotate(i*.8+q);
+      cFall.fillRect(-size/2,-size/2,size,size*.65);cFall.restore();
     }
     cFall.restore();
   }
@@ -670,6 +717,14 @@
   if ("IntersectionObserver" in window) new IntersectionObserver((e) => { visible = e[0].isIntersecting; }).observe(story);
   layout();
   readScroll();
+  if(pinnedFall>=0 && descent){
+    scrollTo({top:descent.start+descent.distance*clamp(pinnedFall,0,1),behavior:'instant'});
+    readScroll();fall=fallTarget;
+  }
+  if('ResizeObserver' in window && bio){
+    const observer=new ResizeObserver(readScroll);
+    observer.observe(bio);observer.observe(document.querySelector('.home-sections'));
+  }
   p = pinned >= 0 ? pinned : pTarget;
   requestAnimationFrame(frame);
 })();

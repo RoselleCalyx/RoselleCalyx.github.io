@@ -1,7 +1,8 @@
 /* =====================================================================
    Starmap — a planisphere centred on the north celestial pole,
    rotated so tonight's meridian (for SITE.observer) points down.
-   Drag to pan, wheel/pinch to zoom, click a constellation to fly to it.
+   Drag to pan; pinch or Ctrl/Command + wheel to zoom; scroll firmly to
+   move the page. Click a constellation to fly to it.
    ===================================================================== */
 (function () {
   const { esc, ICON, store } = window.Site;
@@ -367,6 +368,39 @@
   const pointers = new Map();
   let drag = null, pinch = 0;
   const local = (e) => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  // Ordinary wheel gestures belong to the page after a small intent threshold.
+  // Keep zoom explicit so a whole-sky view cannot trap downward scrolling.
+  const WHEEL_INTENT_PX = 120, WHEEL_IDLE_MS = 280;
+  const wheel = { last: -Infinity, direction: 0, total: 0, scrolling: false };
+  function resetWheel() { wheel.last = -Infinity; wheel.direction = 0; wheel.total = 0; wheel.scrolling = false; }
+  wrap.addEventListener("pointerdown", resetWheel);
+  wrap.addEventListener("pointerleave", resetWheel);
+  addEventListener("blur", resetWheel);
+  wrap.addEventListener("wheel", (e) => {
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? (window.visualViewport?.height || innerHeight) : 1;
+    const dy = e.deltaY * unit;
+    if (e.ctrlKey || e.metaKey) {
+      resetWheel();
+      if (e.target !== canvas || mode === "orrery") return;
+      e.preventDefault();
+      if (!Number.isFinite(dy) || !dy || Math.abs(e.deltaY) <= Math.abs(e.deltaX || 0)) return;
+      const p = local(e);
+      zoomAt(Math.exp(-dy * 0.0015), p[0], p[1]);
+      return;
+    }
+    e.preventDefault();
+    if (!Number.isFinite(dy) || !dy || Math.abs(e.deltaY) <= Math.abs(e.deltaX || 0)) { resetWheel(); return; }
+    // Rendering delays must not split wheel inputs that arrived together.
+    const now = Number.isFinite(e.timeStamp) && e.timeStamp > 0 ? e.timeStamp : performance.now();
+    const direction = Math.sign(dy);
+    if (now < wheel.last || now - wheel.last > WHEEL_IDLE_MS || direction !== wheel.direction) resetWheel();
+    wheel.last = now; wheel.direction = direction;
+    wheel.total += dy;
+    if (!wheel.scrolling && Math.abs(wheel.total) < WHEEL_INTENT_PX) return;
+    const distance = wheel.scrolling ? dy : wheel.total;
+    wheel.scrolling = true; wheel.total = 0;
+    window.scrollBy({ top: distance, left: 0, behavior: "instant" });
+  }, { passive: false });
   canvas.addEventListener("pointerdown", (e) => {
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, local(e));
@@ -412,10 +446,9 @@
   canvas.addEventListener("pointerup", end);
   canvas.addEventListener("pointercancel", end);
   canvas.addEventListener("pointerleave", () => { hover = null; });
-  canvas.addEventListener("wheel", (e) => { e.preventDefault(); const p = local(e); zoomAt(Math.exp(-e.deltaY * 0.0015), p[0], p[1]); }, { passive: false });
-  $("zoomIn").onclick = () => zoomAt(1.4, cx, cy);
-  $("zoomOut").onclick = () => zoomAt(1 / 1.4, cx, cy);
-  $("zoomReset").onclick = resetView;
+  $("zoomIn").onclick = () => { resetWheel(); zoomAt(1.4, cx, cy); };
+  $("zoomOut").onclick = () => { resetWheel(); zoomAt(1 / 1.4, cx, cy); };
+  $("zoomReset").onclick = () => { resetWheel(); resetView(); };
 
   function click(p) {
     const h = hit(p[0], p[1]);
@@ -433,6 +466,7 @@
   /* ---------- side list & modes ---------- */
   const listEl = $("smList");
   document.querySelectorAll(".sm-modes button").forEach((b) => b.addEventListener("click", () => {
+    resetWheel();
     if (quiz.on) stopQuiz();
     mode = b.dataset.mode;
     document.querySelectorAll(".sm-modes button").forEach((x) => x.classList.toggle("active", x === b));
@@ -578,6 +612,7 @@
     quiz.flash = null; quiz.lock = false;
   }
   function startQuiz() {
+    resetWheel();
     cancelNextRound();
     mode = "const";
     document.querySelectorAll(".sm-modes button").forEach((x) => x.classList.toggle("active", x.dataset.mode === "const"));
@@ -588,6 +623,7 @@
     ask();
   }
   function stopQuiz() {
+    resetWheel();
     cancelNextRound();
     quiz.on = false; qbar.classList.remove("on", "right", "wrong");
     $("playQuiz").innerHTML = ICON.target + "Find the constellation";
@@ -596,7 +632,7 @@
   function ask() {
     const c = CONS.find((x) => x.id === quiz.order[quiz.round]);
     qbar.className = "quiz-bar glass on";
-    qbar.innerHTML = `<div class="q">Find <b>${esc(c.zh)} · ${esc(c.name)}</b></div><small>Round ${quiz.round + 1} / ${quiz.order.length} · Score ${quiz.score}</small>`;
+    qbar.innerHTML = `<div class="q">Find <b>${esc(c.name)} <span class="zh" lang="zh-CN">${esc(c.zh)}</span></b></div><small>Round ${quiz.round + 1} / ${quiz.order.length} · Score ${quiz.score}</small>`;
   }
   function answer(h) {
     if (!quiz.on || quiz.lock || !h || h.type !== "const") return;
@@ -645,6 +681,7 @@
   const stage = $("planetStage");
   const globe = window.PlanetGlobe ? PlanetGlobe.create($("globe")) : null;
   function openStage(id) {
+    resetWheel();
     if (!globe || !PlanetGlobe.has(id) || quiz.on) return;
     const w = WORLDS[id] || {};
     $("psName").innerHTML = `${esc(w.name || id)} <span class="zh">${esc(w.zh || "")}</span>`;
@@ -655,7 +692,7 @@
     stage.hidden = false;
     globe.start();
   }
-  function closeStage() { if (stage.hidden) return; stage.hidden = true; if (globe) globe.stop(); }
+  function closeStage() { resetWheel(); if (stage.hidden) return; stage.hidden = true; if (globe) globe.stop(); }
   $("psClose").addEventListener("click", closeStage);
   addEventListener("keydown", (e) => { if (e.key === "Escape") closeStage(); });
 
@@ -677,6 +714,7 @@
   }) : null;
   const speedLabel = () => { const v = orrery.speed; $("oSpeed").textContent = v >= 365 ? (v / 365).toFixed(v >= 730 ? 0 : 1) + " yr/s" : Math.round(v) + " days/s"; };
   function showOrrery(on) {
+    resetWheel();
     if (!orrery) return;
     oc.hidden = !on; bar.hidden = !on;
     canvas.style.visibility = on ? "hidden" : "";
@@ -700,7 +738,7 @@
     });
   } else $("cassiniBtn").hidden = true;
 
-  $("chartNote").textContent = `Oriented to tonight's sky over ${OBS.place} · dashed gold line: horizon`;
+  $("chartNote").textContent = `Tonight over ${OBS.place} · dashed gold: horizon · + / −, pinch or Ctrl/⌘ + scroll to zoom`;
   $("playQuiz").innerHTML = ICON.target + "Find the constellation";
   addEventListener("resize", () => { clearTimeout(resize._t); resize._t = setTimeout(resize, 150); });
   resize();

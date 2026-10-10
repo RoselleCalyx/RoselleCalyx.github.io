@@ -164,7 +164,7 @@ button { font: inherit; color: inherit; }
 /* =====================================================================
    HOME
    ===================================================================== */
-.story { position: relative; height: 330vh; }
+body[data-page="home"] .story { position: relative; height: 330vh; }
 .hero { position: sticky; top: 0; height: 100vh; height: 100dvh; overflow: hidden; background:#10152a; }
 #saturn, #fx, #rings { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .hero-land { position: absolute; max-width: none; pointer-events: none; user-select: none; }
@@ -216,7 +216,7 @@ body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
 .finale h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.1; margin: 0 0 14px; }
 .finale p:last-child { font-family: var(--serif); font-style: italic; font-size: 1.25rem; color: var(--ink-2); margin: 0; }
 @media (max-width: 760px) {
-  .story { height: 280vh; }
+  body[data-page="home"] .story { height: 280vh; }
   .hero-shade { background: linear-gradient(180deg, rgba(3, 4, 10, .78) 0%, rgba(3, 4, 10, .45) 40%, rgba(3, 4, 10, 0) 60%); }
   .hero-cosmos { background-position: 76% center; }
   .hero-text-shade { left: -15%; top: calc(var(--header-h) - 50px); width: 130%; height: 490px; min-height: 0; background: radial-gradient(ellipse closest-side at 50% 50%, rgba(3,4,10,.78) 0%, rgba(3,4,10,.6) 42%, rgba(3,4,10,.18) 70%, transparent 100%); }
@@ -246,6 +246,7 @@ body[data-home-sky="impressionist"] .hero-cosmos { opacity: .24; }
 .coda p { margin: 0; font-family: var(--serif); font-size: clamp(1.15rem, 1.7vw, 1.45rem); line-height: 1.55; color: var(--ink-2); letter-spacing: .01em; }
 .coda em { color: var(--gold-2); }
 .coda + .about { margin-top: 10px; }
+.quiz-bar .q .zh { display: inline-block; margin-left: 6px; font-size: .75em; font-weight: 400; color: var(--muted); }
 body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,32,.72), rgba(7,11,22,.54)); border-color: rgba(226,192,124,.13); box-shadow: 0 24px 80px rgba(0,0,0,.2); scroll-margin-top: 90px; }
 @media (prefers-reduced-motion: reduce) { .hero-cosmos { will-change: auto; } html { scroll-behavior: auto; } .reveal { transition: none; } }
 @media (max-height:540px) {
@@ -477,7 +478,8 @@ body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,3
    ===================================================================== */
 .papers-layout > *, .gallery-layout > *, .starmap-layout > * { min-width: 0; }
 .starmap-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
-.sm-side { padding: 10px; position: sticky; top: calc(var(--header-h) + 20px); max-height: calc(100svh - var(--header-h) - 40px); overflow-y: auto; overscroll-behavior-y: contain; scrollbar-width: thin; }
+/* Before the sidebar sticks, let scrolling continue on the page to reveal its bottom in short windows. */
+.sm-side { padding: 10px; position: sticky; top: calc(var(--header-h) + 20px); max-height: calc(100svh - var(--header-h) - 40px); overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: thin; }
 .sm-modes { display: flex; flex-direction: column; gap: 4px; }
 .sm-modes button { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; cursor: pointer; font-family: var(--serif); font-size: 1.1rem; color: var(--ink-2); text-align: left; }
 .sm-modes button svg { width: 18px; height: 18px; flex: none; }
@@ -517,6 +519,8 @@ body[data-page="home"] .about { background: linear-gradient(145deg, rgba(15,19,3
 .fav-btn[aria-pressed="true"] { border-color: var(--gold); color: var(--gold-2); }
 @media (max-width: 1180px) {
   .starmap-layout { grid-template-columns: 200px minmax(0, 1fr); }
+  /* The information card follows this row, so its map and controls must scroll with it. */
+  .sm-side, .chart-wrap { position: relative; top: auto; }
   .sm-info { grid-column: 1 / -1; position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; }
   .sm-info > .info-head { grid-column: 1 / -1; }
 }
@@ -906,6 +910,7 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 .wild-hint { font-weight: 400; color: #b9c3af; }
 .wild-tip { position: absolute; z-index: 3; transform: translate(-50%, calc(-100% - 16px)); padding: 4px 11px; border-radius: 999px; background: rgba(246, 240, 227, .95); color: #3b4733; font-family: var(--serif); font-size: .98rem; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; box-shadow: 0 6px 18px rgba(0, 0, 0, .3); }
 .wild-tip.on { opacity: 1; }
+.wild-tip { width: max-content; max-width: calc(100% - 16px); white-space: normal; text-align: center; }
 .wild-float { position: absolute; z-index: 4; transform: translate(-50%, -50%); font-family: var(--serif); font-size: 1.2rem; color: #fff4d6; text-shadow: 0 1px 8px rgba(0, 0, 0, .85); pointer-events: none; white-space: nowrap; animation: wild-float 1.7s ease-out forwards; }
 .wild-float.say { font-style: italic; font-size: 1.04rem; background: rgba(246, 240, 227, .95); color: #3b4733; padding: 6px 13px; border-radius: 14px; text-shadow: none; white-space: normal; width: max-content; max-width: 250px; text-align: center; animation-duration: 3.4s; box-shadow: 0 8px 22px rgba(0, 0, 0, .3); }
 .wild-float.soft { color: #e8eef7; font-style: italic; font-size: 1.05rem; }

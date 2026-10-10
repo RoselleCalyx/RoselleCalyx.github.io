@@ -218,7 +218,7 @@
       if (img.complete && img.naturalWidth) ready();
     });
     el.addEventListener("click", (e) => { e.stopPropagation(); openAnimal(a); });
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAnimal(a); } });
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAnimal(a, true); } });
     if (walkReady.has(def.species)) el.classList.add("walk-ready");
     if (jumpReady.has(def.species)) el.classList.add("jump-ready");
     animals.push(a);
@@ -362,37 +362,50 @@
     place(a);
   }
 
-  /* ---------- the speech bubble ---------- */
+  /* ---------- anchored interactions and orchard details ---------- */
   let bubble = null;
   function closeBubble() {
     if (!bubble) return;
+    const focusAnimal = bubble.a && bubble.el.contains(document.activeElement) ? bubble.a.el : null;
     if (bubble.a) {
       const now = performance.now();
       bubble.a.held = (bubble.a.reactUntil || 0) > now;
       bubble.a.until = Math.max(bubble.a.reactUntil || 0, now + 1800);
     }
     bubble.el.remove(); bubble = null;
+    if (focusAnimal) focusAnimal.focus({ preventScroll: true });
   }
-  function showBubble(html, anchorEl, a) {
+  function showBubble(html, anchorEl, a, mode = 'details') {
     closeBubble();
     const el = document.createElement("div");
-    el.className = "bubble";
-    el.innerHTML = `<button class="x" type="button" aria-label="Close">×</button>${html}`;
+    el.className = "bubble" + (mode === 'animal-actions' ? ' animal-actions' : mode === 'animal-food' ? ' animal-food' : '');
+    el.innerHTML = (mode === 'animal-actions' ? '' : `<button class="x" type="button" aria-label="Close">×</button>`) + html;
     world.appendChild(el);
-    bubble = { el, anchor: anchorEl, a };
+    bubble = { el, anchor: anchorEl, a, mode };
     if (a) {
       if(a.state==='hop')finishHop(a,performance.now());
       a.held = true;
       if (a.state !== 'idle') rest(a, performance.now(), 2000, a.def.species === 'snowcat' ? 'stand' : 'sit');
       place(a);
     }
-    el.querySelector(".x").onclick = closeBubble;
+    const close = el.querySelector(".x"); if (close) close.onclick = closeBubble;
     el.addEventListener("click", (e) => e.stopPropagation());
     positionBubble();
     return el;
   }
   function positionBubble() {
     if (!bubble) return;
+    // The three action icons stay above their friend on every screen size.
+    if (bubble.mode === 'animal-actions') {
+      const el = bubble.el, r = bubble.anchor.getBoundingClientRect(), vr = viewport.getBoundingClientRect();
+      if (el.parentNode !== document.body) document.body.appendChild(el);
+      el.hidden = r.right <= vr.left || r.left >= vr.right || r.bottom <= vr.top || r.top >= vr.bottom || r.bottom <= 0 || r.top >= innerHeight;
+      const width = Math.min(140, viewport.clientWidth - 24), half = width / 2;
+      el.style.width = width + 'px';
+      el.style.left = Math.max(Math.max(12, vr.left + 12) + half, Math.min(Math.min(innerWidth - 12, vr.right - 12) - half, r.left + r.width / 2)) + 'px';
+      el.style.top = Math.max(el.offsetHeight + 8, r.top - 6) + 'px';
+      return;
+    }
     // A fixed sheet keeps the expanded feeding tray clear of the clipped garden.
     const mobile = window.matchMedia('(max-width: 900px)').matches;
     bubble.el.classList.toggle('mobile-sheet', mobile);
@@ -548,50 +561,82 @@
         if(kind==='love')setTimeout(()=>fxAt(a.el,'heart'),380);
         line.textContent=`${name} ${kind==='love'?'loves':'enjoys'} ${food} — ${actionText[act]||d.does}! ${kind==='love'?'♥':'♪'}`;
       }});
-      const hb = bubble && bubble.a === a && bubble.el.querySelector("[data-heart] span"); if (hb) hb.textContent = hearts[key];
     },delivery);
   }
-  function openTray(a, el) {
-    const tray = el.querySelector(".feed-tray"), line = el.querySelector(".feed-line");
+  function openTray(a) {
+    const el = showBubble(`<h4>Choose a snack</h4><p class="by">For ${esc(a.def.name)}</p><div class="feed-tray"></div>`, a.el, a, 'animal-food');
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', `Choose food for ${a.def.name}`);
+    const tray = el.querySelector(".feed-tray"), line = document.getElementById('farmFeedback');
     const list = pantry(), known = store.get("farm-diet", {})[a.def.species] || {};
     tray.hidden = false;
-    if (!list.length) { tray.innerHTML = `<p class="feed-empty">Nothing to offer yet. Pick ripe fruit in the orchard, forage in <a href="woods.html">the woods</a>, or fish at <a href="pond.html">the pond</a>.</p>`; positionBubble(); return; }
+    if (!list.length) { tray.innerHTML = `<p class="feed-empty">Nothing to offer yet. Pick ripe fruit in the orchard, forage in <a href="woods.html">the woods</a>, or fish at <a href="pond.html">the pond</a>.</p>`; positionBubble(); el.querySelector('.x').focus({ preventScroll: true }); return; }
     const mark = { love: "♥", like: "♪", meh: "✕", play: "✦" };
     tray.innerHTML = list.map((f, i) => `<button type="button" class="treat ${known[f.id] || ""}" data-i="${i}" title="${esc(f.name)} · ${esc(f.zh)}" aria-label="Offer ${esc(f.name)}">${f.icon}<b>${f.n}</b>${known[f.id] ? `<i>${mark[known[f.id]]}</i>` : ""}</button>`).join("");
     tray.onclick = (e) => {
       const b = e.target.closest(".treat"); if (!b) return;
       e.stopPropagation();
       feed(a, list[+b.dataset.i], line, b);
-      openTray(a, el);
+      // Capture the food's position for delivery, then clear the view this frame.
+      closeBubble();
     };
     positionBubble();
+    tray.querySelector('.treat')?.focus({ preventScroll: true });
   }
 
-  function openAnimal(a) {
+  const animalActionIcons = {
+    pet: `<svg viewBox="0 0 40 40" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <g fill="#c6afe9">
+        <ellipse cx="7.5" cy="17" rx="4.4" ry="5.5" transform="rotate(-25 7.5 17)"/>
+        <ellipse cx="15" cy="9" rx="4.4" ry="5.5" transform="rotate(-12 15 9)"/>
+        <ellipse cx="25" cy="9" rx="4.4" ry="5.5" transform="rotate(12 25 9)"/>
+        <ellipse cx="32.5" cy="17" rx="4.4" ry="5.5" transform="rotate(25 32.5 17)"/>
+        <path d="M20 18c-4 0-5.5 4.8-8.5 7.8-2.7 2.7-4.4 5.4-2.7 8C10.5 37 15 35 20 35s9.5 2 11.2-1.2c1.7-2.6 0-5.3-2.7-8C25.5 22.8 24 18 20 18Z"/>
+      </g>
+    </svg>`,
+    feed: `<svg viewBox="0 0 40 40" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20 15V9" stroke="#bd9a75" stroke-width="1.4"/>
+      <path d="M20 12c0-5 5-7 10-5-1 5-6 7-10 5Z" fill="#9ecb83"/>
+      <path d="M20 15c-6-5-14-1-14 7 0 7 5 13 10 13 2 0 3-1 4-1s2 1 4 1c5 0 10-6 10-13 0-8-8-12-14-7Z" fill="#e76158"/>
+    </svg>`,
+    heart: `<svg viewBox="0 0 40 40" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path class="animal-heart-shape" d="M20 35S5 26 5 15C5 6 14 5 20 12 26 5 35 6 35 15c0 11-15 20-15 20Z" fill="none" stroke="#e75860" stroke-width="2.3"/>
+    </svg>`
+  };
+  function openAnimal(a, focus = false) {
     const d = a.def, hearts = store.get("farm-hearts", {}), key = d.species + ":" + d.name;
+    const liked = !!store.get('farm-liked', {})[key];
+    const line = document.getElementById('farmFeedback');
     const el = showBubble(`
-      <span class="sp">${esc(a.sp.label)} · ${esc(a.sp.zh)}</span>
-      <h4>${esc(d.name)}</h4>
-      ${a.keeper ? `<p class="by">${esc(d.title || "Keeper of the Farm")}</p>` : d.adoptedBy ? `<p class="by">Adopted by ${esc(d.adoptedBy)}${d.since ? " · since " + esc(d.since) : ""}</p>` : ""}
-      ${d.note ? `<p>${esc(d.note)}</p>` : ""}
-      ${a.pending ? `<p class="by">Your request is on its way to the keeper. Until then, ${esc(d.name)} is visiting just for you.</p>` : ""}
-      <div class="bubble-actions"><button class="btn sm" type="button" data-heart>${ICON.heart} <span>${hearts[key] || 0}</span></button><button class="btn sm" type="button" data-pet>Pet</button><button class="btn sm" type="button" data-feed>${ICON.basket} Feed</button></div>
-      <div class="feed-tray" hidden></div><p class="feed-line" aria-live="polite"></p>`, a.el, a);
-    el.querySelector("[data-feed]").onclick = () => openTray(a, el);
+      <button class="animal-action" type="button" data-pet title="Pet" aria-label="Pet ${esc(d.name)}">${animalActionIcons.pet}</button>
+      <button class="animal-action" type="button" data-feed title="Feed" aria-label="Feed ${esc(d.name)}">${animalActionIcons.feed}</button>
+      <button class="animal-action" type="button" data-heart data-liked="${liked}" title="${liked ? 'Liked' : 'Like'} · ${hearts[key] || 0} hearts" aria-label="${liked ? 'Send more love to' : 'Like'} ${esc(d.name)}, ${hearts[key] || 0} hearts">${animalActionIcons.heart}</button>`, a.el, a, 'animal-actions');
+    el.setAttribute('role', 'group');
+    el.setAttribute('aria-label', `Actions for ${d.name}`);
+    el.querySelector("[data-feed]").onclick = () => {
+      if (a.feeding) { line.textContent = `${d.name} is still enjoying that bite…`; return; }
+      openTray(a);
+    };
     el.querySelector("[data-heart]").onclick = (e) => {
-      hearts[key] = (hearts[key] || 0) + 1; store.set("farm-hearts", hearts);
-      e.currentTarget.querySelector("span").textContent = hearts[key];
+      const current = store.get('farm-hearts', {});
+      current[key] = (current[key] || 0) + 1; store.set("farm-hearts", current);
+      const likes = store.get('farm-liked', {}); likes[key] = true; store.set('farm-liked', likes);
+      e.currentTarget.dataset.liked = 'true';
+      e.currentTarget.title = `Liked · ${current[key]} hearts`;
+      e.currentTarget.setAttribute('aria-label', `Send more love to ${d.name}, ${current[key]} hearts`);
+      line.textContent = `A little love for ${d.name}. ${current[key]} hearts.`;
       emote(a, "♥");
       fxAt(a.el, "heart");
     };
     el.querySelector("[data-pet]").onclick = () => {
-      if(a.feeding){el.querySelector('.feed-line').textContent=`Let ${a.def.name} finish that bite first…`;return;}
+      if(a.feeding){line.textContent=`Let ${a.def.name} finish that bite first…`;return;}
       const choices=petActions[d.species],act=choices[(a.petAction||0)%choices.length];
       a.petAction=(a.petAction||0)+1;
       react(a,act,{duration:2600});
-      el.querySelector('.feed-line').textContent=`${d.name} ${actionText[act]||({knead:'stretches and kneads with soft paws',binky:'makes a happy little bunny hop',pounce:'crouches, then springs up',curl:'tucks in, then peeks out','pet-nuzzle':'leans into your hand','pet-stretch':'takes a long, contented stretch'}[act]||'looks very happy')}.`;
+      line.textContent=`${d.name} ${actionText[act]||({knead:'stretches and kneads with soft paws',binky:'makes a happy little bunny hop',pounce:'crouches, then springs up',curl:'tucks in, then peeks out','pet-nuzzle':'leans into your hand','pet-stretch':'takes a long, contented stretch'}[act]||'looks very happy')}.`;
       emote(a, a.keeper ? 'purr…' : ['♪', '♥', '✿'][(Math.random() * 3) | 0]);
     };
+    if (focus) el.querySelector('[data-pet]').focus({ preventScroll: true });
   }
 
   /* ================= orchard ================= */
@@ -1053,6 +1098,7 @@
   document.getElementById("residentCount").textContent = animals.length + " little lives";
   document.getElementById("meetKeeper").onclick = () => {
     const keeper = animals.find(a => a.keeper); if (!keeper) return;
+    viewport.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
     viewport.scrollTo({left: keeper.el.offsetLeft - viewport.clientWidth / 2, behavior: reduce ? "auto" : "smooth"});
     setTimeout(() => openAnimal(keeper), reduce ? 0 : 400);
   };
