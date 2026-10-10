@@ -565,7 +565,7 @@
     });
     const meals = store.get('farm-meals', {});
     for (const recipe of window.FarmKitchen?.recipes || []) {
-      if (meals[recipe.id] > 0) list.push({id:recipe.id,name:recipe.name,from:'kitchen',n:meals[recipe.id],icon:`<span class="emo">${recipe.icon}</span>`,recipe});
+      if (meals[recipe.id] > 0) list.push({id:recipe.id,name:recipe.name,from:'kitchen',n:meals[recipe.id],icon:`<img class="meal-art" src="${FarmKitchen.image(recipe.id)}" alt="" width="64" height="64" decoding="async">`,recipe});
     }
     return list;
   }
@@ -1161,14 +1161,27 @@
     const recipeHTML = () => {
       const {stock,meals} = FarmKitchen.read();
       return FarmKitchen.recipes.map(r => {
-        const ready = !!FarmKitchen.plan(r,stock), total = r.parts.reduce((sum,[,n])=>sum+n,0);
-        return `<article class="kitchen-recipe"><h3><span aria-hidden="true">${r.icon}</span> ${esc(r.name)}</h3><p>${r.parts.map(([group,n])=>`${n} ${names[group].toLowerCase()}`).join(' + ')}</p><div class="kitchen-ingredients">${r.parts.map(([group,n])=>{
-          const available = FarmKitchen.groups[group].reduce((sum,id)=>sum+(stock[id]||0),0);
-          return `<label>${esc(names[group])} <small>${available}/${n}</small><select class="select" data-group="${group}">${available ? "" : '<option value="" selected disabled>Not collected yet</option>'}${FarmKitchen.groups[group].map(id=>`<option value="${id}" ${stock[id] ? '' : 'disabled'}>${esc(FOOD[id][0])} (${stock[id]||0})</option>`).join('')}</select></label>`;
-        }).join('')}</div><button class="btn" type="button" data-cook="${r.id}" ${ready?'':'disabled'}>Cook · ${total} ingredients → 1 meal</button><small class="kitchen-made">${meals[r.id]||0} prepared</small></article>`;
+        const allocation = FarmKitchen.plan(r,stock), ready = !!allocation;
+        const summary = allocation ? Object.entries(allocation).map(([id,n])=>`${n} ${FOOD[id][0].toLowerCase()}`).join(' + ') : r.parts.map(([group])=>names[group].toLowerCase()).join(' + ');
+        const total = allocation ? Object.values(allocation).reduce((sum,n)=>sum+n,0) : null;
+        return `<article class="kitchen-recipe ${ready?'can-cook':''}"><div class="kitchen-dish"><img src="${FarmKitchen.image(r.id)}" alt="${esc(r.name)}" width="144" height="144" loading="lazy" decoding="async"><span class="kitchen-diet">${r.diet==='sea'?'From the pond':'From the garden'}</span><span class="kitchen-made">${meals[r.id]||0} prepared</span></div><h3>${esc(r.name)}</h3><p class="kitchen-summary">${esc(summary)}</p><details class="kitchen-ingredients"><summary>Choose ingredients<span aria-hidden="true">⌄</span></summary><div>${r.parts.map(([group,n])=>{
+          const costs = FarmKitchen.groups[group].map(id=>FarmKitchen.cost(id,n));
+          const range = Math.min(...costs)===Math.max(...costs) ? costs[0] : `${Math.min(...costs)}–${Math.max(...costs)}`;
+          return `<label>${esc(names[group])} <small>${range} needed</small><select class="select" data-group="${group}"><option value="">Mix automatically</option>${FarmKitchen.groups[group].map(id=>`<option value="${id}" ${stock[id] ? '' : 'disabled'}>${esc(FOOD[id][0])} · ${FarmKitchen.cost(id,n)} needed · ${stock[id]||0} owned</option>`).join('')}</select></label>`;
+        }).join('')}</div></details><button class="btn" type="button" data-cook="${r.id}" ${ready?'':'disabled'}>${ready?'Cook this meal':'Gather more ingredients'}<span>${total===null?'Quantity varies by ingredient':`${total} ingredients · 1 meal`}</span></button></article>`;
       }).join('');
     };
-    modal(`<h2>Cottage kitchen</h2><p class="muted">Combine your harvest into a generous meal. Choose ingredients to use first; the rest comes from the same food group. Each meal brings thirty seconds of happy munching and hearts.</p><p class="kitchen-status" role="status" aria-live="polite"></p><div class="kitchen-menu">${recipeHTML()}</div>`,{className:'kitchen-card',onOpen(m){
+    modal(`<p class="kitchen-kicker">From your basket, with love</p><h2>Cottage kitchen</h2><p class="kitchen-intro">Turn your harvest into a generous meal. Common harvests make generous portions; rare ingredients need fewer pieces. Each dish brings thirty seconds of happy munching and hearts.</p><p class="kitchen-status" role="status" aria-live="polite"></p><div class="kitchen-menu">${recipeHTML()}</div>`,{className:'kitchen-card',onOpen(m){
+      m.card.addEventListener('change',e=>{
+        if (!e.target.matches('select[data-group]')) return;
+        const article=e.target.closest('article'),button=article.querySelector('[data-cook]');
+        const recipe=FarmKitchen.recipes.find(r=>r.id===button.dataset.cook);
+        const choices=Object.fromEntries([...article.querySelectorAll('select')].map(select=>[select.dataset.group,select.value]));
+        const allocation=FarmKitchen.plan(recipe,FarmKitchen.read().stock,choices);
+        button.disabled=!allocation; article.classList.toggle('can-cook',!!allocation);
+        article.querySelector('.kitchen-summary').textContent=allocation ? Object.entries(allocation).map(([id,n])=>`${n} ${FOOD[id][0].toLowerCase()}`).join(' + ') : recipe.parts.map(([g])=>names[g].toLowerCase()).join(' + ');
+        button.innerHTML=`${allocation?'Cook this meal':'Gather more ingredients'}<span>${allocation?`${Object.values(allocation).reduce((a,n)=>a+n,0)} ingredients · 1 meal`:'Quantity varies by ingredient'}</span>`;
+      });
       m.card.addEventListener('click',async e=>{
         const button=e.target.closest('[data-cook]');if(!button||button.disabled)return;
         button.disabled=true;

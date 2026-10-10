@@ -189,3 +189,44 @@ body[data-page="farm"] .resident-label { bottom: -23px; padding: 6px 13px; line-
 .kitchen-made { display: block; margin-top: 8px; text-align: center; color: #737b65; }
 .kitchen-status { color: #576b3e; font-size: .85rem; }
 @media(max-width:600px) { .kitchen-menu { grid-template-columns: 1fr; } }
+
+/* Illustrated recipe cards, with details available when choosing ingredients. */
+body[data-page="farm"] .kitchen-card { width: min(820px, 100%); padding: 30px; background: #f6f1e6; }
+.kitchen-kicker { margin: 0 0 8px; font: .65rem var(--ui); letter-spacing: .13em; text-transform: uppercase; color: #8c7652; }
+.kitchen-intro { max-width: 560px; margin: 12px 0 20px; color: #75816a; font-size: .86rem; line-height: 1.65; }
+.kitchen-menu { gap: 18px; }
+.kitchen-recipe { padding: 18px; background: #fffaf0; border-color: #e3ddcd; border-radius: 18px; display: flex; flex-direction: column; }
+.kitchen-dish { position: relative; display: grid; place-items: center; min-height: 150px; margin: -6px -6px 12px; border-radius: 12px; background: radial-gradient(ellipse, #efe8d4 0%, #fffaf0 72%); }
+.kitchen-dish img { width: 144px; height: 144px; object-fit: contain; filter: drop-shadow(0 8px 8px #53493216); }
+.kitchen-diet { position: absolute; left: 8px; top: 8px; font: .6rem var(--ui); color: #7f886d; }
+.kitchen-dish .kitchen-made { position: absolute; right: 8px; top: 8px; margin: 0; font: .6rem var(--ui); color: #7f886d; }
+.kitchen-recipe h3 { margin: 0 0 7px; color: #3b4c36; font-size: .98rem; line-height: 1.4; }
+.kitchen-summary { margin: 0 0 10px; min-height: 38px; font-size: .72rem !important; color: #899079 !important; }
+.kitchen-ingredients { display: block; margin: auto 0 12px; border-top: 1px solid #e8e1d2; }
+.kitchen-ingredients summary { display: flex; justify-content: space-between; padding: 12px 0; cursor: pointer; list-style: none; font: .72rem var(--ui); color: #68795b; }
+.kitchen-ingredients summary::-webkit-details-marker { display: none; }
+.kitchen-ingredients[open] summary span { transform: rotate(180deg); }
+.kitchen-ingredients > div { display: grid; gap: 10px; padding-bottom: 12px; }
+.kitchen-recipe .btn { display: flex; flex-direction: column; gap: 5px; padding: 11px; border-radius: 10px; background: #e9eddf; font-size: .78rem; }
+.kitchen-recipe.can-cook .btn { background: #536b47; color: #fffaf0; border-color: #536b47; }
+.kitchen-recipe .btn span { font-size: .61rem; opacity: .7; font-weight: 400; }
+.kitchen-status:empty { display: none; }
+.kitchen-status:not(:empty) { padding: 12px; border-radius: 10px; background: #e6ecdc; }
+.treat .meal-art { width: 48px; height: 48px; object-fit: contain; }
+.fly-treat .meal-art, .bite-treat .meal-art { width: 100%; height: 100%; object-fit: contain; }
+body[data-page="farm"] .farm-actions button { border-radius: 16px; padding: 18px; background: #1c2923; border-color: #c3d2ac24; box-shadow: inset 0 1px 0 #f7f2dc05; }
+body[data-page="farm"] .farm-actions button:first-child { background: #dcd0ae; color: #3c4c36; border-color: #e5d9b8; }
+body[data-page="farm"] .farm-actions button:hover { transform: translateY(-2px); background: #25362a; border-color: #bccba653; }
+body[data-page="farm"] .farm-actions button:first-child:hover { background: #e8dcbc; }
+body[data-page="farm"] .farm-action-icon { border-radius: 50%; width: 40px; height: 40px; background: #d4dfb70b; }
+body[data-page="farm"] .farm-action-arrow { width: 24px; height: 24px; display: grid; place-items: center; font-size: .85rem; border: 1px solid #aaba9328; border-radius: 50%; flex: none; }
+body[data-page="farm"] .farm-actions b { font-size: .96rem; }
+body[data-page="farm"] .farm-actions small { font-size: .72rem; line-height: 1.5; }
+@media(max-width:600px) {
+  body[data-page="farm"] .kitchen-card { padding: 22px 18px; }
+  .kitchen-menu { gap: 14px; }
+  .kitchen-dish { min-height: 128px; }
+  .kitchen-dish img { width: 124px; height: 124px; }
+  body[data-page="farm"] .farm-actions button { padding: 14px 12px; gap: 10px; }
+  body[data-page="farm"] .farm-action-icon { width: 32px; height: 32px; }
+}

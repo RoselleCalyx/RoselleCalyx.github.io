@@ -27,3 +27,13 @@ test('plant and fish dishes respect existing animal diets',()=>{
  const {k}=fixture(),plants=k.recipes[0],sea=k.recipes[3];
  assert(k.accepts('rabbit',plants));assert(!k.accepts('rabbit',sea));assert(k.accepts('wolf',sea));assert(!k.accepts('wolf',plants));assert(k.accepts('raccoon',plants)&&k.accepts('raccoon',sea));
 });
+test('scarce ingredients need fewer pieces, common stock is used first, and mixed portions stay within inventory',()=>{
+ const {k,storage}=fixture(),fish=k.recipes.find(r=>r.id==='fish-stew');
+ assert.equal(k.cost('crucian',24),24);assert.equal(k.cost('carp',24),12);assert.equal(k.cost('mandarin',24),6);assert.equal(k.cost('goldkoi',24),1);
+ assert.equal(k.cost('shiitake',24),24);assert.equal(k.cost('matsutake',24),3);
+ storage.setItem('wild-pond',JSON.stringify({creel:{crucian:24,goldkoi:1,lotus:6}}));
+ assert.equal(k.plan(fish,k.read().stock).goldkoi,undefined);
+ const used=k.cook('fish-stew',{fish:'goldkoi'}).used;assert.equal(used.goldkoi,1);assert.equal(used.lotus,6);assert.equal(k.read().stock.crucian,24);
+ const mixed=k.plan(fish,{crucian:5,carp:3,mandarin:4,lotus:6});assert.equal(mixed.crucian,5);assert.equal(mixed.carp,3);assert.equal(mixed.mandarin,4);
+ assert.equal(k.plan(fish,{crucian:5,carp:3,mandarin:3,lotus:6}),null);
+});
