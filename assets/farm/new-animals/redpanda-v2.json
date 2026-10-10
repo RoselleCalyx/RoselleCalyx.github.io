@@ -1,0 +1,118 @@
+{
+  "generatedWith": "built-in imagegen",
+  "source": "assets/farm/new-animals/source/redpanda-v2.png",
+  "frames": 6,
+  "walkScale": 0.6996963123644252,
+  "idleBaseline": 301,
+  "motionBaseline": 360,
+  "extractedBoxes": [
+    {
+      "width": 344,
+      "height": 372
+    },
+    {
+      "width": 400,
+      "height": 259
+    },
+    {
+      "width": 455,
+      "height": 287
+    },
+    {
+      "width": 443,
+      "height": 285
+    },
+    {
+      "width": 444,
+      "height": 287
+    },
+    {
+      "width": 461,
+      "height": 287
+    },
+    {
+      "width": 455,
+      "height": 284
+    },
+    {
+      "width": 448,
+      "height": 285
+    }
+  ],
+  "assets": [
+    {
+      "path": "assets/farm/redpanda-v2.webp",
+      "width": 320,
+      "height": 320,
+      "hasAlpha": true,
+      "quality": 88,
+      "bytes": 27666
+    },
+    {
+      "path": "assets/farm/poses/redpanda-sleep-v2.webp",
+      "width": 384,
+      "height": 384,
+      "hasAlpha": true,
+      "quality": 88,
+      "bytes": 23364
+    },
+    {
+      "path": "assets/farm/walk/redpanda-v2.webp",
+      "width": 2304,
+      "height": 384,
+      "hasAlpha": true,
+      "quality": 86,
+      "bytes": 119198
+    }
+  ],
+  "boundsAt384": [
+    {
+      "x0": 36,
+      "y0": 18,
+      "x1": 350,
+      "y1": 358
+    },
+    {
+      "x0": 34,
+      "y0": 154,
+      "x1": 351,
+      "y1": 356
+    },
+    {
+      "x0": 34,
+      "y0": 161,
+      "x1": 348,
+      "y1": 357
+    },
+    {
+      "x0": 39,
+      "y0": 163,
+      "x1": 344,
+      "y1": 357
+    },
+    {
+      "x0": 39,
+      "y0": 161,
+      "x1": 345,
+      "y1": 357
+    },
+    {
+      "x0": 33,
+      "y0": 161,
+      "x1": 351,
+      "y1": 357
+    },
+    {
+      "x0": 34,
+      "y0": 163,
+      "x1": 348,
+      "y1": 357
+    },
+    {
+      "x0": 38,
+      "y0": 163,
+      "x1": 346,
+      "y1": 357
+    }
+  ]
+}

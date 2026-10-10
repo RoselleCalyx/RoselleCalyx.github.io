@@ -19,7 +19,12 @@
     shiba: { label: "Shiba Inu", size: 0.95, speed: 1.4 },
     hedgehog: { label: "Hedgehog", size: 0.66, speed: 0.65 },
     duckling: { label: "Duckling", size: 0.64, speed: 1 },
-    penguin: { label: "Penguin", size: 0.84, speed: 0.75 }
+    penguin: { label: "Penguin", size: 0.84, speed: 0.75 },
+    redpanda: { label: "Red panda", size: 0.92, speed: 1.05 },
+    raccoon: { label: "Raccoon", size: 0.86, speed: 1.15 },
+    wolf: { label: "Wolf", size: 1.04, speed: 1.5 },
+    crocodile: { label: "Crocodile", size: 1.12, speed: 0.9, habitat: "water" },
+    fennec: { label: "Fennec fox", size: 0.78, speed: 1.65 }
   };
   /* ---------- trees ---------- */
   const TREES = {
@@ -84,13 +89,14 @@
 
 
   // One cohesive set of generated illustrations, reused in scene, adoption and roster.
-  const animalImage = (species) => '<img class="animal-sprite" src="assets/farm/' + species + '.webp" alt="" width="320" height="320" draggable="false" decoding="async">';
+  const animalImage = (species) => '<img class="animal-sprite" src="assets/farm/' + (species === 'redpanda' ? 'redpanda-v2' : species) + '.webp" alt="" width="320" height="320" draggable="false" decoding="async">';
   const ART = Object.fromEntries(Object.keys(SPECIES).map(species => [species, () => animalImage(species)]));
   ART.snowcatSit = () => animalImage("snowcat");
 
   // Original sheets have six frames; the revised cat has eight. FarmMotion
   // selects frames from travelled distance instead of an independent CSS timer.
-  const WALK = { snowcat: 0.8, rabbit: 0.7, panda: 1, fox: 0.6, shiba: 0.6, hedgehog: 0.45, duckling: 0.8, penguin: 1 };
+  const WALK = { snowcat: 0.8, rabbit: 0.7, panda: 1, fox: 0.6, shiba: 0.6, hedgehog: 0.45, duckling: 0.8, penguin: 1, redpanda: 0.85, raccoon: 0.8, wolf: 0.7, crocodile: 1.2, fennec: 0.6 };
+  const JUMPS = new Set(['snowcat', 'rabbit', 'panda', 'fox', 'shiba', 'hedgehog', 'duckling', 'penguin']);
   const walkSrc = (species) => FarmMotion.GAITS[species].src || "assets/farm/walk/" + species + ".webp";
   const walkSprite = (species) => {
     const g = FarmMotion.GAITS[species];
@@ -99,11 +105,12 @@
     return `<div class="walk-sprite" style="${style}" aria-hidden="true"></div><div class="walk-sprite walk-sprite-next" style="${style}" aria-hidden="true"></div>`;
   };
   const jumpSprite=sp=>{
+    if (!JUMPS.has(sp)) return '';
     const g=FarmMotion.GAITS[sp],style=`background-image:url(assets/farm/jump/${sp}-v3.webp);background-size:800% 100%;--walk-scale:${g.scale};--walk-offset:.25%`;
     return `<div class="jump-sprite" style="${style}" aria-hidden="true"></div><div class="jump-sprite jump-sprite-next" style="${style}" aria-hidden="true"></div>`;
   };
   const POSES = Object.fromEntries(Object.keys(SPECIES).map(sp => [sp, {
-    sleep: `assets/farm/poses/${sp}-sleep.webp`,
+    sleep: `assets/farm/poses/${sp}-sleep${sp === 'redpanda' ? '-v2' : ''}.webp`,
     ...(sp === 'snowcat' ? Object.fromEntries(['stand', 'stretch', 'sniff'].map(p => [p, `assets/farm/poses/snowcat-${p}.webp`])) : {})
   }]));
   const poseSprite = (species) => Object.entries(POSES[species]).map(([pose, src]) =>
@@ -182,5 +189,5 @@
     return `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="9.5" r="5.5" fill="url(#fr-${type})"/><path d="M8 4 v-2.5" stroke="#5a3b1e" stroke-width="1.3"/><path d="M8 4 q3 -3 5.5 -1 q-3 2.5 -5.5 1z" fill="#5f9a3e"/></svg>`;
   }
 
-  window.FarmArt = { ART, SPECIES, TREES, PHENO, FRUIT, WALK, POSES, walkSrc, walkSprite, jumpSprite, poseSprite, treeVariant, treeSrc, fruitSlots, registerFruitSlots, fruitSVG, treeSVG, treeInline, fruitIcon, defs };
+  window.FarmArt = { ART, SPECIES, TREES, PHENO, FRUIT, WALK, JUMPS, POSES, walkSrc, walkSprite, jumpSprite, poseSprite, treeVariant, treeSrc, fruitSlots, registerFruitSlots, fruitSVG, treeSVG, treeInline, fruitIcon, defs };
 })();

@@ -59,3 +59,14 @@ body[data-page="farm"] .bubble.animal-food.below::after { border-bottom-color: r
 .farm-shared-tools .unavailable { color: #dfbda3; }
 .roster .resident-note { white-space: pre-line; overflow-wrap: anywhere; }
 @media (max-width: 520px) { .farm-shared-tools { align-items: flex-start; gap: 12px; } }
+
+/* Water residents float on a quiet wake. */
+.actor.aquatic::before { display: none; }
+.swim-ripple { position: absolute; left: -9%; width: 118%; height: 12%; bottom: 1%; border: 1px solid rgba(224, 231, 244, .5); border-radius: 50%; pointer-events: none; }
+.swim-ripple::after { content: ""; position: absolute; inset: -35% -9%; border: 1px solid rgba(224, 231, 244, .2); border-radius: inherit; }
+.actor.aquatic.walking .swim-ripple { animation: crocodile-wake 2.8s ease-out infinite; }
+.actor.aquatic.react-swish { --ra: crocodile-swish; }
+.actor[data-species="crocodile"] .bite-treat { left: 76%; top: 73%; }
+@keyframes crocodile-wake { 0% { opacity: .25; transform: scale(.88); } 55% { opacity: .7; } 100% { opacity: .25; transform: scale(1.12); } }
+@keyframes crocodile-swish { 0%,100% { transform: rotate(0); } 30% { transform: rotate(2deg); } 65% { transform: rotate(-2deg); } }
+.farm-calm .swim-ripple, .farm-reduced-motion .swim-ripple { animation: none !important; }

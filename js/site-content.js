@@ -42,7 +42,7 @@
     if (Array.isArray(value.coords) && value.coords.length === 2 && value.coords.every(Number.isFinite) && Math.abs(value.coords[0]) <= 90 && Math.abs(value.coords[1]) <= 180) result.coords = value.coords.slice();
     return result;
   };
-  const animal = value => record(value) && ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin"].includes(value.species)
+  const animal = value => record(value) && ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"].includes(value.species)
     ? { ...textFields(value, ["id", "species", "name", "title", "note", "adoptedBy", "since"]) } : null;
   const stop = value => {
     if (!record(value) || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value.id || "") || !Array.isArray(value.title) || value.title.length !== 2 ||

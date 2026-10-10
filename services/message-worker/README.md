@@ -73,7 +73,9 @@ Keep the same UUID `submissionId` when retrying the same draft after an uncertai
 
 ## Owner content management
 
-Apply `0001_message_inbox.sql`, `0002_shared_farm.sql`, and `0003_owner_content.sql` in order before deploying this version. `0003_owner_content.sql` creates the public overlay and adds the private request status/note columns; it preserves existing letters and sessions. The original inbox deployment does not provide the new content endpoints until the migration and updated Worker have both been deployed.
+Apply all migrations in order before deploying this version. `0003_owner_content.sql` creates the public overlay and adds the private request status/note columns; it preserves existing letters and sessions. The original inbox deployment does not provide the new content endpoints until the migration and updated Worker have both been deployed.
+
+`0004_farm_species.sql` expands adoption support to red pandas, raccoons, wolves, crocodiles, and fennec foxes. It preserves existing adoption submissions and review statuses. Apply it before deploying the Worker so the database accepts these species.
 
 The empty database returns revision `0`, `updatedAt: null`, and `content: {}`. The website uses its checked-in defaults for sections absent from this overlay. An authenticated save replaces the complete overlay with one atomic D1 update, increments the revision, and publishes the returned content immediately. Send the revision from the most recent read. HTTP 409 `content_conflict` means another session saved first; reload and reconcile the latest content before retrying. A failed database write never reports success or changes the published content. A network interruption after commit can leave the caller uncertain; reread the latest revision before deciding to retry.
 

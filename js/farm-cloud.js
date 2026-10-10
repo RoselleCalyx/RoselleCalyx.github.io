@@ -2,7 +2,7 @@
 (function () {
   const MAX_TREES = 8, TIMEOUT_MS = 12000, MAX_BYTES = 262144;
   const TREE_TYPES = new Set(["apple", "peach", "orange", "cherry", "kiwi", "grape", "durian", "mango"]);
-  const SPECIES = new Set(["rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin"]);
+  const SPECIES = new Set(["rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"]);
   const TOKEN_KEY = "farm-visitor-token";
   const pending = new Map();
   let visitorToken = "", tokenRead = false, storageWarningShown = false;

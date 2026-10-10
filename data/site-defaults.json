@@ -432,6 +432,41 @@
         "adoptedBy": "Chen",
         "note": "Thinks the pond is the ocean.",
         "since": "2026-09"
+      },
+      {
+        "species": "redpanda",
+        "name": "Maple",
+        "adoptedBy": "Chen",
+        "note": "A little red panda with a ringed tail and a soft spot for bamboo shoots.",
+        "since": "2026-10"
+      },
+      {
+        "species": "raccoon",
+        "name": "Pebble",
+        "adoptedBy": "Chen",
+        "note": "Collects shiny pebbles. Always has a curious little paw to lend.",
+        "since": "2026-10"
+      },
+      {
+        "species": "wolf",
+        "name": "Luna",
+        "adoptedBy": "Chen",
+        "note": "A gentle wolf pup who listens for the wind between the trees.",
+        "since": "2026-10"
+      },
+      {
+        "species": "crocodile",
+        "name": "Moss",
+        "adoptedBy": "Chen",
+        "note": "Lives in the pond, floating among the lily pads and dreaming of fish.",
+        "since": "2026-10"
+      },
+      {
+        "species": "fennec",
+        "name": "Dune",
+        "adoptedBy": "Chen",
+        "note": "Those enormous ears can hear an apple land before anyone else.",
+        "since": "2026-10"
       }
     ]
   },

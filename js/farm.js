@@ -10,7 +10,7 @@
    ===================================================================== */
 (function () {
   const { esc, ICON, store, toast, modal } = window.Site;
-  const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, jumpSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
+  const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, JUMPS, walkSrc, walkSprite, jumpSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
   const Motion = window.FarmMotion;
   const FARM = window.FARM || { residents: [] };
   const Cloud = window.FarmCloud;
@@ -58,7 +58,7 @@
       '<img class="farm-bg farm-landscape" data-s="spring summer" src="assets/farm/meadow-spring.webp" alt="" width="1920" height="1080" draggable="false" fetchpriority="high">' +
       '<img class="farm-bg farm-landscape" data-s="autumn" src="assets/farm/meadow-autumn.webp" alt="" width="1920" height="1080" draggable="false">' +
       '<img class="farm-bg farm-landscape" data-s="winter" src="assets/farm/meadow-winter.webp" alt="" width="1920" height="1080" draggable="false">' +
-      '<div class="pond-open-water"></div><div class="pond-shimmer"><i></i><i></i></div>' +
+      '<div class="pond-shimmer"><i></i><i></i></div>' +
       '<svg class="meadow-breeze" viewBox="0 0 1600 900">' + grass + '</svg>' +
       '<span class="scene-lantern lantern-cottage"></span><span class="scene-lantern lantern-pond"></span></div>';
   }
@@ -142,14 +142,29 @@
   /* ================= geometry (percent of the world) ================= */
   const GROUND = { x0: 5, x1: 93, y0: 65, y1: 94 };
   const POND = { cx: 64, cy: 78.5, rx: 26, ry: 12 };
+  const WATER = { cx: 64.5, cy: 79, rx: 21.5, ry: 7.2 };
+  // Inset from the painted banks so the whole swimming sprite stays in water.
+  const SWIM = { cx: WATER.cx, cy: 80.5, rx: 14.5, ry: 3.2 };
   const ROCK = { x: 18, y: 78 };
   const SLOTS = [{ x: 8, y: 67 }, { x: 47, y: 65 }, { x: 81, y: 64 }, { x: 93, y: 91 }, { x: 31, y: 94 }, {x:27,y:66}, {x:64,y:65}, {x:11,y:96}];
-  const HOMES = { rabbit: {x: 37,y: 72.5}, panda: {x: 47,y: 92}, fox: {x: 56,y: 65.5}, shiba: {x: 30,y: 92}, duckling: {x: 76,y: 94} };
+  const MAX_TREES = 8;
+  const HOMES = { rabbit: {x: 37,y: 72.5}, panda: {x: 47,y: 92}, fox: {x: 56,y: 65.5}, shiba: {x: 30,y: 92}, duckling: {x: 76,y: 94}, redpanda: {x: 42,y: 67}, raccoon: {x: 88,y: 92}, wolf: {x: 22,y: 68}, crocodile: {x: 66,y: 81}, fennec: {x: 87,y: 67} };
   const inPond = (x, y) => ((x - POND.cx) / POND.rx) ** 2 + ((y - POND.cy) / POND.ry) ** 2 < 1;
+  const inSwimArea = (x, y) => ((x - SWIM.cx) / SWIM.rx) ** 2 + ((y - SWIM.cy) / SWIM.ry) ** 2 <= 1;
+  const aquatic = a => a.sp.habitat === 'water';
   const depth = (y) => 0.72 + ((y - 66) / 30) * 0.5;
   const crowded = (x,y,self) => animals.some(a => a !== self && Math.hypot((x-a.x)/8, (y-a.y)/11) < 1);
   const behindFrontTree = (x,y) => trees && trees.some(t => SLOTS[t.slot].y > 82 && Math.abs(x-SLOTS[t.slot].x) < 8 && y < SLOTS[t.slot].y && y > SLOTS[t.slot].y-23);
+  function waterSpot(nearX, self) {
+    for (let i = 0; i < 70; i++) {
+      const x = nearX == null ? SWIM.cx + (Math.random() - .5) * SWIM.rx * 2 : nearX + (Math.random() - .5) * 20;
+      const y = SWIM.cy + (Math.random() - .5) * SWIM.ry * 2;
+      if (inSwimArea(x, y) && (!self || Math.abs(x - self.x) > 3) && !crowded(x, y, self)) return { x, y };
+    }
+    return self ? { x: self.x, y: self.y } : { x: SWIM.cx, y: SWIM.cy };
+  }
   function randomSpot(nearX, self) {
+    if (self && aquatic(self)) return waterSpot(nearX, self);
     for (let i = 0; i < 70; i++) {
       const x = Math.max(GROUND.x0, Math.min(GROUND.x1, nearX == null ? GROUND.x0 + Math.random() * (GROUND.x1 - GROUND.x0) : nearX + (Math.random() - 0.5) * 34));
       // Side-view art reads best on mostly lateral paths, rather than marching
@@ -164,11 +179,13 @@
   const walkReady = new Set(),jumpReady=new Set();
   function preloadWalks() {
     const run = () => Object.keys(WALK).forEach((sp) => {
-      const jump=new Image();jump.decoding='async';jump.src=`assets/farm/jump/${sp}-v3.webp`;
-      jump.onload=async()=>{
-        if(jump.naturalWidth!==8*384||jump.naturalHeight!==384)return;
-        try{await jump.decode();jumpReady.add(sp);document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach(el=>el.classList.add('jump-ready'));}catch{}
-      };
+      if (JUMPS.has(sp)) {
+        const jump=new Image();jump.decoding='async';jump.src=`assets/farm/jump/${sp}-v3.webp`;
+        jump.onload=async()=>{
+          if(jump.naturalWidth!==8*384||jump.naturalHeight!==384)return;
+          try{await jump.decode();jumpReady.add(sp);document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach(el=>el.classList.add('jump-ready'));}catch{}
+        };
+      }
       const img = new Image();
       img.decoding = "async";
       img.src = walkSrc(sp);
@@ -192,15 +209,16 @@
     if (!sp) return null;
     const home = HOMES[def.species];
     const first = !animals.some(a => a.def.species === def.species);
-    const pos = opts.keeper ? { x: ROCK.x, y: ROCK.y } : home && first ? {...home} : randomSpot();
+    const pos = sp.habitat === 'water' ? home && first ? {...home} : waterSpot() : opts.keeper ? { x: ROCK.x, y: ROCK.y } : home && first ? {...home} : randomSpot();
     const el = document.createElement("div");
     el.className = "actor" + (opts.pending ? " pending" : "") + (opts.keeper ? " keeper sitting" : "");
     el.dataset.species = def.species;
+    if (sp.habitat === 'water') el.classList.add('aquatic');
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
     el.setAttribute("aria-label", `${def.name}, ${sp.label}`);
     const art = `<div class="flip"><div class="bob">${ART[def.species]()}${walkSprite(def.species)}${jumpSprite(def.species)}${poseSprite(def.species)}<canvas class="reaction-art" width="320" height="320" aria-hidden="true"></canvas></div></div>`;
-    el.innerHTML = art
+    el.innerHTML = (sp.habitat === 'water' ? '<span class="swim-ripple" aria-hidden="true"></span>' : '') + art
       + `<span class="resident-label">${esc(def.name)}</span>`
       + (opts.pending ? `<span class="tag">waiting for approval</span>` : "");
     actorsEl.appendChild(el);
@@ -235,6 +253,7 @@
     setPose(a, pose);
   }
   function planWalk(a, target, now) {
+    if (aquatic(a) && !inSwimArea(target.x, target.y)) target = waterSpot(a.x, a);
     if(!walkReady.has(a.def.species)){rest(a,now,1200,'sit');return;}
     if (Math.hypot(target.x - a.x, target.y - a.y) < .3) { rest(a, now, 3000); return; }
     if(a.perch){leaveRock(a,now);return;}
@@ -279,6 +298,7 @@
   }
   const climbable = a => ['snowcat','rabbit','fox','shiba'].includes(a.def.species);
   function startHop(a, target, now, rock = null) {
+    if (aquatic(a)) return false;
     if(!jumpReady.has(a.def.species)){rest(a,now,1200,'sit');return false;}
     a.hop = {x:a.x,y:a.y,lift:a.lift||0,tx:target.x,ty:target.y,endLift:rock?rock.lift:0,rock,start:now,duration:1000};
     a.jumpPhase=0;
@@ -299,6 +319,11 @@
     rest(a,now,3000);return false;
   }
   function think(a, now) {
+    if (aquatic(a)) {
+      if (Math.random() < .35) rest(a, now, 3500 + Math.random() * 6500, Math.random() < .45 ? 'sleep' : 'sit');
+      else planWalk(a, waterSpot(a.x, a), now);
+      return;
+    }
     if(a.perch){leaveRock(a,now);return;}
     if(window.MeadowProps && climbable(a) && Math.random()<.28) {
       const rock=MeadowProps.PROPS.find(p=>p.kind==='rock'&&Math.hypot(p.x-a.x,(p.y-a.y)*1.78)<7&&!crowded(p.x,p.y,a)&&!inPond((p.x+a.x)/2,(p.y+a.y)/2));
@@ -351,8 +376,8 @@
     if (d < .025) { a.x = a.tx; a.y = a.ty; rest(a, now, 1600 + Math.random() * 3000, a.def.species === 'snowcat' ? 'stand' : 'sit'); }
     else {
       let nx = a.x + (dx / d) * v, ny = a.y + (dy / d / 1.78) * v;
-      if (inPond(nx, ny)) { ny += (ny < POND.cy ? -1 : 1) * v; nx = a.x + (dx / d) * v * 0.5; }
-      if (crowded(nx,ny,a) || behindFrontTree(nx,ny)) { rest(a, now, 1500 + Math.random()*2000, a.def.species === 'snowcat' ? 'sniff' : 'sit'); place(a); return; }
+      if (!aquatic(a) && inPond(nx, ny)) { ny += (ny < POND.cy ? -1 : 1) * v; nx = a.x + (dx / d) * v * 0.5; }
+      if ((aquatic(a) ? !inSwimArea(nx, ny) : behindFrontTree(nx,ny)) || crowded(nx,ny,a)) { rest(a, now, 1500 + Math.random()*2000, a.def.species === 'snowcat' ? 'sniff' : 'sit'); place(a); return; }
       a.x = nx; a.y = ny;
     }
     const distance = Math.hypot(a.x - oldX, (a.y - oldY) * 1.78);
@@ -461,7 +486,12 @@
     shiba: { love: ["apple", "peach"], like: ["crucian", "carp", "porcini", "shiitake"], act: "spin", does: "spins and spins, tail going wild" },
     hedgehog: { love: ["strawberry", "chanterelle"], like: ["apple", "bayberry", "porcini", "morel"], act: "curl", does: "curls into a ball, then pops out beaming" },
     duckling: { love: ["shrimp", "minnow", "bitterling"], like: ["lotus", "strawberry", "loach"], act: "flap", does: "flaps its tiny wings and peeps" },
-    penguin: { love: ["crucian", "minnow", "bitterling", "shrimp", "mandarin"], like: ["crab", "crayfish", "loach", "carp"], act: "slide", does: "toboggans across the grass on its tummy" }
+    penguin: { love: ["crucian", "minnow", "bitterling", "shrimp", "mandarin"], like: ["crab", "crayfish", "loach", "carp"], act: "slide", does: "toboggans across the grass on its tummy" },
+    redpanda: { love: ["shoot", "apple"], like: ["peach", "cherry", "strawberry"], act: "wave", does: "raises a tiny paw and twitches its ringed tail" },
+    raccoon: { love: ["shrimp", "crayfish", "strawberry"], like: ["apple", "cherry", "crucian", "lotus"], act: "wave", does: "cups its little paws with delight" },
+    wolf: { love: FISH, like: ["shrimp", "crab", "crayfish"], act: "wag", does: "wags its fluffy tail with delight" },
+    crocodile: { love: ["carp", "catfish", "crucian", "eel"], like: ["minnow", "loach", "shrimp", "crayfish"], act: "swish", does: "swishes its tail and sends ripples across the pond" },
+    fennec: { love: ["shrimp", "minnow", "strawberry"], like: ["apple", "bayberry", "loach"], act: "pounce", does: "perks up its enormous ears and bounces with delight" }
   };
   const EMOJI = { farm: "🍎", woods: "🍄", pond: "🐟" };
   function pantry() {
@@ -485,7 +515,9 @@
   const fed = {};                                              // recent snacks, to know when someone is full
   const happyActions={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','pet-stretch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','wave','happy-hop'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop']};
   const petActions={snowcat:['knead','pet-nuzzle','wave','pet-stretch'],rabbit:['binky','pet-nuzzle','wave','pet-stretch'],panda:['wave','pet-nuzzle','pet-stretch'],fox:['wave','pet-nuzzle','pounce','pet-stretch'],shiba:['wag','pet-nuzzle','wave','pet-stretch'],hedgehog:['curl','pet-nuzzle','wave'],duckling:['flap','pet-nuzzle','wave'],penguin:['flap','pet-nuzzle','wave']};
-  const actionText={wave:'waves a little paw',wag:'wags that curly tail', 'happy-hop':'hops up with delight',flap:'flutters tiny wings'};
+  Object.assign(happyActions, { redpanda: ['wave', 'happy-hop'], raccoon: ['wave', 'happy-hop'], wolf: ['wag', 'wave'], crocodile: ['swish'], fennec: ['pounce', 'happy-hop', 'wave'] });
+  Object.assign(petActions, { redpanda: ['pet-nuzzle', 'wave', 'pet-stretch'], raccoon: ['wave', 'pet-nuzzle'], wolf: ['wag', 'pet-nuzzle', 'pet-stretch'], crocodile: ['swish', 'pet-nuzzle'], fennec: ['pet-nuzzle', 'wave', 'pounce'] });
+  const actionText={wave:'waves a little paw',wag:'wags its fluffy tail', 'happy-hop':'hops up with delight',flap:'flutters tiny wings',swish:'swishes its tail through the water'};
   function react(a, kind, options = {}) {
     [...a.el.classList].filter((c) => c.startsWith("react")).forEach((c) => a.el.classList.remove(c));
     void a.el.offsetWidth;
@@ -527,9 +559,9 @@
     fed[key] = (fed[key] || []).filter((t) => now - t < 4 * 60 * 1000);
     if (fed[key].length >= 3) { react(a, "nap"); emote(a, "z z"); line.textContent = `${name} is too full for another bite — time for a little nap.`; return; }
     if (f.id === "pinecone") {                                // not food, but a wonderful toy
-      useFood(f); react(a, "pounce"); emote(a, "!");
+      useFood(f); react(a, aquatic(a) ? "swish" : "pounce"); emote(a, "!");
       known[a.def.species].pinecone = "play"; store.set("farm-diet", known);
-      line.textContent = `${name} isn’t hungry for a pine cone — but what a toy! Off it rolls into the grass.`;
+      line.textContent = `${name} isn’t hungry for a pine cone — but what a toy! ${aquatic(a) ? 'It bobs across the water.' : 'Off it rolls into the grass.'}`;
       return;
     }
     const kind = d.love.includes(f.id) ? "love" : d.like.includes(f.id) ? "like" : "meh";
@@ -640,7 +672,6 @@
 
   /* ================= orchard ================= */
   const LOOKS = { bare: "resting through winter", bloom: "in blossom", green: "in full leaf", autumn: "turning gold" };
-  const MAX_TREES = 8;
   let trees = [], sharedReady = false, sharedSync = null;
   const personalPicked = store.get("farm-picked", {});
   function renderOrchardCount() {
@@ -988,7 +1019,6 @@
     [[57, 45], [66, 41], [76, 44], [88, 43], [90, 53], [57, 52]],
     [[87, 14], [100, 9], [100, 52], [90, 53], [86, 40]]
   ];
-  const WATER = { cx: 64.5, cy: 79, rx: 21.5, ry: 7.2 };
   const WAYS = {
     woods: { url: "woods.html", label: "Into the woods", at: [12, 32], c: "#040a07" },
     pond: { url: "pond.html", label: "Go fishing", at: [64.5, 79], c: "#030812" }
@@ -1206,7 +1236,7 @@
     if (window.OrchardSim) OrchardSim.update(dt, time, season, clock().p, calm, breeze(time) * 1.4 + gust * 14);
     if (window.FarmFX) FarmFX.update(dt, time, {
       season: season.name, calm,
-      animals: animals.map((a) => ({ id: a.def.species + ":" + a.def.name, x: a.x, y: a.y, dir: a.dir, walking: a.state === "walk", size: a.sp.size * depth(a.y) }))
+      animals: animals.map((a) => ({ id: a.def.species + ":" + a.def.name, x: a.x, y: a.y, dir: a.dir, walking: a.state === "walk" && !aquatic(a), size: a.sp.size * depth(a.y) }))
     });
     tick += dt;
     if (tick > 1) {

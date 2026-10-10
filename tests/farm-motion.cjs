@@ -37,4 +37,4 @@ function simulate(hz) {
 const a = simulate(30), b = simulate(60);
 assert.ok(a.remaining < 1e-7 && b.remaining < 1e-7);
 assert.ok(Math.abs(a.phase - b.phase) < 1e-7, 'same path must have the same gait phase at 30 and 60 fps');
-console.log('Farm motion passed: all eight species, distance/phase, loop bounds, acceleration, braking, pause and frame-rate independence.');
+console.log(`Farm motion passed: all ${Object.keys(m.GAITS).length} species, distance/phase, loop bounds, acceleration, braking, pause and frame-rate independence.`);

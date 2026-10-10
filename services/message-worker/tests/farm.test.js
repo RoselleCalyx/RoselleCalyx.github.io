@@ -10,7 +10,7 @@ import worker from '../src/worker.js';
 class D1 {
   constructor() {
     this.sqlite = new DatabaseSync(':memory:');
-    for (const migration of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql']) this.sqlite.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
+    for (const migration of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql']) this.sqlite.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
     this.failOperation = false;
     this.queries = [];
   }
@@ -86,6 +86,36 @@ test('shared migration seeds the same four mature trees and public shape', async
   assert.ok(snapshot.trees.every(tree => tree.canRemove === false));
   assert.deepEqual(snapshot.residents, []);
   for (const tree of snapshot.trees) assert.deepEqual(Object.keys(tree).sort(), ['canRemove', 'id', 'plantedAbs', 'seed', 'slot', 'type', 'variant', 'water']);
+});
+
+test('species migration preserves existing submissions, reviews and indexes', () => {
+  const sqlite = new DatabaseSync(':memory:');
+  for (const file of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql']) sqlite.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
+  const insert = sqlite.prepare('INSERT INTO farm_adoptions (id, submission_id, payload_hash, visitor_hash, species, name, adopted_by, note, status, created_at, reviewed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const time = '2026-10-10T00:00:00.000Z';
+  for (const [index, status] of ['pending', 'approved', 'rejected'].entries()) insert.run('existing-' + index, 'submission-' + index, '0'.repeat(64), '1'.repeat(64), ['rabbit', 'fox', 'panda'][index], 'Friend ' + index, 'A visitor', 'Keep this note.', status, time, status === 'pending' ? null : time);
+  const before = sqlite.prepare('SELECT * FROM farm_adoptions ORDER BY id').all();
+  sqlite.exec(readFileSync(new URL('../migrations/0004_farm_species.sql', import.meta.url), 'utf8'));
+  assert.deepEqual(sqlite.prepare('SELECT * FROM farm_adoptions ORDER BY id').all(), before);
+  const indexes = sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'farm_adoptions'").all().map(row => row.name);
+  assert.ok(indexes.includes('farm_adoptions_status_idx')); assert.ok(indexes.includes('farm_adoptions_visitor_idx'));
+  assert.throws(() => sqlite.prepare("INSERT INTO farm_adoptions SELECT 'duplicate', submission_id, payload_hash, visitor_hash, species, name, adopted_by, note, status, created_at, reviewed_at FROM farm_adoptions LIMIT 1").run(), /UNIQUE/);
+  assert.throws(() => sqlite.prepare("UPDATE farm_adoptions SET species = 'dragon' WHERE id = 'existing-0'").run(), /CHECK/);
+  sqlite.close();
+});
+
+test('new animal species can be submitted, reviewed and returned as public residents', async () => {
+  const f = fixture(), species = ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'], host = await f.login();
+  for (const animal of species) {
+    const response = await f.adopt(credential(), { species: animal, name: animal });
+    assert.equal(response.status, 200, animal);
+    const submitted = await response.json();
+    assert.equal(submitted.status, 'pending');
+    const review = await f.call('/api/host/farm/adoptions/' + submitted.id, { method: 'PATCH', token: host, body: { status: 'approved' } });
+    assert.equal(review.status, 200, animal);
+    assert.equal((await review.json()).species, animal);
+  }
+  assert.deepEqual((await f.snapshot()).residents.map(row => row.species).sort(), [...species].sort());
 });
 
 test('different clients see the same new tree while removal rights stay with its owner', async () => {
@@ -273,17 +303,17 @@ test('simultaneous conflicting reviews have one winner and one honest conflict',
   assert.equal(f.env.DB.rows('farm_adoptions')[0].status, 'approved');
 });
 
-test('concurrent approvals stop at nineteen additions and leave excess requests pending', async () => {
+test('concurrent approvals stop at fourteen additions alongside the ten default residents', async () => {
   const f = fixture(), token = await f.login();
   const responses = await Promise.all(Array.from({ length: 30 }, (_, i) => f.adopt(credential(), { name: 'Friend ' + i }, { ip: '192.0.2.' + (i + 1) })));
   assert.ok(responses.every(response => response.status === 200));
   const rows = await Promise.all(responses.map(response => response.json()));
   const reviews = await Promise.all(rows.map(row => f.call('/api/host/farm/adoptions/' + row.id, { method: 'PATCH', token, body: { status: 'approved' } })));
-  assert.equal(reviews.filter(response => response.status === 200).length, 19);
-  assert.equal(reviews.filter(response => response.status === 409).length, 11);
+  assert.equal(reviews.filter(response => response.status === 200).length, 14);
+  assert.equal(reviews.filter(response => response.status === 409).length, 16);
   for (const response of reviews.filter(response => response.status === 409)) assert.equal((await response.json()).code, 'farm_full');
-  assert.equal((await f.snapshot()).residents.length, 19);
-  assert.equal(f.env.DB.rows('farm_adoptions').filter(row => row.status === 'pending').length, 11);
+  assert.equal((await f.snapshot()).residents.length, 14);
+  assert.equal(f.env.DB.rows('farm_adoptions').filter(row => row.status === 'pending').length, 16);
 });
 
 test('simultaneous duplicate adoption requests create one pending record', async () => {

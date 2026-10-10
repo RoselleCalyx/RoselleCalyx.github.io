@@ -32,19 +32,73 @@ async function main() {
       if (url.pathname === '/js/farm.js') {
         const source = await fs.readFile(path.join(root,'js/farm.js'),'utf8');
         const end = source.lastIndexOf('})();');
-        return route.fulfill({ contentType:'application/javascript', body:source.slice(0,end) + 'window.__farmTest = {animals, trees, stepAnimal, planWalk, rest, place, openAnimal, closeBubble, feed, startHop, leaveRock};\n' + source.slice(end) });
+        return route.fulfill({ contentType:'application/javascript', body:source.slice(0,end) + 'window.__farmTest = {animals, trees, stepAnimal, planWalk, rest, place, openAnimal, closeBubble, feed, startHop, leaveRock, addAnimal, waterSpot, inSwimArea, think};\n' + source.slice(end) });
       }
       return route.continue();
     });
     const base = `http://127.0.0.1:${server.address().port}`;
     await page.goto(base + '/farm.html?season=spring&p=.5');
     await page.waitForFunction(() => window.__farmTest && document.querySelectorAll('.actor.walk-ready').length === __farmTest.animals.length);
-    await page.waitForFunction(() => document.querySelectorAll('.actor.jump-ready').length === __farmTest.animals.length);
+    await page.waitForFunction(() => __farmTest.animals.filter(a => FarmArt.JUMPS.has(a.def.species)).every(a => a.el.classList.contains('jump-ready')));
     await page.waitForFunction(() => [...document.querySelectorAll('.pose-sprite')].every(i => i.dataset.ready === 'true'));
     assert.deepEqual(errors, [], 'page must initialize without script errors');
+    await page.screenshot({path:path.join(out,'new-residents.png'),fullPage:true});
+    const habitat = await page.evaluate(() => {
+      const t = __farmTest, now = performance.now();
+      const species = ['redpanda','raccoon','wolf','crocodile','fennec'];
+      const present = species.every(sp => t.animals.some(a => a.def.species === sp));
+      const croc = t.animals.find(a => a.def.species === 'crocodile');
+      t.animals.forEach(a => a.held = true);
+      const second = t.addAnimal({ species:'crocodile', name:'River' }); second.held = true;
+      const spawned = t.inSwimArea(croc.x,croc.y) && t.inSwimArea(second.x,second.y);
+      let confined = true, moved = false;
+      croc.held = false;
+      for (let trip = 0; trip < 20; trip++) {
+        const target = t.waterSpot(croc.x,croc), start = {x:croc.x,y:croc.y};
+        const at = now + trip * 50000;
+        t.planWalk(croc,target,at);t.stepAnimal(croc,.016,at+1700);
+        for (let tick = 0; tick < 1200; tick++) {
+          t.stepAnimal(croc,1/30,at+1716+tick*1000/30);
+          confined &&= t.inSwimArea(croc.x,croc.y);
+          moved ||= Math.hypot(croc.x-start.x,croc.y-start.y) > 1;
+          if (croc.state === 'idle') break;
+        }
+      }
+      t.planWalk(croc,{x:4,y:94},now+1100000);
+      const corrected = t.inSwimArea(croc.tx,croc.ty);
+      const hops = t.startHop(croc,{x:18,y:78},now+1100100);
+      t.rest(croc,now,10000,'sleep');croc.held=true;
+      const anchor={x:croc.x,y:croc.y,phase:croc.phase};
+      t.stepAnimal(croc,.1,now+2000);
+      const held=croc.x===anchor.x&&croc.y===anchor.y&&croc.phase===anchor.phase;
+      second.el.remove();t.animals.splice(t.animals.indexOf(second),1);
+      t.rest(croc,now,10000,'sit');t.place(croc);
+      return {present,spawned,confined,moved,corrected,hops,held};
+    });
+    assert.deepEqual(habitat,{present:true,spawned:true,confined:true,moved:true,corrected:true,hops:false,held:true},'new residents and duplicate crocodiles stay in water throughout motion and rest');
+    await page.evaluate(() => __farmTest.openAnimal(__farmTest.animals.find(a=>a.def.species==='crocodile')));
+    await page.locator('[data-pet]').click();
+    assert.equal(await page.evaluate(()=>__farmTest.inSwimArea(...['x','y'].map(k=>__farmTest.animals.find(a=>a.def.species==='crocodile')[k]))),true,'petting stays in water');
+    await page.evaluate(() => __farmTest.closeBubble());
+    await page.locator('#btnAdopt').click();
+    assert.equal(await page.locator('.species-grid [data-sp]').count(),12,'all twelve adoptable species are offered');
+    for (const sp of ['redpanda','raccoon','wolf','crocodile','fennec']) {
+      await page.locator(`.species-grid [data-sp="${sp}"]`).click();
+      assert.equal(await page.locator(`.species-grid [data-sp="${sp}"]`).getAttribute('aria-checked'),'true');
+    }
+    await page.locator('.modal-close').click();
+    await page.evaluate(() => {
+      const t=__farmTest,a=t.animals.find(a=>a.def.species==='crocodile');
+      t.openAnimal(a);t.feed(a,{id:'carp',name:'Carp',from:'pond',icon:'🐟'},document.querySelector('.feed-line'),null);t.closeBubble();
+    });
+    await page.waitForFunction(()=>__farmTest.animals.find(a=>a.def.species==='crocodile').reaction?.kind==='swish');
+    assert.equal(await page.evaluate(()=>{const a=__farmTest.animals.find(a=>a.def.species==='crocodile');return __farmTest.inSwimArea(a.x,a.y)&&a.held;}),true,'favorite fish gets a swimming response in water');
+    await page.waitForFunction(()=>!__farmTest.animals.find(a=>a.def.species==='crocodile').feeding);
     const cycle = await page.evaluate(() => {
       const t = __farmTest, a = t.animals.find(a => a.keeper), now = performance.now();
       t.animals.forEach(a => a.held = true);
+      // Keep this fixed gait inspection corridor clear of new resident homes.
+      const wolf=t.animals.find(a=>a.def.species==='wolf');wolf.y=94;t.place(wolf);
       a.held = false; a.x = 14; a.y = 67; t.rest(a,now,10000,'sleep');
       t.planWalk(a,{x:26,y:67},now);
       const wake = a.pose;
@@ -151,7 +205,7 @@ async function main() {
     await page.screenshot({path:path.join(out,'mobile.png'),fullPage:true});
     await page.setViewportSize({width:1280,height:1120});
     await page.goto(base + '/docs/farm-motion-preview.html');
-    await page.waitForFunction(()=>document.querySelectorAll('.motion-grid .actor').length===8);
+    await page.waitForFunction(()=>document.querySelectorAll('.motion-grid .actor').length===13);
     await page.waitForFunction(()=>[...document.querySelectorAll('.pose-sprite')].every(i=>i.complete&&i.naturalWidth));
     await page.locator('#pose').selectOption('stretch');
     await page.waitForTimeout(250);
@@ -164,9 +218,9 @@ async function main() {
     const after=await page.locator('.actor[data-species="snowcat"] .walk-sprite:not(.walk-sprite-next)').evaluate(e=>e.style.backgroundPositionX);
     assert.notEqual(after,before,'preview supports frame stepping');
     await page.locator('#flip').click();
-    assert.equal(await page.locator('.actor.left').count(),8);
+    assert.equal(await page.locator('.actor.left').count(),13);
     assert.deepEqual(errors,[]); assert.deepEqual(broken,[],'all local assets must load');
-    console.log(JSON.stringify({passed:true,checks:['twelve-frame cat cycle','wake/stand/walk','held phase','pet posture','varied feeding postures and nap hold/release','FarmFX integration','eight-posture rock takeoff/perch/landing and depth','reduced motion','four seasons','mobile overflow','preview stepping/mirroring','local asset loads'],screenshots:out}));
+    console.log(JSON.stringify({passed:true,checks:['five new residents and adoption choices','crocodile spawning, swimming boundary, held pose, hop guard and fish response','twelve-frame cat cycle','wake/stand/walk','held phase','pet posture','varied feeding postures and nap hold/release','FarmFX integration','eight-posture rock takeoff/perch/landing and depth','reduced motion','four seasons','mobile overflow','thirteen-species preview stepping/mirroring','local asset loads'],screenshots:out}));
   } finally { if(browser) await browser.close(); await new Promise(ok=>server.close(ok)); }
 }
 main().catch(e=>{ console.error(e); process.exitCode=1; });

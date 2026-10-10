@@ -16,6 +16,13 @@
   // A rabbit travels in bounds, not a quadruped walking cycle.
   GAITS.rabbit.frames=8;GAITS.rabbit.src='assets/farm/jump/rabbit-v3.webp';
   GAITS.panda.src='assets/farm/walk/panda-v4.webp';
+  Object.assign(GAITS, {
+    redpanda: { frames: 6, stride: .28, scale: 1.25, baseline: 360 / 384, src: 'assets/farm/walk/redpanda-v2.webp' },
+    raccoon: { frames: 6, stride: .3, scale: 1.25, baseline: 360 / 384 },
+    wolf: { frames: 6, stride: .36, scale: 1.25, baseline: 360 / 384 },
+    crocodile: { frames: 6, stride: .4, scale: 1.45, baseline: 360 / 384 },
+    fennec: { frames: 6, stride: .38, scale: 1.25, baseline: 360 / 384 }
+  });
   function leap(progress){
     const f=clamp(progress,0,1)*7,index=Math.floor(f),blend=f-index;
     return {frame:index,next:Math.min(7,index+1),blend:blend*blend*(3-2*blend)};

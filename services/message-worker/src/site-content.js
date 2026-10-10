@@ -38,7 +38,7 @@ const day = (value, path) => {
   pattern(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 10)(value, path);
   if (!Number.isFinite(new Date(value).getTime()) || new Date(value).toISOString().slice(0, 10) !== value) invalid(path);
 };
-const species = oneOf("snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin");
+const species = oneOf("snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec");
 const resident = object({ id, species, name: string(24, true), adoptedBy: string(40), note: string(140), since: month }, ["species", "name"]);
 const photo = object({ src: link, caption: string(2000), paint: object({ sky: oneOf("dusk", "aurora", "milkyway", "sunset", "night", "dawn"), land: oneOf("mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"), cabin: boolean }) }, ["src"]);
 const pair = (min, max) => array(number(min, max), 2, 2);
@@ -106,7 +106,7 @@ export async function readSiteContent(env) {
 export async function saveSiteContent(env, body) {
   if (!Number.isSafeInteger(body.revision) || body.revision < 0) invalid("revision");
   const content = validateSiteContent(body.content);
-  const baselineResidents = content.farm && content.farm.residents ? content.farm.residents.length : 5;
+  const baselineResidents = content.farm && content.farm.residents ? content.farm.residents.length : 10;
   const row = await env.DB.prepare("UPDATE site_content SET revision = revision + 1, updated_at = ?, content_json = ? WHERE id = 1 AND revision = ? AND (SELECT count(*) FROM farm_adoptions WHERE status = 'approved') + ? <= 24 RETURNING revision, updated_at, content_json")
     .bind(new Date().toISOString(), JSON.stringify(content), body.revision, baselineResidents).first();
   if (!row) {

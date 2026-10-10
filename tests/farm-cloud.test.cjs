@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../js/farm-cloud.js'), 'utf8');
+const newSpecies = ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'];
 
 const tree = (extra = {}) => ({ id: 't-one', type: 'apple', slot: 0, seed: 23, variant: 2, plantedAbs: 3732575, water: 0, canRemove: true, ...extra });
 const resident = (extra = {}) => ({ id: 'a-one', species: 'rabbit', name: 'Mochi', adoptedBy: 'A friend', note: 'Likes stars.', since: '2026-10', ...extra });
@@ -126,6 +127,13 @@ test('all eight slots and Unicode resident names validate without mutating the r
   assert.deepEqual(value.trees[7], tree({ id: 't-7', slot: 7 }));
 });
 
+test('shared snapshots preserve each new animal species and its public resident data', async () => {
+  const value = snapshot({ residents: newSpecies.map(species => resident({ id: 'resident-' + species, species, name: species })) });
+  const p = page(); p.respond(value);
+  assert.deepEqual(json(await p.api.load()), value);
+  assert.equal(p.writes.length, 0, 'reading new residents does not create visitor data');
+});
+
 test('a planting creates a private 64 hex ownership token and UUID once, then fresh intent gets a fresh ID', async () => {
   const p = page(); p.respond({ ok: true, tree: tree() });
   assert.deepEqual(json(await p.api.plant('apple')), { ok: true, tree: tree() });
@@ -204,6 +212,25 @@ test('adoptions remain server-confirmed pending requests and reject keeper speci
   await assert.rejects(p.api.adopt({ ...def, species: 'snowcat' }), errorCode('validation'));
   await assert.rejects(p.api.adopt({ ...def, name: 'x'.repeat(25) }), errorCode('validation'));
   assert.equal(p.calls.length, 1);
+});
+
+test('each new species can send a pending adoption request with an independent submission ID', async () => {
+  const p = page();
+  for (const species of newSpecies) {
+    const result = { ok: true, id: 'adoption-' + species, status: 'pending' };
+    p.respond(result);
+    assert.deepEqual(json(await p.api.adopt({ species, name: ' ' + species + ' ', adoptedBy: ' A friend ', note: ' Likes the farm. ' })), result);
+    const call = p.calls.at(-1), sent = payload(call);
+    assert.equal(call.url, 'https://farm.example/api/farm/adoptions'); assert.equal(call.request.method, 'POST');
+    assert.equal(sent.species, species); assert.equal(sent.name, species);
+    assert.equal(sent.adoptedBy, 'A friend'); assert.equal(sent.note, 'Likes the farm.');
+    assert.match(sent.submissionId, uuidPattern);
+  }
+  const sent = p.calls.map(payload);
+  assert.equal(new Set(sent.map(value => value.submissionId)).size, newSpecies.length);
+  assert.equal(new Set(sent.map(value => value.visitorToken)).size, 1);
+  assert.deepEqual(p.writes, ['farm-visitor-token']);
+  assert.equal(p.values.has('farm-pending'), false, 'new animals await shared approval');
 });
 
 test('different adoption payloads have independent retry IDs and malformed status never creates a local resident', async () => {

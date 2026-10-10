@@ -2,7 +2,7 @@ const MAX_TREES = 8;
 // CMS baseline residents and approved visitor additions share 24 places.
 const MAX_PENDING = 200, MAX_VISITOR_PENDING = 3;
 const TYPES = ['apple', 'peach', 'orange', 'cherry', 'kiwi', 'grape', 'durian', 'mango'];
-const SPECIES = ['rabbit', 'panda', 'fox', 'shiba', 'hedgehog', 'duckling', 'penguin'];
+const SPECIES = ['rabbit', 'panda', 'fox', 'shiba', 'hedgehog', 'duckling', 'penguin', 'redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'];
 const TOKEN = /^[0-9a-f]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TREE_COLUMNS = 'id, type, slot, seed, variant, planted_abs, water, owner_hash, initial';
@@ -170,7 +170,7 @@ export async function farmRoute(request, env, path, url, helpers) {
       if (!current) fail(404, 'adoption_not_found', 'This adoption request was not found.');
       if (current.status === body.status) return current;
       if (current.status !== 'pending') fail(409, 'adoption_reviewed', 'This adoption request has already been reviewed. Reload the list.');
-      const row = await env.DB.prepare("UPDATE farm_adoptions SET status = ?, reviewed_at = ? WHERE id = ? AND status = 'pending' AND (? <> 'approved' OR (SELECT COUNT(*) FROM farm_adoptions WHERE status = 'approved') + (SELECT COALESCE(json_array_length(content_json, '$.farm.residents'), 5) FROM site_content WHERE id = 1) < 24) RETURNING " + ADOPTION_COLUMNS)
+      const row = await env.DB.prepare("UPDATE farm_adoptions SET status = ?, reviewed_at = ? WHERE id = ? AND status = 'pending' AND (? <> 'approved' OR (SELECT COUNT(*) FROM farm_adoptions WHERE status = 'approved') + (SELECT COALESCE(json_array_length(content_json, '$.farm.residents'), 10) FROM site_content WHERE id = 1) < 24) RETURNING " + ADOPTION_COLUMNS)
         .bind(body.status, new Date().toISOString(), id, body.status).first();
       if (row) return row;
       const latest = await env.DB.prepare('SELECT ' + ADOPTION_COLUMNS + ' FROM farm_adoptions WHERE id = ?').bind(id).first();

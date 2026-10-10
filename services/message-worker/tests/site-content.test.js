@@ -8,7 +8,7 @@ import { validateSiteContent } from "../src/site-content.js";
 class D1 {
   constructor() {
     this.sqlite = new DatabaseSync(":memory:");
-    for (const file of ["0001_message_inbox.sql", "0002_shared_farm.sql", "0003_owner_content.sql"]) this.sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
+    for (const file of ["0001_message_inbox.sql", "0002_shared_farm.sql", "0003_owner_content.sql", "0004_farm_species.sql"]) this.sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
     this.failContentWrite = false;
   }
   prepare(sql) {
@@ -101,6 +101,28 @@ test("CMS farm edits preserve combined capacity with existing approved visitor r
   assert.equal(tooMany.status, 409); assert.equal((await tooMany.json()).code, "farm_capacity");
   const latest = await (await f.call("/api/site-content")).json();
   assert.equal(latest.revision, 1); assert.equal(latest.content.farm.residents.length, 22);
+});
+
+test("CMS accepts and publishes the new farm species", async () => {
+  const f = fixture(), token = await f.login();
+  const species = ["redpanda", "raccoon", "wolf", "crocodile", "fennec"];
+  const content = { farm: { residents: species.map((animal) => ({ species: animal, name: animal })) } };
+  const response = await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 0, content } });
+  assert.equal(response.status, 200);
+  assert.deepEqual((await (await f.call("/api/site-content")).json()).content, content);
+  assert.throws(() => validateSiteContent({ farm: { residents: [{ species: "dragon", name: "Unknown" }] } }), /species/);
+});
+
+test("CMS content without a farm override reserves space for the ten default residents", async () => {
+  const f = fixture(), token = await f.login();
+  const insert = f.env.DB.sqlite.prepare("INSERT INTO farm_adoptions (id, submission_id, payload_hash, visitor_hash, species, name, adopted_by, note, status, created_at) VALUES (?, ?, ?, ?, 'rabbit', 'Guest', 'a visitor', '', 'approved', ?)");
+  const addGuest = () => insert.run(crypto.randomUUID(), crypto.randomUUID(), "0".repeat(64), "1".repeat(64), new Date().toISOString());
+  for (let index = 0; index < 14; index++) addGuest();
+  assert.equal((await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 0, content: { site: { name: "Farm keeper" } } } })).status, 200);
+  addGuest();
+  const blocked = await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 1, content: { site: { name: "New keeper" } } } });
+  assert.equal(blocked.status, 409); assert.equal((await blocked.json()).code, "farm_capacity");
+  assert.equal((await (await f.call("/api/site-content")).json()).content.site.name, "Farm keeper");
 });
 
 test("adoption approvals atomically share the capacity of an edited CMS farm", async () => {

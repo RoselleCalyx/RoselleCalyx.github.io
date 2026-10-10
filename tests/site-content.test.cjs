@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../js/site-content.js'), 'utf8');
 const defaults = JSON.parse(fs.readFileSync(require('node:path').join(__dirname, '../data/site-defaults.json'), 'utf8'));
+const newSpecies = ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'];
 const plain = value => JSON.parse(JSON.stringify(value));
 
 function page({ fetch, settings = {}, placeholders = [], timeout = false } = {}) {
@@ -76,6 +77,20 @@ test('all checked-in public defaults round-trip through the cloud parser, includ
   assert.equal(p.context.window.FARM.keeper.name, defaults.farm.keeper.name);
   assert.deepEqual(plain(p.context.window.FARM.residents), defaults.farm.residents);
   assert.deepEqual(plain(p.context.window.HOME_CONTENT), { ...defaults.home, news: defaults.home.news.map(item => ({ ...item, href: '' })) });
+});
+
+test('all ten farm defaults match the static roster and retain the five new species through CMS parsing', async () => {
+  const staticContext = { window: {} };
+  vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname, '../data/farm.js'), 'utf8'), staticContext);
+  assert.deepEqual(plain(staticContext.window.FARM), defaults.farm);
+  assert.equal(defaults.farm.residents.length, 10, 'shared capacity reserves ten baseline residents');
+  const content = { farm: { ...defaults.farm, residents: [...defaults.farm.residents, { species: 'dragon', name: 'Unknown' }] } };
+  const p = page({ fetch: async () => response(content) }); await p.api.started;
+  assert.deepEqual(plain(p.context.window.FARM.residents), defaults.farm.residents, 'known residents survive and unknown species are filtered');
+  for (const species of newSpecies) {
+    const resident = p.context.window.FARM.residents.find(value => value.species === species);
+    assert.deepEqual(plain(resident), defaults.farm.residents.find(value => value.species === species), species);
+  }
 });
 
 test('each public HTML page uses data defaults before the cloud gate and retains runtime ordering', () => {

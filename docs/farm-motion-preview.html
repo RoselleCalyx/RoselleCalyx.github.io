@@ -22,7 +22,7 @@
 </style>
 <main>
   <h1>Farm Motion Preview</h1>
-  <p>Compare the walks, eight-frame jumps and resting poses of eight animals. Rabbits hop as they move.<br>Pause and step through each frame to inspect takeoff, flight and landing.</p>
+  <p>Compare the walks, swimming and resting poses of thirteen animals. Rabbits hop as they move, and crocodiles swim.<br>Pause and step through each frame. The original eight animals also have jumping poses.</p>
   <div class="controls">
     <button id="pause">Pause</button><button id="step">Next frame</button><button id="flip">Turn around</button>
     <label>Speed <input id="speed" type="range" min="0.3" max="1.8" step="0.1" value="1"><output id="speedValue">1×</output></label>
@@ -31,28 +31,30 @@
   <div class="motion-grid" id="grid"></div>
   <p><a href="farm.html">Back to the farm</a> · <a href="docs/farm-motion-contact-sheet.webp">View all poses</a></p>
 </main>
-<script src="js/farm-motion.js"></script><script src="js/farm-art.js?v=20261010-english-ui"></script>
+<script src="js/farm-motion.js?v=20261010-redpanda2"></script><script src="js/farm-art.js?v=20261010-redpanda2"></script>
 <script>
   const grid = document.getElementById('grid'), pose = document.getElementById('pose');
   const pause = document.getElementById('pause'), step = document.getElementById('step'), flip = document.getElementById('flip');
   const speed = document.getElementById('speed'), speedValue = document.getElementById('speedValue');
   const entries = Object.entries(FarmArt.SPECIES).map(([sp, s]) => {
     const article = document.createElement('article');
-    article.innerHTML = `<div class="stage"><div class="actor walk-ready jump-ready" data-species="${sp}" data-pose="walk"><div class="flip"><div class="bob">${FarmArt.ART[sp]()}${FarmArt.walkSprite(sp)}${FarmArt.jumpSprite(sp)}${FarmArt.poseSprite(sp)}</div></div></div></div><div class="caption"><span>${s.label}</span><small class="frame-readout"></small></div>`;
+    article.innerHTML = `<div class="stage"><div class="actor walk-ready ${FarmArt.JUMPS.has(sp) ? 'jump-ready' : ''}" data-species="${sp}" data-pose="walk"><div class="flip"><div class="bob">${FarmArt.ART[sp]()}${FarmArt.walkSprite(sp)}${FarmArt.jumpSprite(sp)}${FarmArt.poseSprite(sp)}</div></div></div></div><div class="caption"><span>${s.label}</span><small class="frame-readout"></small></div>`;
     grid.append(article);
     return { sp, s, actor:article.querySelector('.actor'), sprite:article.querySelector('.walk-sprite'), readout:article.querySelector('.frame-readout'), phase:0 };
   });
   let running = !matchMedia('(prefers-reduced-motion:reduce)').matches, last = performance.now();
   function paint(e) {
-    const p = pose.value, actual = p === 'walk' || p === 'jump' || p === 'sit' || FarmArt.POSES[e.sp][p] ? p : 'sit';
+    const p = pose.value, actual = p === 'jump' ? FarmArt.JUMPS.has(e.sp) ? 'jump' : 'sit' : p === 'walk' || p === 'sit' || FarmArt.POSES[e.sp][p] ? p : 'sit';
     e.actor.dataset.pose = actual;
     e.actor.classList.toggle('walking', actual === 'walk' && e.s.gait !== 'hop');
     e.actor.classList.toggle('hopping', actual === 'walk' && e.s.gait === 'hop');
     e.actor.classList.toggle('sleeping', actual === 'sleep');
     e.actor.classList.toggle('leaping',actual==='jump');
     const leap=FarmMotion.leap(e.phase);
-    e.actor.querySelector('.jump-sprite').style.backgroundPositionX=leap.frame*100/7+'%';
-    e.actor.querySelector('.jump-sprite-next').style.backgroundPositionX=leap.next*100/7+'%';
+    if (FarmArt.JUMPS.has(e.sp)) {
+      e.actor.querySelector('.jump-sprite').style.backgroundPositionX=leap.frame*100/7+'%';
+      e.actor.querySelector('.jump-sprite-next').style.backgroundPositionX=leap.next*100/7+'%';
+    }
     e.actor.style.setProperty('--jump-blend',leap.blend.toFixed(3));
     const bounding=actual==='jump'||(actual==='walk'&&e.s.gait==='hop');
     const air=Math.min(1,Math.max(0,(e.phase-.26)/.56));

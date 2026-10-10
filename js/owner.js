@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   if (!api || !$("ownerContentForm")) return;
   const clone = value => JSON.parse(JSON.stringify(value));
-  const species = ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin"];
+  const species = ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"];
   const sections = ["site", "home", "papers", "gallery", "bottles", "farm", "voyager"];
   let defaults, draft, revision = 0, dirty = false, busy = false, generation = 0, tab = "profile";
   let updatedAt = null;
