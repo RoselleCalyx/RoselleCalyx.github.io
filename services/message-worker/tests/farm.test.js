@@ -266,7 +266,7 @@ test('only approved animal additions appear publicly, without pending or visitor
   const review = await f.call('/api/host/farm/adoptions/' + submitted.id, { method: 'PATCH', token: host, body: { status: 'approved' } });
   assert.equal(review.status, 200); assert.equal((await review.json()).status, 'approved');
   const approved = (await f.snapshot()).residents;
-  assert.deepEqual(approved, [{ id: submitted.id, species: 'rabbit', name: 'Luna 🌙', adoptedBy: 'Enceladus-000002', note: 'A private pending note.', since: new Date().toISOString().slice(0, 7) }]);
+  assert.deepEqual(approved, [{ id: submitted.id, species: 'rabbit', name: 'Luna 🌙', adoptedBy: 'Enceladus', note: 'A private pending note.', since: new Date().toISOString().slice(0, 7) }]);
   const stored = JSON.stringify(f.env.DB.rows('farm_adoptions'));
   assert.equal(stored.includes(visitorToken), false);
   assert.equal(JSON.stringify(approved).includes(f.env.DB.rows('farm_adoptions')[0].visitor_hash), false);

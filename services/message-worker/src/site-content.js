@@ -1,4 +1,4 @@
-import { visitorAlias, legacyIdentity, redactNames } from './visitor-privacy.js';
+import { visitorAlias, legacyIdentity, redactNames, HOST_ALIAS, isLegacyHost } from './visitor-privacy.js';
 import { HTTPError } from "./errors.js";
 
 const invalid = (path) => { throw new HTTPError(400, "validation", "Please check the public content field: " + path + "."); };
@@ -112,13 +112,13 @@ export async function readSiteContent(env, { publicOnly = false } = {}) {
     for (const resident of content.farm?.residents || []) {
       if (!resident.adoptedBy) continue;
       const name = resident.adoptedBy;
-      resident.adoptedBy = await visitorAlias(env, await legacyIdentity(name, env));
+      resident.adoptedBy = isLegacyHost(name) ? HOST_ALIAS : await visitorAlias(env, await legacyIdentity(name, env));
       identities.push({name,alias:resident.adoptedBy});
     }
     for (const bottle of content.bottles || []) {
       if (!bottle.from) continue;
       const name = bottle.from;
-      bottle.from = await visitorAlias(env, await legacyIdentity(name, env));
+      bottle.from = isLegacyHost(name) ? HOST_ALIAS : await visitorAlias(env, await legacyIdentity(name, env));
       identities.push({name,alias:bottle.from});
     }
     for (const resident of content.farm?.residents || []) resident.note = redactNames(resident.note,identities);

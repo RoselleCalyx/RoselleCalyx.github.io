@@ -1,9 +1,23 @@
 const MOONS = ['Titan', 'Enceladus', 'Dione', 'Rhea', 'Iapetus', 'Mimas', 'Tethys', 'Hyperion', 'Phoebe', 'Janus'];
+const WORDS = ['Amber', 'Silver', 'Quiet', 'Golden', 'Misty', 'Gentle', 'Bright', 'Velvet', 'Hidden', 'Distant', 'Snowy', 'Dreamy', 'Soft', 'Wild', 'Little', 'Starry'];
+export const HOST_ALIAS = 'Titan · Host';
+// Trusted, Host-managed legacy records use the site owner's public badge.
+export function isLegacyHost(name) { return String(name).trim().toLowerCase() === 'chen'; }
+export function aliasForId(id) {
+  if (!Number.isSafeInteger(id) || id < 1) throw Error('visitor identity unavailable');
+  let group = Math.floor((id - 1) / MOONS.length);
+  const words = [MOONS[(id - 1) % MOONS.length]];
+  while (group > 0) {
+    words.unshift(WORDS[(group - 1) % WORDS.length]);
+    group = Math.floor((group - 1) / WORDS.length);
+  }
+  return words.join(' ');
+}
 export async function visitorAlias(env, key) {
   await env.DB.prepare('INSERT INTO visitor_aliases (identity_key) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM visitor_aliases WHERE identity_key = ?) ON CONFLICT(identity_key) DO NOTHING').bind(key,key).run();
   const row = await env.DB.prepare('SELECT id FROM visitor_aliases WHERE identity_key = ?').bind(key).first();
   if (!row || !Number.isSafeInteger(row.id)) throw Error('visitor identity unavailable');
-  return MOONS[(row.id - 1) % MOONS.length] + '-' + String(row.id).padStart(6, '0');
+  return aliasForId(row.id);
 }
 export async function legacyIdentity(name, env) {
   if (env) {

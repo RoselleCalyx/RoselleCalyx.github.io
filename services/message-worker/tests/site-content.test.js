@@ -114,7 +114,7 @@ test("unpublished papers, albums and curated notes remain editable and are absen
   content.papers[1].published = true; content.gallery[0].published = true; content.bottles[0].published = true;
   assert.equal((await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 1, content } })).status, 200);
   const published = (await (await f.call("/api/site-content")).json()).content;
-  assert.match(published.bottles[0].from, /^[A-Za-z]+-\d+$/);
+  assert.match(published.bottles[0].from, /^[A-Za-z ]+$/);
   assert.deepEqual({...published,bottles:published.bottles.map((row,i)=>({...row,from:content.bottles[i].from}))}, content, "content stays intact apart from private sender names");
 });
 
@@ -287,4 +287,17 @@ test("request status and owner notes stay private and cannot alter submitted con
   for (const privateValue of ["private@example.com", "A private request.", "A private owner note."]) assert.equal(publicJSON.includes(privateValue), false);
   assert.equal((await f.call("/api/messages")).status, 404);
   assert.equal((await f.call("/api/messages/" + submitted.id)).status, 404);
+});
+
+test('trusted owner records show a Host badge while visitors keep word-only aliases', async () => {
+  const f = fixture(), token = await f.login();
+  const content = { farm: { residents: [
+    { species: 'rabbit', name: 'Mochi', adoptedBy: 'Chen' },
+    { species: 'fox', name: 'Ember', adoptedBy: 'Private Visitor' }
+  ] }, bottles: [] };
+  assert.equal((await f.call('/api/host/site-content', {method:'PUT',token,body:{revision:0,content}})).status,200);
+  const published = (await (await f.call('/api/site-content')).json()).content;
+  assert.equal(published.farm.residents[0].adoptedBy,'Titan · Host');
+  assert.match(published.farm.residents[1].adoptedBy,/^[A-Za-z ]+$/);
+  assert.deepEqual((await (await f.call('/api/host/site-content',{token})).json()).content,content);
 });
