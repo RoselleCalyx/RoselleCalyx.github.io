@@ -101,7 +101,7 @@ async function main() {
           state.media.set(id, uploaded);
           return respond({ ok:true, id, url:uploaded.url, width:decoded.width, height:decoded.height, mime, bytes:bytes.length, deduplicated:false });
         }
-        if (pathname === '/api/host/messages' || pathname === '/api/host/farm/adoptions') return respond([]);
+        if (pathname === '/api/host/messages' || pathname === '/api/host/farm/adoptions' || pathname === '/api/host/farm/residents') return respond([]);
         if (pathname === '/api/farm') return respond({ ok:true, maxTrees:8, trees:[], residents:[] });
         if (pathname === '/api/host/logout') return respond({ ok:true });
         throw Error('Unexpected mocked API request: ' + method + ' ' + pathname);
