@@ -362,6 +362,7 @@
   function paintBackground() {
     const g = bg.getContext("2d"), pal = PAL[season.name], r = rng(1234), snow = season.name === "winter";
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if(painting?.pending(season.name)){g.clearRect(0,0,W,H);stage.dataset.texture="loading";return;}
     if(painting?.draw(g,W,H,season.name)) {
       paintRays();stage.dataset.texture='illustrated';return;
     }

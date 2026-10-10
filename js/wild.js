@@ -149,13 +149,17 @@
   }
 
   /* ---------- the journal ---------- */
+  function catchName(value) {
+    const [english, ...chinese] = String(value).split(' · ');
+    return esc(english) + (chinese.length ? '<span class="zh">' + esc(chinese.join(' · ')) + '</span>' : '');
+  }
   function journal({ title, sub, items, seen, counts, best, iconOf, note }) {
     const found = items.filter((it) => seen[it.id]).length;
     const cards = items.map((it) => {
       const s = seen[it.id];
       return `<li class="${s ? "found" : "unknown"}${it.poison ? " poison" : ""}">
         <img src="${iconOf(it.id)}" alt="" width="72" height="72">
-        <b>${s ? esc(it.name) : "?"}</b>
+        <b>${s ? catchName(it.name) : "?"}</b>
         <small>${s ? esc(it.text) : esc(it.hint || "Not found yet.")}</small>
         <span class="meta">${s ? `${it.poison ? "seen" : "×" + (counts[it.id] || 0)}${best && best[it.id] ? " · best " + best[it.id] + " cm" : ""}` : ""}${"★".repeat(it.rarity || 1)}</span>
       </li>`;
@@ -163,5 +167,5 @@
     modal(`<h2>${esc(title)}</h2><p class="muted">${esc(sub)} · ${found} / ${items.length} found</p>${note ? `<p class="journal-note">${note}</p>` : ""}<ul class="journal">${cards}</ul>`, { className: "wide" });
   }
 
-  window.Wild = { keeper, keeperLine, season, seasonChip, withSeason, arrive, back, rng, lerp, clamp, smooth, mix, glow, moon, range, icon, shareIcons, float, fly, journal, store, reduce, lowPower, cap, ICONS };
+  window.Wild = { keeper, keeperLine, season, seasonChip, withSeason, arrive, back, rng, lerp, clamp, smooth, mix, glow, moon, range, icon, shareIcons, float, fly, journal, catchName, store, reduce, lowPower, cap, ICONS };
 })();

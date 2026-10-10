@@ -4,7 +4,6 @@
   const sheets={};
   const species=['snowcat','rabbit','panda','fox','shiba','hedgehog','duckling','penguin','redpanda','raccoon','wolf','crocodile','fennec'];
   const newSpecies=new Set(['redpanda','raccoon','wolf','crocodile','fennec']);
-  const farm=document.body.dataset.page==='farm';
   const requested=new Set(),queue=new Set(),loading=new Map(),failed=new Set();
   let idleScheduled=false,backgroundRunning=false;
   const tailScratch=document.createElement('canvas');tailScratch.width=tailScratch.height=320;
@@ -21,7 +20,7 @@
     // A missing sheet keeps the existing body response, without retrying every frame.
     if(failed.has(sp))return Promise.resolve(null);
     const img=new Image();img.decoding='async';
-    img.fetchPriority=urgent?'high':farm?'low':'auto';
+    img.fetchPriority=urgent?'high':'low';
     let resolve;
     const promise=new Promise(done=>{resolve=done;});
     loading.set(sp,{img,promise});
@@ -35,7 +34,7 @@
     return promise;
   }
   function schedule(){
-    if(!farm||idleScheduled||backgroundRunning||!queue.size)return;
+    if(idleScheduled||backgroundRunning||!queue.size)return;
     idleScheduled=true;
     const run=()=>{
       idleScheduled=false;
@@ -50,7 +49,7 @@
     const idle=()=>('requestIdleCallback'in window?requestIdleCallback(run,{timeout:1800}):setTimeout(run,250));
     document.readyState==='complete'?idle():addEventListener('load',idle,{once:true});
   }
-  // Register only species present on the farm. This does not block its first paint.
+  // Register only species present in the current scene. This does not block its first paint.
   function prepare(value){
     for(const sp of typeof value==='string'?[value]:value||[]){
       if(!species.includes(sp))continue;
@@ -64,8 +63,7 @@
     queue.delete(sp);
     return loadSheet(sp,true);
   }
-  // Preserve the existing loading behavior and readiness contract for guardians.
-  if(!farm)species.forEach(sp=>loadSheet(sp));
+  // Each scene registers its actual animals, so distant species never block startup.
   function sequenceFor(sp,kind){
     if(newSpecies.has(sp)){
       // New sheets keep each action within its own four-frame group.
@@ -146,5 +144,5 @@
     art.parts.filter(b=>b.name!=='tail').forEach(part);
     r.painted=true;a.el.classList.add('reaction-ready');
   }
-  window.AnimalReactions={draw,prepare,preload,get ready(){return [...(farm?requested:species)].every(sp=>!!sheets[sp]);}};
+  window.AnimalReactions={draw,prepare,preload,get ready(){return [...requested].every(sp=>!!sheets[sp]);}};
 })();

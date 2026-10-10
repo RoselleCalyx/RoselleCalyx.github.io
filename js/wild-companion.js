@@ -53,6 +53,7 @@
     const art=document.createElement('canvas');art.className='reaction-art';art.width=art.height=320;
     el.append(sprite,art);
     const actor={def:{species,name},el,reaction:null};
+    window.AnimalReactions?.prepare(species);
     const jump=new Image();let jumpReady=false;
     if(FarmArt.JUMPS.has(species)) {
       jump.decoding='async';

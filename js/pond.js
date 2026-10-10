@@ -349,6 +349,7 @@
     waterLastDraw = -Infinity;
     const g = bg.getContext("2d");
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if(painting?.pending(season.name)) {g.clearRect(0,0,W,H);stage.dataset.texture='loading';return;}
     paintSky(g);
     const pal = PAL[season.name];
     const wg = g.createLinearGradient(0, H * HZ, 0, H);
@@ -564,9 +565,9 @@
       rod.slack = rod.tension < 0.08 ? rod.slack + dt : 0;
       if (rod.tension >= 1) { scare("Snap! The line broke."); return; }
       if (rod.slack > 2.6 || rod.progress < 0) { scare("The hook slipped — it got away."); return; }
-      const [ex, ey] = [W * 0.74, H * 0.9];
-      f.x = lerp(rod.hookAt.x, ex, rod.progress) + Math.sin(time * 2.3) * 40 * k * (1 - rod.progress);
-      f.y = lerp(rod.hookAt.y, ey, rod.progress) + Math.sin(time * 3.1) * 8 * k;
+      const [ex, ey] = frozen() ? P(HOLE.u, HOLE.v) : [W * 0.74, H * 0.9];
+      f.x = lerp(rod.hookAt.x, ex, rod.progress) + Math.sin(time * 2.3) * (frozen() ? 12 : 40) * k * (1 - rod.progress);
+      f.y = lerp(rod.hookAt.y, ey, rod.progress) + Math.sin(time * 3.1) * (frozen() ? 4 : 8) * k;
       f.h = Math.atan2(Math.cos(time * 2.3), 1) + Math.PI;
       if (rod.progress >= 1) land();
       renderReel();
@@ -589,13 +590,25 @@
   }
 
   /* ---------- the open-bottom fishing cover (saved tool id stays "net") ---------- */
-  const COVER_FLY = 1.1, COVER_PULL = 1.9;
+  const COVER_FLY = .75, COVER_PULL = 1.9;
   const coverRestPose = () => ({x:W*.875,y:H*.975,w:36*k});
   function throwNet(x, y) {
     if (net || frozen()) return;
     const s = scaleAt(y);
     net = { x, y, r: 36 * k * s, t0: time, phase: "fly", caught: [] };
+    // Reserve fish under the descending cover, with a forgiving rim hit area.
+    // Their escape speed makes aiming harder, but cannot undo a successful throw.
+    catchUnderCover();
     hint.textContent = "Pressing the open bamboo cover into the shallows…";
+  }
+  function catchUnderCover() {
+    if (!net) return;
+    for (const fish of shadows) {
+      if (!['wander','flee'].includes(fish.mode) || BY[fish.id].kind !== 'fish') continue;
+      const rx = net.r * 1.4, ry = net.r * .55;
+      if (((fish.x - net.x) / rx) ** 2 + ((fish.y - net.y) / ry) ** 2 > 1) continue;
+      fish.mode = 'trapped'; net.caught.push(fish);
+    }
   }
   function updateNet() {
     if (!net) return;
@@ -603,10 +616,7 @@
     if (net.phase === "fly" && t > COVER_FLY) {
       net.phase = "sink"; net.t1 = time;
       splash(net.x, net.y, 18, 0.9); ripple(net.x, net.y, net.r / (40 * k), 1);
-      shadows.forEach((s) => { if (((s.x - net.x) / net.r) ** 2 + ((s.y - net.y) / (net.r * 0.34)) ** 2 < 1) {
-        if (!NET[season.name].some(([id]) => id === s.id)) { s.mode = "flee"; s.until = time + 2; return; }
-        s.mode = "trapped"; net.caught.push(s);
-      } });
+      catchUnderCover();
     }
     if (net.phase === "sink" && time - net.t1 > .55 && !net.gathering) {
       net.gathering = true;
@@ -927,11 +937,14 @@
       const p = clamp((time - rod.t0 - 0.3) / 0.45, 0, 1);
       if (p > 0) { end = { x: lerp(tipP.x, rod.target.x, p), y: lerp(tipP.y, rod.target.y, p) - Math.sin(p * Math.PI) * Math.min(90 * k, Math.abs(tipP.y - rod.target.y) * 0.5 + 30 * k) }; }
     } else if (rod.bob && rod.state !== "reeling") end = { x: rod.bob.x, y: rod.bob.y + rod.bob.dip * 3 * k };
-    else if (rod.state === "reeling") end = { x: rod.fish.x, y: rod.fish.y };
+    else if (rod.state === "reeling") { const [hx,hy] = P(HOLE.u, HOLE.v); end = frozen() ? {x:hx,y:hy} : { x: rod.fish.x, y: rod.fish.y }; }
     if (end) {
       ctx.strokeStyle = "rgba(235,235,225,.55)"; ctx.lineWidth = 0.8;
       const sag = rod.state === "reeling" ? (1 - rod.tension) * 40 * k : 30 * k;
-      ctx.beginPath(); ctx.moveTo(tipP.x, tipP.y); ctx.quadraticCurveTo((tipP.x + end.x) / 2, Math.max(tipP.y, end.y) + sag, end.x, end.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(tipP.x, tipP.y);
+      if (frozen() && rod.state !== 'casting') ctx.lineTo(end.x, end.y);
+      else ctx.quadraticCurveTo((tipP.x + end.x) / 2, Math.max(tipP.y, end.y) + sag, end.x, end.y);
+      ctx.stroke();
       if (rod.state !== "reeling") {
         const fx = end.x, fy = end.y, s = 7 * k * scaleAt(fy) + 2;
         if (rod.state !== "casting") { ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(fx, fy + 1, s * 1.1, s * 0.3, 0, 0, TAU); ctx.fill(); }
@@ -942,8 +955,8 @@
         ctx.restore();
         if (rod.state === "bite") { ctx.globalCompositeOperation = "lighter"; glow(ctx, fx, fy, 30 * k, "255,220,150", 0.35 + 0.25 * Math.sin(time * 20)); ctx.globalCompositeOperation = "source-over"; }
       } else {
-        const f = rod.fish, sc = scaleAt(f.y), len = Math.max(20, (BY[f.id].len[1] || 30)) * k * sc * 0.9;
-        ctx.save(); ctx.globalAlpha = 0.55; ctx.translate(f.x, f.y); ctx.scale(1, 0.5); ctx.rotate(f.h); ctx.fillStyle = "#04080e"; ctx.beginPath(); ctx.ellipse(0, 0, len / 2, len * 0.15, 0, 0, TAU); ctx.fill(); ctx.restore();
+        const f = rod.fish, sc = scaleAt(f.y), len = (f.specimen?.cm || 30) * k * sc * 1.1;
+        if(frozen()){ctx.save(); const [hx,hy]=P(HOLE.u,HOLE.v);holePath(ctx,hx,hy,53*k,16*k);ctx.clip(); ctx.globalAlpha = 0.55; ctx.translate(f.x, f.y); ctx.scale(1, 0.5); ctx.rotate(f.h); ctx.fillStyle = "#04080e"; ctx.beginPath(); ctx.ellipse(0, 0, len / 2, len * 0.15, 0, 0, TAU); ctx.fill(); ctx.restore();}
         if (Math.random() < 0.2) ripple(f.x, f.y, 0.5, 0.6);
       }
     }
@@ -1026,14 +1039,14 @@
     cardEl.innerHTML = single ? `
       <div class="cc-art"><img src="${iconOf(c0.id)}" alt="" width="160" height="160"></div>
       <p class="cc-kicker">${firsts.length ? "New in your log!" : how === "rod" ? "On the line" : how === "net" ? "Under the bamboo cover" : "In the trap"}</p>
-      <h3>${esc(info.name)}</h3>
+      <h3>${Wd.catchName(info.name)}</h3>
       <p class="cc-stats">${stats(c0)}${stats(c0) ? " · " : ""}<span class="stars">${"★".repeat(info.rarity)}</span></p>
       <p class="cc-text">${esc(info.text)}</p>
       <div class="cc-actions">${c0.id === "bottle" ? `<a class="btn sm primary" href="message.html">Read the bottles →</a>` : ""}<button class="btn sm primary" type="button" data-keep>${info.kind === "junk" ? "Keep it" : "Into the creel"}</button>${info.kind === "fish" || info.kind === "crust" ? `<button class="btn sm" type="button" data-release>Let it go</button>` : ""}</div>`
       : `
       <p class="cc-kicker">${how === "net" ? "Caught with the bamboo cover" : "The trap comes up"}${firsts.length ? " · something new!" : ""}</p>
       <h3>${list.length} ${how === "net" ? "caught in the shallows" : "in the trap"}</h3>
-      <ul class="cc-list">${list.map((c) => `<li class="${firsts.includes(c.id) ? "new" : ""}"><img src="${iconOf(c.id)}" alt="" width="56" height="56"><b>${esc(BY[c.id].name)}</b><small>${stats(c)}</small></li>`).join("")}</ul>
+      <ul class="cc-list">${list.map((c) => `<li class="${firsts.includes(c.id) ? "new" : ""}"><img src="${iconOf(c.id)}" alt="" width="56" height="56"><b>${Wd.catchName(BY[c.id].name)}</b><small>${stats(c)}</small></li>`).join("")}</ul>
       <div class="cc-actions"><button class="btn sm primary" type="button" data-keep>Keep them all</button><button class="btn sm" type="button" data-release>Let them go</button></div>`;
     cardEl.hidden = false;
     cardEl.classList.remove("show"); void cardEl.offsetWidth; cardEl.classList.add("show");
@@ -1182,7 +1195,7 @@
     <p>浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
     <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。越稀有越少出现、游得越快，提竿窗口也越短。它挣扎很强，保持张力在安全区；同种鱼里，个体越大越难收线。</p>
     <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。锦鲤带红白斑块；鳜鱼身宽、有斑纹和棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
-    <p>黄金锦鲤和其他大型鱼使用鱼竿；竹罩捕浅水小鱼。黄鳝用岸边地笼捕获，春夏秋都有，夏季较多；放下后约一分钟回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
+    <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝用岸边地笼捕获，春夏秋都有，夏季较多；放下后约一分钟回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
 
   function restoreSavedState() {
     const latest = Wd.store.get("wild-pond", { creel: {}, seen: {}, best: {}, traps: [null, null, null] }) || {};
