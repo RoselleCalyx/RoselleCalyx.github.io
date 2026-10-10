@@ -36,7 +36,6 @@
     let gl=null,program=null,texture=null,uniforms={},gpu=false;
     let width=1,height=1,stop=null,art=null,request=0,paused=false,time=0,fade=1;
     let frame=0,raf=0,last=0,painted=0,pointer=[0,0],aim=[0,0];
-    let craftY=0;
     const cache=new Map();
     const moving=()=>!paused&&!reduced.matches&&!document.hidden;
 
@@ -87,23 +86,9 @@
     function wake(){if(!raf&&!document.hidden)raf=requestAnimationFrame(tick);}
     function resize(){
       const box=host.getBoundingClientRect();width=box.width;height=box.height;
-      positionCraft();
       const dpr=Math.min(window.devicePixelRatio||1,1.5,2100/Math.max(width,height));
       for(const c of [canvas,overlay]){c.width=Math.round(width*dpr);c.height=Math.round(height*dpr);}
       ctx.setTransform(dpr,0,0,dpr,0,0);wake();
-    }
-    function positionCraft(){
-      craftY=height*.35;
-      if(width>=700)return;
-      const story=host.parentElement.querySelector('.v-story');
-      const controls=host.parentElement.querySelector('.v-context');
-      if(story&&controls&&!document.body.classList.contains('v-immersive')){
-        const origin=host.getBoundingClientRect().top;
-        const top=story.getBoundingClientRect().bottom-origin+32;
-        const bottom=controls.getBoundingClientRect().top-origin-32;
-        if(bottom>=top){craftY=(top+bottom)/2;return;}
-      }
-      craftY=height*.48;
     }
     function crop(){
       const ratio=art?art.naturalWidth/art.naturalHeight:16/9;
@@ -140,8 +125,8 @@
       if(stop.body!=='nebula'&&window.CassiniArt){
         let alpha=stop.farewell?clamp(1-time/16,0,1):1;
         const phone=width<700;
-        const x=width*.69+(phone?Math.max(60,width*.095):width*.095)*Math.sin(time*(phone?.14:.032));
-        const y=craftY-(phone?8:height*.025)*Math.sin(time*(phone?.11:.043));
+        const x=width*(.69+.095*Math.sin(time*(phone?.28:.032)));
+        const y=height*(.35-.025*Math.sin(time*.043));
         const size=clamp(width*.105,80,190)/340;
         ctx.globalAlpha=fade*alpha;
         CassiniArt.draw(ctx,x,y,size,-.18+.035*Math.sin(time*.06));
@@ -183,7 +168,7 @@
       try{
         const image=await load(stop.scene.art);
         if(token!==request)return;
-        art=image;fade=moving()?0:1;positionCraft();upload();
+        art=image;fade=moving()?0:1;upload();
         host.dataset.loading='false';overlay.dataset.scene=stop.id;canvas.dataset.art=stop.scene.art;
         status.hidden=true;wake();
         const next=window.VOYAGER_STOPS[window.VOYAGER_STOPS.indexOf(stop)+1];

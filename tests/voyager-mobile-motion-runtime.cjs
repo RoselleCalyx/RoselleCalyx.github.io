@@ -37,8 +37,11 @@ const base = process.env.VOYAGER_PREVIEW_URL || 'http://127.0.0.1:4174';
         assert.ok(last.x > first.x, 'Cassini moves independently of mouse or touch input');
         if (width < 700) {
           assert.ok(last.x - first.x > 15, 'phone motion is clearly visible over a short observation');
-          const bounds = await page.evaluate(() => ({ top: document.querySelector('.v-story').getBoundingClientRect().bottom, bottom: document.querySelector('.v-context').getBoundingClientRect().top }));
-          assert.ok(last.y > bounds.top + 15 && last.y < bounds.bottom - 15, 'phone flight stays in the open area below the story and above controls');
+          const scene = await page.locator('#voyagerScene').boundingBox();
+          for (const pose of [first, last]) {
+            assert.ok(pose.x >= scene.width * .595 && pose.x <= scene.width * .785, 'flight retains its original horizontal range');
+            assert.ok(pose.y >= scene.height * .325 && pose.y <= scene.height * .375, 'flight retains the original scene height instead of following text or controls');
+          }
         }
         await page.locator('#vMotion').click(); await page.waitForTimeout(150);
         const paused = await page.evaluate(() => __craftMotion);
