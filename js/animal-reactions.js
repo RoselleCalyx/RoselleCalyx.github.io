@@ -4,13 +4,68 @@
   const sheets={};
   const species=['snowcat','rabbit','panda','fox','shiba','hedgehog','duckling','penguin','redpanda','raccoon','wolf','crocodile','fennec'];
   const newSpecies=new Set(['redpanda','raccoon','wolf','crocodile','fennec']);
+  const farm=document.body.dataset.page==='farm';
+  const requested=new Set(),queue=new Set(),loading=new Map(),failed=new Set();
+  let idleScheduled=false,backgroundRunning=false;
   const tailScratch=document.createElement('canvas');tailScratch.width=tailScratch.height=320;
   const wagMask=new Path2D('M102 53 C55 42 12 78 16 120 C18 151 34 168 50 166 L69 142 L98 114 C109 91 117 60 102 53 Z');
-  for(const sp of species){
+  function loadSheet(sp,urgent=false){
+    if(!species.includes(sp))return Promise.resolve(null);
+    requested.add(sp);
+    if(sheets[sp])return Promise.resolve(sheets[sp]);
+    if(loading.has(sp)){
+      const pending=loading.get(sp);
+      if(urgent)pending.img.fetchPriority='high';
+      return pending.promise;
+    }
+    // A missing sheet keeps the existing body response, without retrying every frame.
+    if(failed.has(sp))return Promise.resolve(null);
     const img=new Image();img.decoding='async';
-    img.onload=async()=>{try{await img.decode();}catch{}if(img.complete&&img.naturalWidth===384*16)sheets[sp]=img;};
+    img.fetchPriority=urgent?'high':farm?'low':'auto';
+    let resolve;
+    const promise=new Promise(done=>{resolve=done;});
+    loading.set(sp,{img,promise});
+    const finish=valid=>{
+      if(valid)sheets[sp]=img;else failed.add(sp);
+      loading.delete(sp);resolve(valid?img:null);
+    };
+    img.onload=async()=>{try{await img.decode();}catch{}finish(img.complete&&img.naturalWidth===384*16);};
+    img.onerror=()=>finish(false);
     img.src=`assets/farm/affection/${sp}-v4.webp`;
+    return promise;
   }
+  function schedule(){
+    if(!farm||idleScheduled||backgroundRunning||!queue.size)return;
+    idleScheduled=true;
+    const run=()=>{
+      idleScheduled=false;
+      const sp=queue.values().next().value;
+      if(!sp)return;
+      queue.delete(sp);
+      if(sheets[sp]||loading.has(sp)||failed.has(sp)){schedule();return;}
+      backgroundRunning=true;
+      // Keep downloads and decodes serial: one atlas, then another idle turn.
+      loadSheet(sp).finally(()=>{backgroundRunning=false;schedule();});
+    };
+    const idle=()=>('requestIdleCallback'in window?requestIdleCallback(run,{timeout:1800}):setTimeout(run,250));
+    document.readyState==='complete'?idle():addEventListener('load',idle,{once:true});
+  }
+  // Register only species present on the farm. This does not block its first paint.
+  function prepare(value){
+    for(const sp of typeof value==='string'?[value]:value||[]){
+      if(!species.includes(sp))continue;
+      requested.add(sp);
+      if(!sheets[sp]&&!loading.has(sp)&&!failed.has(sp))queue.add(sp);
+    }
+    schedule();
+  }
+  // Opening an animal or starting an action bypasses the background idle queue.
+  function preload(sp){
+    queue.delete(sp);
+    return loadSheet(sp,true);
+  }
+  // Preserve the existing loading behavior and readiness contract for guardians.
+  if(!farm)species.forEach(sp=>loadSheet(sp));
   function sequenceFor(sp,kind){
     if(newSpecies.has(sp)){
       // New sheets keep each action within its own four-frame group.
@@ -50,6 +105,7 @@
       a.el.classList.remove('reaction-ready');return;
     }
     const sheet=sheets[a.def.species];
+    if(!sheet)preload(a.def.species);
     if(sheet){
       const p=Math.max(0,Math.min(1,(now-r.start)/r.duration));
       // Feeding, greeting and affection have actual articulated silhouettes.
@@ -90,5 +146,5 @@
     art.parts.filter(b=>b.name!=='tail').forEach(part);
     r.painted=true;a.el.classList.add('reaction-ready');
   }
-  window.AnimalReactions={draw,get ready(){return Object.keys(sheets).length===species.length;}};
+  window.AnimalReactions={draw,prepare,preload,get ready(){return [...(farm?requested:species)].every(sp=>!!sheets[sp]);}};
 })();

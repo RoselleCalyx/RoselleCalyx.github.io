@@ -13,6 +13,18 @@
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
   <link rel="stylesheet" href="css/farm-interactions.css?v=20261010-season-poses" />
+  <script>
+    (() => {
+      const seasons = ['spring', 'summer', 'autumn', 'winter'];
+      const forced = new URLSearchParams(location.search).get('season');
+      const season = seasons.includes(forced) ? forced : seasons[Math.floor(Date.now() / 480000) % 4];
+      const src = 'assets/farm/meadow-' + (season === 'summer' ? 'spring' : season) + '.webp';
+      window.FARM_PAINT_BOOT = { season, src };
+      const preload = document.createElement('link');
+      preload.rel = 'preload'; preload.as = 'image'; preload.href = src; preload.fetchPriority = 'high';
+      document.head.appendChild(preload);
+    })();
+  </script>
 </head>
 <body data-page="farm">
   <header id="site-header"></header>
@@ -40,6 +52,18 @@
         <div class="farm-world" id="world">
           <div class="actors" id="actors"></div>
         </div>
+        <script>
+          (() => {
+            const world = document.getElementById('world'), boot = window.FARM_PAINT_BOOT;
+            world.dataset.season = boot.season;
+            const scene = document.createElement('div'); scene.className = 'farm-landscapes';
+            const image = document.createElement('img');
+            image.className = 'farm-bg farm-landscape'; image.dataset.s = boot.season === 'spring' || boot.season === 'summer' ? 'spring summer' : boot.season;
+            image.src = boot.src; image.alt = ''; image.width = 1920; image.height = 1080;
+            image.draggable = false; image.fetchPriority = 'high';
+            scene.setAttribute('aria-hidden', 'true'); scene.appendChild(image); world.prepend(scene);
+          })();
+        </script>
       </div>
       <div class="farm-scene-bottom">
         <p class="farm-hint"><span aria-hidden="true">✧</span> Tap a friend to pet, feed, or send a little love.</p>
@@ -79,13 +103,13 @@
   <script type="text/plain" data-site-src="js/farm-cloud.js?v=20261010-new-animals"></script>
   <script type="text/plain" data-site-src="js/backend.js"></script>
   <script type="text/plain" data-site-src="js/farm-motion.js?v=20261010-crocodile-water"></script>
-  <script type="text/plain" data-site-src="js/farm-art.js?v=20261010-larger-wolf"></script>
+  <script type="text/plain" data-site-src="js/farm-art.js?v=20261010-fast-start"></script>
   <script type="text/plain" data-site-src="js/farm-pose-transitions.js?v=20261010-season-poses"></script>
   <script type="text/plain" data-site-src="js/orchard-sim.js?v=20261010-species-bark"></script>
   <script type="text/plain" data-site-src="js/farm-fx.js?v=20261009-feed"></script>
   <script type="text/plain" data-site-src="js/meadow-props.js?v=20261009-orchard-shapes9"></script>
-  <script type="text/plain" data-site-src="js/animal-reactions.js?v=20261010-affection13"></script>
-  <script type="text/plain" data-site-src="js/farm.js?v=20261010-affection13"></script>
-  <script src="js/site-content.js?v=20261010-owner-polish1"></script>
+  <script type="text/plain" data-site-src="js/animal-reactions.js?v=20261010-fast-start"></script>
+  <script type="text/plain" data-site-src="js/farm.js?v=20261010-fast-start"></script>
+  <script src="js/site-content.js?v=20261010-fast-start"></script>
 </body>
 </html>

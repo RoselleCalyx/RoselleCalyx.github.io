@@ -48,6 +48,7 @@
   /* ================= the painted world (1600 × 900) ================= */
 
   function background() {
+    const landscape = (names, file) => `<img class="farm-bg farm-landscape" data-s="${names}" ${names.split(' ').includes(season.name) ? 'src' : 'data-landscape-src'}="assets/farm/meadow-${file}.webp" alt="" width="1920" height="1080" draggable="false" decoding="async" fetchpriority="${names.split(' ').includes(season.name) ? 'high' : 'low'}">`;
     // A few foreground blades add local wind motion without moving the painting.
     const grass = Array.from({ length: 24 }, (_, i) => {
       const x = i < 18 ? 22 + i * 37 : 1440 + (i - 18) * 26;
@@ -55,9 +56,7 @@
       return `<g class="meadow-tuft" style="--lean:${i % 2 ? -1 : 1}"><path d="M${x} ${y} q-3 -${h * .7} -8 -${h} M${x} ${y} q1 -${h} 4 -${h + 4} M${x} ${y} q8 -${h * .6} 12 -${h * .8}"/></g>`;
     }).join('');
     return '<div class="farm-landscapes" aria-hidden="true">' +
-      '<img class="farm-bg farm-landscape" data-s="spring summer" src="assets/farm/meadow-spring.webp" alt="" width="1920" height="1080" draggable="false" fetchpriority="high">' +
-      '<img class="farm-bg farm-landscape" data-s="autumn" src="assets/farm/meadow-autumn.webp" alt="" width="1920" height="1080" draggable="false">' +
-      '<img class="farm-bg farm-landscape" data-s="winter" src="assets/farm/meadow-winter.webp" alt="" width="1920" height="1080" draggable="false">' +
+      landscape('spring summer', 'spring') + landscape('autumn', 'autumn') + landscape('winter', 'winter') +
       '<div class="pond-shimmer"><i></i><i></i></div>' +
       '<svg class="meadow-breeze" viewBox="0 0 1600 900">' + grass + '</svg>' +
       '<span class="scene-lantern lantern-cottage"></span><span class="scene-lantern lantern-pond"></span></div>';
@@ -190,29 +189,41 @@
 
   /* ---------- walk cycles: show them only once decoded, so a first step never flashes blank ---------- */
   const walkReady = new Set(),jumpReady=new Set();
-  function preloadWalks() {
-    const run = () => Object.keys(WALK).forEach((sp) => {
-      if (JUMPS.has(sp)) {
-        const jump=new Image();jump.decoding='async';jump.src=`assets/farm/jump/${sp}-v3.webp`;
-        jump.onload=async()=>{
-          if(jump.naturalWidth!==8*384||jump.naturalHeight!==384)return;
-          try{await jump.decode();jumpReady.add(sp);document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach(el=>el.classList.add('jump-ready'));}catch{}
-        };
-      }
-      const img = new Image();
-      img.decoding = "async";
-      img.src = walkSrc(sp);
-      new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; if (img.complete && img.naturalWidth) ok(); })
-        .then(async () => {
-          if (img.naturalWidth !== Motion.GAITS[sp].frames * 384 || img.naturalHeight !== 384) return;
-          if (img.decode) await img.decode();
-          walkReady.add(sp);
-          document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach((el) => el.classList.add("walk-ready"));
-        })
-        .catch(() => {});                          // keep the sitting sprite if a sheet fails to load
-    });
-    const idle = () => ("requestIdleCallback" in window ? requestIdleCallback(run, { timeout: 1500 }) : setTimeout(run, 300));
-    document.readyState === "complete" ? idle() : addEventListener("load", idle, { once: true });
+  const motionQueue = [], motionRequested = new Set();
+  let motionLoading = false, motionScheduled = false, motionStarted = false;
+  const idleWork = callback => 'requestIdleCallback' in window ? requestIdleCallback(callback, { timeout: 2000 }) : setTimeout(callback, 50);
+  function applyMotionArt(el, sp) {
+    for (const [kind, ready] of [['walk', walkReady], ['jump', jumpReady]]) {
+      if (!ready.has(sp)) continue;
+      el.querySelectorAll(`.${kind}-sprite[data-motion-src]`).forEach(sprite => {
+        sprite.style.backgroundImage = `url("${sprite.dataset.motionSrc}")`;
+        delete sprite.dataset.motionSrc;
+      });
+      el.classList.add(kind + '-ready');
+    }
+  }
+  function loadNextMotion() {
+    if (motionLoading || !motionQueue.length) return;
+    motionLoading = true;
+    const { sp, kind } = motionQueue.shift(), img = new Image();
+    img.decoding = 'async'; img.fetchPriority = 'low';
+    new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = kind === 'walk' ? walkSrc(sp) : `assets/farm/jump/${sp}-v3.webp`; })
+      .then(async () => {
+        const frames = kind === 'walk' ? Motion.GAITS[sp].frames : 8;
+        if (img.naturalWidth !== frames * 384 || img.naturalHeight !== 384) return;
+        if (img.decode) await img.decode();
+        (kind === 'walk' ? walkReady : jumpReady).add(sp);
+        document.querySelectorAll(`.actor[data-species="${sp}"]`).forEach(el => applyMotionArt(el, sp));
+      }).catch(() => {}) // Keep the sitting sprite if a sheet fails to load.
+      .finally(() => { motionLoading = false; idleWork(loadNextMotion); });
+  }
+  function preloadWalks(sp) {
+    if (!sp || motionRequested.has(sp)) return;
+    motionRequested.add(sp); motionQueue.push({ sp, kind: 'walk' });
+    if (JUMPS.has(sp)) motionQueue.push({ sp, kind: 'jump' });
+    if (motionScheduled) { if (motionStarted && !motionLoading) idleWork(loadNextMotion); return; }
+    motionScheduled = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => { motionStarted = true; idleWork(loadNextMotion); }));
   }
 
   /* ================= animals ================= */
@@ -240,6 +251,9 @@
       + `<span class="resident-label">${esc(def.name)}</span>`
       + (opts.pending ? `<span class="tag">waiting for approval</span>` : "");
     actorsEl.appendChild(el);
+    applyMotionArt(el, def.species);
+    preloadWalks(def.species);
+    window.AnimalReactions?.prepare(def.species);
     const a = { def, sp, el, sprite: el.querySelector('.walk-sprite'), nextSprite: el.querySelector('.walk-sprite-next'), lift: 0, x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", pose: winterRest || opts.keeper ? 'sleep' : 'sit', phase: 0, speed: 0, until: winterRest ? Infinity : performance.now() + 2500 + Math.random() * 5000, winterRest, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
     el.querySelectorAll('.pose-sprite').forEach(img => {
       const ready = async () => {
@@ -672,6 +686,7 @@
     </svg>`
   };
   function openAnimal(a, focus = false) {
+    window.AnimalReactions?.preload(a.def.species);
     if (winterResting(a)) toast(`${a.def.name} is spending winter on warm stones in the pond-side shelter.`, 3200);
     const d = a.def, hearts = store.get("farm-hearts", {}), key = d.species + ":" + d.name;
     const liked = !!store.get('farm-liked', {})[key];
@@ -970,6 +985,9 @@
     chip.innerHTML = `<span class="si">${ICONS[season.name]}</span><b>${cap(season.name)}</b>${forced ? "" : `<span class="muted"> · ${next} in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}</span>`}`;
   }
   function applySeason(announce) {
+    world.querySelectorAll(`.farm-landscape[data-s~="${season.name}"][data-landscape-src]`).forEach(image => {
+      image.src = image.dataset.landscapeSrc; delete image.dataset.landscapeSrc;
+    });
     world.dataset.season = season.name;
     if(window.MeadowProps)MeadowProps.mount(actorsEl,season.name);
     document.body.dataset.farmSeason = season.name;
@@ -1222,7 +1240,20 @@
 
   /* ================= start ================= */
   document.body.insertAdjacentHTML("afterbegin", defs());
-  world.insertAdjacentHTML("afterbegin", background());
+  const earlyLandscape = world.querySelector('.farm-landscapes');
+  if (earlyLandscape) {
+    const template = document.createElement('template'); template.innerHTML = background();
+    const completeLandscape = template.content.firstElementChild;
+    const firstImage = earlyLandscape.querySelector('.farm-landscape');
+    const matchingImage = completeLandscape.querySelector(`[data-s="${firstImage.dataset.s}"]`);
+    matchingImage.replaceWith(firstImage); earlyLandscape.replaceWith(completeLandscape);
+  } else world.insertAdjacentHTML("afterbegin", background());
+  // Future seasons have minutes to warm up; don't compete with the first view.
+  setTimeout(() => idleWork(() => {
+    world.querySelectorAll('.farm-landscape[data-landscape-src]').forEach(image => {
+      image.src = image.dataset.landscapeSrc; delete image.dataset.landscapeSrc;
+    });
+  }), 2000);
   world.appendChild(zoneTip);
   placeSigns();
   for (let i = 0; i < 40; i++) {
@@ -1238,7 +1269,6 @@
   }
   setupWeather();
   if (window.FarmFX) FarmFX.init(world);
-  preloadWalks();
   if (FARM.keeper) addAnimal(FARM.keeper, { keeper: true });
   (FARM.residents || []).filter(d => d.active !== false).forEach((d) => addAnimal(d));
   document.getElementById("residentCount").textContent = animals.length + " little lives";

@@ -165,15 +165,24 @@
     return api;
   });
   const scripts = Array.from(document.querySelectorAll("script[data-site-src]"));
+  // Fetch the farm's dependencies while its published content is being read.
+  // Execution still waits for that snapshot and follows the original order.
+  if (document.body?.dataset.page === "farm") scripts.forEach(placeholder => {
+    const preload = document.createElement("link");
+    preload.rel = "preload"; preload.as = "script";
+    preload.href = placeholder.getAttribute("data-site-src");
+    document.head.appendChild(preload);
+  });
   api.started = api.ready.then(async () => {
-    for (const placeholder of scripts) {
-      await new Promise((resolve, reject) => {
+    // async=false preserves insertion-order execution without serial downloads.
+    await Promise.all(scripts.map(placeholder =>
+      new Promise((resolve, reject) => {
         const script = document.createElement("script");
         script.src = placeholder.getAttribute("data-site-src"); script.async = false;
         script.onload = resolve; script.onerror = () => reject(new Error("Could not load " + script.src));
         placeholder.replaceWith(script);
-      });
-    }
+      })
+    ));
     document.dispatchEvent(new CustomEvent("site-content-ready", { detail: { revision: api.revision, source: api.source } }));
     return api;
   }).catch(error => { console.error("Page startup failed:", error); throw error; });

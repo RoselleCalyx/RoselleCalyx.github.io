@@ -101,13 +101,17 @@
   const walkSprite = (species) => {
     const g = FarmMotion.GAITS[species];
     if (!g) return "";
-    const style=`background-image:url(${walkSrc(species)});background-size:${g.frames * 100}% 100%;--walk-scale:${g.scale};--walk-offset:${(0.94 - g.baseline) * 100}%`;
-    return `<div class="walk-sprite" style="${style}" aria-hidden="true"></div><div class="walk-sprite walk-sprite-next" style="${style}" aria-hidden="true"></div>`;
+    const deferred = document.body?.dataset.page === 'farm';
+    const style=`${deferred?'':`background-image:url(${walkSrc(species)});`}background-size:${g.frames * 100}% 100%;--walk-scale:${g.scale};--walk-offset:${(0.94 - g.baseline) * 100}%`;
+    const source = deferred ? ` data-motion-src="${walkSrc(species)}"` : '';
+    return `<div class="walk-sprite"${source} style="${style}" aria-hidden="true"></div><div class="walk-sprite walk-sprite-next"${source} style="${style}" aria-hidden="true"></div>`;
   };
   const jumpSprite=sp=>{
     if (!JUMPS.has(sp)) return '';
-    const g=FarmMotion.GAITS[sp],style=`background-image:url(assets/farm/jump/${sp}-v3.webp);background-size:800% 100%;--walk-scale:${g.scale};--walk-offset:.25%`;
-    return `<div class="jump-sprite" style="${style}" aria-hidden="true"></div><div class="jump-sprite jump-sprite-next" style="${style}" aria-hidden="true"></div>`;
+    const deferred = document.body?.dataset.page === 'farm', src = `assets/farm/jump/${sp}-v3.webp`;
+    const g=FarmMotion.GAITS[sp],style=`${deferred?'':`background-image:url(${src});`}background-size:800% 100%;--walk-scale:${g.scale};--walk-offset:.25%`;
+    const source = deferred ? ` data-motion-src="${src}"` : '';
+    return `<div class="jump-sprite"${source} style="${style}" aria-hidden="true"></div><div class="jump-sprite jump-sprite-next"${source} style="${style}" aria-hidden="true"></div>`;
   };
   const POSES = Object.fromEntries(Object.keys(SPECIES).map(sp => [sp, {
     sleep: `assets/farm/poses/${sp}-sleep${sp === 'redpanda' ? '-v2' : ''}.webp`,
