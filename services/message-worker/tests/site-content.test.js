@@ -74,6 +74,62 @@ test("owner saves persist complete publication figures and links and become publ
   assert.equal((await f.call("/api/site-content")).headers.get("Cache-Control"), "no-store");
 });
 
+test("new owner display settings and image descriptions round-trip without changing legacy content requirements", async () => {
+  const f = fixture(), token = await f.login(), content = publicContent();
+  content.site.pages.home = { title: "My notebook", subtitle: "A researcher’s home", navLabel: "Start", description: "Work and small discoveries." };
+  content.site.extraLinks = [{ label: "Lab", href: "https://example.com/lab", icon: "globe" }, { label: "Temporarily hidden link", href: "", icon: "book" }];
+  Object.assign(content.home, {
+    avatarAlt: "Portrait beneath the trees", labels: { about: "Hello", news: "Updates" },
+    visibility: { about: true, news: false }, finale: { date: "Today", title: "Still looking", text: "At another horizon." }
+  });
+  content.message = { introKicker: "Say hello", placeholder: "Your message", sharedIntro: "Letters from the shore", emptyText: "No notes shared yet." };
+  content.papers[0].imageAlt = "An overview of the model";
+  content.papers[0].figures[0].alt = "Three views linked by anatomical correspondence";
+  content.gallery = [{ id: "garden", place: "Garden", title: "Spring", date: "2026-04", coords: [48, 11], tags: ["Nature"], story: "An afternoon outdoors.",
+    photos: [{ src: "assets/garden.jpg", caption: "In bloom", text: "The first blossoms after the rain.", alt: "Pink blossoms against a blue sky" }] }];
+  const saved = await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 0, content } });
+  assert.equal(saved.status, 200);
+  assert.deepEqual((await saved.json()).content, content);
+  assert.deepEqual((await (await f.call("/api/site-content")).json()).content, content);
+  assert.doesNotThrow(() => validateSiteContent(publicContent()), "old documents remain valid");
+  const defaults = JSON.parse(readFileSync(new URL("../../../data/site-defaults.json", import.meta.url), "utf8"));
+  assert.doesNotThrow(() => validateSiteContent(defaults), "all owner defaults are accepted by the deployed schema");
+});
+
+test("unpublished papers, albums and curated notes remain editable and are absent from every public content response", async () => {
+  const f = fixture(), token = await f.login(), content = publicContent();
+  content.papers.push({ ...paper(), title: "Unannounced private title", abstract: "Unannounced details", published: false });
+  content.gallery = [{ id: "private-trip", title: "Unshared trip", place: "Private place", date: "2026-04", coords: [48, 11], tags: [], story: "Unshared album story", photos: [], published: false }];
+  content.bottles = [{ from: "Owner", date: "2026-10-10", text: "Unshared curated note", reply: "Unshared answer", published: false }];
+  const saved = await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 0, content } });
+  assert.equal(saved.status, 200); assert.deepEqual((await saved.json()).content, content);
+  const owner = await (await f.call("/api/host/site-content", { token })).json();
+  assert.deepEqual(owner.content, content);
+  const publicResult = await (await f.call("/api/site-content")).json();
+  assert.equal(publicResult.revision, 1);
+  assert.deepEqual(publicResult.content.papers, [content.papers[0]]);
+  assert.deepEqual(publicResult.content.gallery, []); assert.deepEqual(publicResult.content.bottles, []);
+  for (const text of ["Unannounced private title", "Unannounced details", "Private place", "Unshared album story", "Unshared curated note", "Unshared answer"]) assert.equal(JSON.stringify(publicResult).includes(text), false);
+  assert.deepEqual(JSON.parse(f.env.DB.sqlite.prepare("SELECT content_json FROM site_content").get().content_json), content);
+  content.papers[1].published = true; content.gallery[0].published = true; content.bottles[0].published = true;
+  assert.equal((await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 1, content } })).status, 200);
+  assert.deepEqual((await (await f.call("/api/site-content")).json()).content, content, "showing a saved draft restores its complete public record");
+});
+
+test("new owner settings reject unsafe URLs, malformed flags, unknown properties and excessive text", () => {
+  for (const content of [
+    { site: { extraLinks: [{ label: "Unsafe", href: "javascript:alert(1)", icon: "globe" }] } },
+    { site: { extraLinks: [{ label: "Lab", href: "https://example.com", icon: "script" }] } },
+    { site: { extraLinks: Array.from({ length: 25 }, () => ({ label: "Lab", href: "https://example.com", icon: "globe" })) } },
+    { site: { pages: { home: { navLabel: "x".repeat(101) } } } },
+    { home: { visibility: { about: "false" } } }, { home: { visibility: { footer: false } } },
+    { home: { labels: { about: "x".repeat(201) } } }, { home: { avatarAlt: "x".repeat(1001) } },
+    { message: { placeholder: "x".repeat(1001) } }, { message: { hostPassword: "secret" } },
+    { papers: [{ ...paper(), published: "false" }] }, { papers: [{ ...paper(), imageAlt: "x".repeat(1001) }] },
+    { papers: [{ ...paper(), figures: [{ src: "assets/figure.jpg", caption: "Diagram", alt: "x".repeat(1001) }] }] }
+  ]) assert.throws(() => validateSiteContent(content), /Please check the public content field/, JSON.stringify(content).slice(0, 180));
+});
+
 test("compare-and-swap saves reject stale and concurrent revisions without overwriting the winner", async () => {
   const f = fixture(), token = await f.login();
   const responses = await Promise.all(["First", "Second"].map((name) => f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 0, content: { site: { name } } } })));

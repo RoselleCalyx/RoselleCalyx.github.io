@@ -69,6 +69,7 @@ button { font: inherit; color: inherit; }
 .header-right { display: flex; align-items: center; gap: clamp(10px, 2vw, 26px); }
 .nav { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 34px); }
 .nav a { font-family: var(--serif); font-size: 1.06rem; color: var(--ink-2); position: relative; padding: 4px 0; letter-spacing: .02em; }
+.nav a[data-owner-nav] { min-width: 0; max-width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--gold-2); transform: scaleX(0); transition: transform .35s; }
 .nav a:hover { color: #fff; }
 .nav a:hover::after, .nav a[aria-current="page"]::after { transform: scaleX(1); }
@@ -91,6 +92,7 @@ button { font: inherit; color: inherit; }
   }
   .nav.open { opacity: 1; transform: none; pointer-events: auto; }
   .nav a { padding: 11px 14px; }
+  .nav a[data-owner-nav] { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
   .nav a::after { display: none; }
   .nav a[aria-current="page"] { background: rgba(255, 255, 255, .06); border-radius: 10px; }
 }

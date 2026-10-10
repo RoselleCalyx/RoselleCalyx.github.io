@@ -1,0 +1,167 @@
+// Public rendering of owner content through the real loader, with every service mocked.
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const http = require('node:http');
+const path = require('node:path');
+let chromium;
+try { ({ chromium } = require('playwright')); }
+catch (_) { ({ chromium } = require('/Users/cassini/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')); }
+const root = path.resolve(__dirname, '..');
+const chrome = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const types = { '.html':'text/html', '.js':'application/javascript', '.css':'text/css', '.json':'application/json', '.webp':'image/webp', '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml', '.woff2':'font/woff2' };
+const clone = value => JSON.parse(JSON.stringify(value));
+async function main() {
+  const defaults = JSON.parse(await fs.readFile(path.join(root, 'data/site-defaults.json'), 'utf8'));
+  const server = http.createServer(async (request, response) => {
+    try {
+      const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
+      const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
+      if (!file.startsWith(root + path.sep)) throw Error('Invalid path');
+      response.writeHead(200, { 'Content-Type':types[path.extname(file)] || 'application/octet-stream' });
+      response.end(await fs.readFile(file));
+    } catch (_) { response.writeHead(404); response.end(); }
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  const base = 'http://127.0.0.1:' + server.address().port;
+  const name = 'Sky <script> & Jia', keeper = 'Fern $& <b>Fox</b>', errors = [];
+  let browser, content = clone(defaults), fallback = false, messages = 0;
+  content.site.name = name;
+  content.site.pages.home = { title:'My public notebook', subtitle:'', navLabel:'Start <i>here</i>', description:'A custom <description> & sky.' };
+  content.site.pages.papers.title = 'Research notes';
+  content.site.pages.papers.navLabel = 'Research <img>';
+  content.site.pages.papers.description = 'Work by the visitor-facing researcher.';
+  content.site.pages.woods.navLabel = 'Forest path';
+  content.site.pages.pond.navLabel = 'Quiet water';
+  content.site.extraLinks = [{ label:'Research group <b>website</b>', href:'https://example.org/lab', icon:'globe' }, { label:'N'.repeat(100), href:'https://example.org/news', icon:'book' }];
+  content.home.avatarAlt = 'An illustrated portrait <not HTML>';
+  content.home.labels = { about:'About my work', beyond:'After work', educationKicker:'A path', education:'Learning', newsKicker:'Updates', news:'Recently', explore:'Keep exploring' };
+  content.home.visibility = { about:true, education:false, news:true, explore:true };
+  content.home.finale = { date:'A different date', title:'The journey <continues>', text:'Another page in this story.' };
+  content.message = { introKicker:'From a quiet shore <b>', placeholder:'Leave a few words here', sharedIntro:'Words shared with permission.', emptyText:'Nothing shared just yet <i>.' };
+  content.farm.keeper.name = keeper; content.farm.keeper.species = 'redpanda';
+  const paper = clone(content.papers[0]); paper.id = 'visible-paper'; paper.title = 'Visible paper'; paper.image = 'assets/avatar.jpg'; paper.imageAlt = 'A chart <cover>'; paper.figures = [{ src:'assets/home-landscape.webp', caption:'A figure caption', alt:'Detailed figure description <text>' }];
+  content.papers = [paper, { ...clone(paper), id:'hidden-paper', title:'Do not show this paper', published:false }];
+  const album = clone(content.gallery[0]); album.id='visible-album'; album.title='Visible album'; album.photos = [{ src:'assets/avatar.jpg', caption:'Photo caption', text:'A story for this particular photo <b>.', alt:'A landscape <with mountains>' }];
+  content.gallery = [album, { ...clone(album), id:'hidden-album', title:'Do not show this album', published:false }];
+  content.bottles = [{ id:'hidden-note', from:'Host', date:'2026-10', text:'A note still in draft', reply:'', published:false }];
+  try {
+    browser = await chromium.launch({ executablePath:chrome, headless:true });
+    const context = await browser.newContext({ viewport:{ width:1440, height:1000 }, reducedMotion:'reduce' });
+    context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
+    await context.route('**/*', async route => {
+      const url = new URL(route.request().url());
+      if (url.origin === base) return route.continue();
+      const respond = (value, status=200) => route.fulfill({ status, contentType:'application/json', headers:{ 'Access-Control-Allow-Origin':base, 'Access-Control-Allow-Methods':'GET, POST, OPTIONS', 'Access-Control-Allow-Headers':'Content-Type, Authorization, X-Farm-Token' }, body:JSON.stringify(value) });
+      if (route.request().method() === 'OPTIONS') return respond({});
+      if (url.pathname === '/api/site-content') return fallback ? respond({}, 503) : respond({ ok:true, revision:1, updatedAt:null, content });
+      if (url.pathname === '/api/farm') return respond({ ok:true, maxTrees:8, trees:[], residents:[] });
+      if (url.pathname === '/api/messages') { messages++; return respond({ ok:true, id:'mock-message' }); }
+      return route.abort();
+    });
+    const page = await context.newPage();
+    async function visit(file) {
+      await page.goto(base + '/' + file, { waitUntil:'domcontentloaded' });
+      await page.waitForFunction(() => !!window.Site && document.querySelector('#site-header .brand'));
+    }
+    await visit('index.html');
+    assert.equal(await page.title(), 'My public notebook · ' + name);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'desktop content must not overflow');
+    assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), 'A custom <description> & sky.');
+    assert.equal(await page.locator('#nav a').first().textContent(), 'Start <i>here</i>');
+    assert.equal(await page.locator('#nav i, #nav img').count(), 0);
+    assert.equal(await page.locator('.social [data-extra-link]').count(), 0);
+    assert.equal(await page.locator('.about-links [data-extra-link]').count(), 2);
+    assert.equal(await page.locator('.about-links [data-extra-link]').first().getAttribute('href'), 'https://example.org/lab');
+    assert.equal(await page.locator('.about-links [data-extra-link] b').count(), 0);
+    assert.equal(await page.locator('.bio-portrait img').getAttribute('alt'), content.home.avatarAlt);
+    assert.equal(await page.locator('.bio-content > .kicker').textContent(), 'About my work');
+    assert.equal(await page.locator('#education').isVisible(), false);
+    assert.equal(await page.locator('#news .section-title').textContent(), 'Recently');
+    assert.equal(await page.locator('#explore > .kicker').textContent(), 'Keep exploring');
+    assert.equal(await page.locator('#finale h2').textContent(), 'The journey <continues>');
+    assert.equal(await page.locator('#finale > p:last-child').textContent(), 'Another page in this story.');
+    await page.setViewportSize({ width:390, height:844 });
+    await page.waitForTimeout(150);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'home must not overflow mobile: ' + JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('body *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1 && getComputedStyle(el).position !== 'fixed').slice(0,12).map(el => [el.tagName,el.id,el.className,el.getBoundingClientRect().right]))));
+    await page.locator('.about-links').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(250);
+    await page.screenshot({ path:'/tmp/owner-public-home-mobile.png' });
+    await page.setViewportSize({ width:1440, height:1000 });
+    await visit('papers.html');
+    await page.locator('.paper').first().waitFor();
+    assert.equal(await page.locator('.paper').count(), 1);
+    assert.equal(await page.title(), 'Research notes · ' + name);
+    assert.equal(await page.locator('.paper-thumb img').getAttribute('alt'), 'A chart <cover>');
+    await page.locator('.paper-thumb').click();
+    assert.equal(await page.locator('.lb-stage img').getAttribute('alt'), 'A chart <cover>');
+    await page.locator('.lightbox .next').click();
+    assert.equal(await page.locator('.lb-stage img').getAttribute('alt'), 'Detailed figure description <text>');
+    await visit('gallery.html');
+    await page.locator('#wall .tile[data-k]').first().waitFor();
+    assert.equal(await page.locator('#wall .tile[data-k]').count(), 1);
+    assert.equal(await page.locator('#wall img').getAttribute('alt'), 'A landscape <with mountains>');
+    await page.locator('#wall .tile[data-k]').click();
+    assert.equal(await page.locator('.lb-text').textContent(), 'A story for this particular photo <b>.');
+    assert.equal(await page.locator('.lb-stage img').getAttribute('alt'), 'A landscape <with mountains>');
+    assert.equal(await page.locator('.lb-text b').count(), 0);
+    await visit('message.html');
+    await page.waitForFunction(() => !!window.MessageDelivery);
+    assert.equal((await page.locator('#messageKicker').textContent()).trim(), 'From a quiet shore <b>');
+    assert.equal(await page.locator('#bText').getAttribute('placeholder'), 'Leave a few words here');
+    await page.locator('#readTab').click();
+    assert.equal(await page.locator('.ashore-head > p').textContent(), 'Words shared with permission.');
+    assert.equal(await page.locator('#bottleList').textContent(), content.message.emptyText);
+    assert.equal(await page.locator('#pickBottle').isDisabled(), true);
+    await page.locator('#writeTab').click();
+    await page.locator('[name="delivery"][value="email"]').check();
+    assert((await page.locator('#deliveryNote').textContent()).includes(name));
+    await page.locator('[name="delivery"][value="bottle"]').check();
+    await page.locator('#bText').fill('This message goes only to the mocked service.');
+    await page.waitForTimeout(3600);
+    await page.locator('.cast-button').click();
+    await page.waitForFunction(() => document.getElementById('bStatus').textContent.startsWith('Message sent'));
+    assert.equal(await page.locator('#bStatus').textContent(), 'Message sent to ' + name + '’s private inbox.');
+    assert.equal(messages, 1);
+    await visit('farm.html');
+    assert.equal(await page.locator('#btnWoods b').textContent(), 'Forest path');
+    assert.equal(await page.locator('#btnPond b').textContent(), 'Quiet water');
+    assert.equal(await page.locator('#meetKeeper img').getAttribute('src'), 'assets/farm/redpanda-v2.webp');
+    assert.equal(await page.locator('#meetKeeper b').textContent(), keeper + ' is keeping watch.');
+    await visit('woods.html');
+    await page.waitForFunction(() => !!window.Wild);
+    assert.equal(await page.locator('#btnMatcha b').textContent(), 'Ask ' + keeper);
+    assert.equal(await page.evaluate(() => Site.keeper.image), 'assets/farm/redpanda-v2.webp');
+    await page.locator('#btnMatcha').click();
+    assert((await page.locator('.wild-float.say').last().textContent()).includes(keeper));
+    await visit('pond.html');
+    await page.waitForFunction(() => !!window.Wild);
+    assert.equal(await page.locator('#btnBack2 small').textContent(), keeper + ' will carry the creel');
+    assert.equal(await page.evaluate(() => Site.keeper.species), 'Red panda');
+    content = { site:{ name:'A different researcher', pages:{ papers:{ navLabel:'Research'.repeat(12) } } } };
+    await visit('message.html');
+    assert.equal(await page.title(), 'Message in a Bottle · A different researcher');
+    assert((await page.locator('meta[name="description"]').getAttribute('content')).startsWith('A different researcher.'));
+    assert.equal((await page.locator('#messageKicker').textContent()).trim(), 'Under the same sky');
+    assert(await page.evaluate(() => { const nav = document.querySelector('#nav').getBoundingClientRect(), brand = document.querySelector('.brand').getBoundingClientRect(), right = document.querySelector('.header-right').getBoundingClientRect(); return nav.left >= brand.right && right.right <= innerWidth; }), 'long navigation label must fit beside the brand and header controls');
+    await page.setViewportSize({ width:390, height:844 });
+    await page.locator('#menuBtn').click();
+    assert(await page.evaluate(() => [...document.querySelectorAll('#nav a')].every(link => link.scrollWidth <= link.clientWidth + 1)), 'long navigation label text must fit the mobile menu');
+    await page.setViewportSize({ width:1440, height:1000 });
+    content = { home:{ visibility:{ about:false, education:false, news:false, explore:true } } };
+    await visit('index.html');
+    assert.equal(await page.locator('.scroll-cue').getAttribute('href'), '#explore');
+    assert.equal(await page.locator('.home-sections > .two-col').isVisible(), false);
+    fallback = true;
+    await visit('woods.html');
+    await page.waitForFunction(() => !!window.Wild);
+    assert.equal(await page.locator('#btnMatcha b').textContent(), 'Ask Matcha');
+    assert.equal(await page.evaluate(() => Site.keeper.image), 'assets/farm/snowcat.webp');
+    assert.deepEqual(errors, []);
+    console.log(JSON.stringify({ ok:true, pages:['home','papers','gallery','message','farm','woods','pond'], checks:'metadata, partial overrides, safe text, links, sections, figures, photo stories, hidden collections, keeper propagation, fallback, mobile', mockedMessages:messages }));
+  } finally {
+    if (browser) await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+main().catch(error => { console.error(error); process.exitCode = 1; });

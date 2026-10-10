@@ -110,7 +110,7 @@
       if (Object.prototype.hasOwnProperty.call(home, "avatar")) {
         if (home.avatar) avatar.src = safeURL(home.avatar); else avatar.removeAttribute("src");
       }
-      avatar.alt = "Portrait of " + (S.name || "the host");
+      avatar.alt = home.avatarAlt || "Portrait of " + (S.name || "the host");
     }
     for (const [key, selector, tag, className] of [["bio", ".bio-copy", "p", ""], ["interests", ".bio-content .chips", "span", "chip"]]) {
       const el = document.querySelector(selector);
@@ -138,6 +138,38 @@
       if (ICON[item.icon]) icon.dataset.icon = item.icon;
       link.append(icon, node("b", item.title), node("span", item.text)); return link;
     }));
+    for (const [key, selector] of Object.entries({ about: ".bio-content > .kicker", beyond: ".bio-earth .kicker", educationKicker: "#education .kicker", education: "#education .section-title", newsKicker: "#news .kicker", news: "#news .section-title", explore: "#explore > .kicker" })) {
+      const target = document.querySelector(selector);
+      if (target && typeof home.labels?.[key] === "string") target.textContent = home.labels[key];
+    }
+    for (const key of ["about", "education", "news", "explore"]) {
+      const section = document.getElementById(key);
+      if (section && home.visibility?.[key] === false) { section.hidden = true; section.style.display = "none"; }
+    }
+    const columns = document.querySelector(".home-sections > .two-col");
+    if (columns) {
+      const visible = [...columns.children].filter(section => !section.hidden).length;
+      if (!visible) { columns.hidden = true; columns.style.display = "none"; }
+      else if (visible === 1) columns.style.gridTemplateColumns = "1fr";
+    }
+    const cue = document.querySelector(".scroll-cue");
+    if (cue && home.visibility?.about === false) {
+      const next = ["education", "news", "explore"].find(key => home.visibility?.[key] !== false);
+      if (next) cue.href = "#" + next; else { cue.hidden = true; cue.style.display = "none"; }
+    }
+    for (const [key, selector] of [["date", "#finale .kicker"], ["title", "#finale h2"], ["text", "#finale > p:last-child"]]) {
+      if (typeof home.finale?.[key] === "string") multiline(document.querySelector(selector), home.finale[key]);
+    }
+    for (const links of document.querySelectorAll(".about-links")) {
+      for (const item of S.extraLinks || []) {
+        const href = safeURL(item.href); if (!href) continue;
+        const link = node("a", "", "btn"); link.append(node("span", item.label));
+        link.href = href; link.dataset.extraLink = "";
+        link.dataset.icon = Object.hasOwn(ICON, item.icon) ? item.icon : "globe";
+        if (/^https?:/i.test(href)) { link.target = "_blank"; link.rel = "noopener noreferrer"; }
+        links.append(link);
+      }
+    }
     document.title = [S.name, S.tagline].filter(Boolean).join(" · ");
   }
   const pageKey = document.body.dataset.wild || document.body.dataset.page;
@@ -146,22 +178,35 @@
     const key = el.dataset.pageCopy;
     if (Object.prototype.hasOwnProperty.call(copy, key)) multiline(el, copy[key], el.dataset.pageEmphasis === "true");
   });
-  if (copy.title) document.title = copy.title.replaceAll("\n", " ") + " · " + (S.name || "");
+  const pageTitle = copy.title || (pageKey === "home" ? "" : document.title.split(" · ")[0]);
+  if (pageTitle) document.title = [pageTitle.replaceAll("\n", " "), S.name].filter(Boolean).join(" · ");
+  const intro = pageKey === "home" ? (home.heroLede || S.role || "") : (copy.subtitle ?? document.querySelector('[data-page-copy="subtitle"]')?.textContent ?? "");
+  const description = copy.description || [S.name, intro.replaceAll("\n", " ")].filter(Boolean).join(". ");
+  let descriptionTag = document.querySelector('meta[name="description"]');
+  if (!descriptionTag) { descriptionTag = document.createElement("meta"); descriptionTag.name = "description"; document.head.append(descriptionTag); }
+  descriptionTag.content = description;
+
+  for (const [key, selector] of [["woods", "#btnWoods b"], ["pond", "#btnPond b"]]) {
+    const target = document.querySelector(selector);
+    if (target && S.pages?.[key]?.navLabel) target.textContent = S.pages[key].navLabel;
+  }
 
   /* ---------- farm keeper card ---------- */
   const keeperCard = document.getElementById("meetKeeper"), farmKeeper = window.FARM?.keeper;
+  const speciesLabels = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin", wolf: "Wolf", redpanda: "Red panda", raccoon: "Raccoon", fennec: "Fennec fox", crocodile: "Crocodile" };
+  const keeperSpecies = Object.hasOwn(speciesLabels, farmKeeper?.species) ? farmKeeper.species : "snowcat";
+  const keeper = { name: farmKeeper?.name || "The keeper", species: speciesLabels[keeperSpecies], image: "assets/farm/" + (keeperSpecies === "redpanda" ? "redpanda-v2" : keeperSpecies) + ".webp" };
   if (keeperCard) {
     keeperCard.hidden = !farmKeeper;
     if (farmKeeper) {
-      const labels = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin" };
-      const name = farmKeeper.name || "The keeper", type = Object.hasOwn(labels, farmKeeper.species) ? farmKeeper.species : "snowcat";
+      const name = keeper.name;
       const image = keeperCard.querySelector("img"), title = keeperCard.querySelector("small");
       const heading = keeperCard.querySelector("b"), note = keeperCard.querySelector("span span");
-      if (image) image.src = "assets/farm/" + type + ".webp";
+      if (image) { image.src = keeper.image; image.alt = name + ", " + keeper.species; }
       if (title) title.textContent = farmKeeper.title || "";
       if (heading) heading.textContent = name + " is keeping watch.";
       if (note) note.textContent = farmKeeper.note || "";
-      keeperCard.setAttribute("aria-label", "Meet " + name + ", " + (farmKeeper.title || "keeper of the farm") + ", " + labels[type]);
+      keeperCard.setAttribute("aria-label", "Meet " + name + ", " + (farmKeeper.title || "keeper of the farm") + ", " + keeper.species);
     }
   }
 
@@ -173,7 +218,7 @@
       <a class="brand" href="index.html">${ICON.star4}<span>${esc(S.brand || S.name || "")}</span></a>
       <div class="header-right">
         <nav class="nav" id="nav" aria-label="Main">${PAGES.map(([id, href, label]) =>
-          `<a href="${href}"${id === page ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</nav>
+          `<a href="${href}"${S.pages?.[id]?.navLabel ? ' data-owner-nav title="' + esc(S.pages[id].navLabel) + '"' : ""}${id === page ? ' aria-current="page"' : ""}>${esc(S.pages?.[id]?.navLabel || label)}</a>`).join("")}</nav>
         <button class="icon-btn sky-toggle calm-toggle" id="calmToggle" type="button" aria-pressed="false" aria-label="Calm sky: less motion">${ICON.moon}<span class="tip"></span></button>
         <button class="icon-btn sky-toggle" id="skyToggle" type="button" aria-label="Change how the sky is painted">${ICON.star4}<span class="tip"></span></button>
         <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">${ICON.menu}</button>
@@ -464,7 +509,7 @@
         el.querySelector(".lb-text").textContent = [it.text, "The image could not load."].filter(Boolean).join("\n\n");
         el.querySelector(".lb-side").style.display = "";
       });
-      img.alt = it.title || "";
+      img.alt = typeof it.alt === "string" ? it.alt : it.title || "";
       el.querySelector("h3").textContent = it.title || "";
       el.querySelector(".lb-meta").textContent = it.meta || "";
       el.querySelector(".lb-text").textContent = it.text || "";
@@ -508,5 +553,5 @@
     return { ok: true, via: "mail" };
   }
 
-  window.Site = { ICON, esc, store, toast, modal, lightbox, send, reveal, tabs };
+  window.Site = { ICON, esc, store, toast, modal, lightbox, send, reveal, tabs, keeper };
 })();

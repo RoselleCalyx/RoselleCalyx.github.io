@@ -715,7 +715,7 @@
   }
 
   /* ================= Matcha came along ================= */
-  const yuki = new Image(); yuki.src = "assets/farm/snowcat.webp";
+  const yuki = new Image(); yuki.src = Wild.keeper.image;
   const YUKI = { u: 0.155, v: 0.95 };
   const yukiBox = () => { const h = 128 * k, [x, y] = P(YUKI.u, YUKI.v); return { x: x - h / 2, y: y - h, w: h, h, cx: x, cy: y - h / 2 }; };
   const YUKI_LINES = {
@@ -898,7 +898,7 @@
   function pick(target) {
     if (target === "yuki") {
       const lines = YUKI_LINES[season.name], b = yukiBox();
-      Wd.float(stage, b.cx, b.y + 10, lines[(Math.random() * lines.length) | 0], "say");
+      Wd.float(stage, b.cx, b.y + 10, Wd.keeperLine(lines[(Math.random() * lines.length) | 0]), "say");
       sparkle(b.cx, b.y + b.h * 0.3, 8, "220,230,255");
       return;
     }
@@ -925,7 +925,7 @@
       it.shake = time;
       if (!save.seen.amanita) { save.seen.amanita = 1; persist(); document.getElementById("btnJournal").classList.add("glint"); }
       Wd.float(stage, x, y - it.s - 10, "Poisonous fly agaric", "warn");
-      toast("Fly agaric: beautiful, and poisonous. Matcha says leave it for the fairies.", 3400);
+      toast(Wd.keeperLine("Fly agaric: beautiful, and poisonous. Matcha says leave it for the fairies."), 3400);
       return;
     }
     it.picking = time;
@@ -1015,7 +1015,7 @@
   const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   const COVER_TIP = { rock: "Roll the rock aside", grass: "Part the grass", snow: "Brush the snow away", leaves: "Sweep the needles aside" };
   function label(h) {
-    if (h === "yuki") return "Matcha · snow leopard cat";
+    if (h === "yuki") return Wild.keeper.name + " · " + Wild.keeper.species;
     if (h.coverHit) return h.coverHit.target > 0.5 ? "Put it back" : COVER_TIP[h.coverHit.kind];
     if (berries.includes(h)) return h.ripe >= 0.75 ? "Wild bayberry" : h.ripe < 0.15 ? "Bayberry blossom" : `Bayberry · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;
     if (hips.includes(h)) return h.ripe >= 0.75 ? "Rose hip" : `Rose hip · ripening ${Math.round((h.ripe / 0.75) * 100)}%`;

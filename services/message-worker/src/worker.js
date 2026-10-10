@@ -277,7 +277,7 @@ export default {
       let data;
       if (farm) data = await farmRoute(request, env, path, url, { HTTPError, jsonBody, digest, rateLimit, authorize });
       else if (path === "/api/messages" && request.method === "POST") data = await submit(request, env, ctx);
-      else if (path === "/api/site-content" && request.method === "GET") data = await readSiteContent(env);
+      else if (path === "/api/site-content" && request.method === "GET") data = await readSiteContent(env, { publicOnly: true });
       else if (path === "/api/host/login" && request.method === "POST") data = await login(request, env);
       else if (path === "/api/host/refresh" && request.method === "POST") data = await refresh(request, env);
       else if (path.startsWith("/api/host/")) data = await hostRoute(request, env, path, url);

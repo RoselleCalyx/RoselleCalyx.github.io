@@ -7,7 +7,7 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   const species = ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"];
   const speciesLabels = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin", redpanda: "Red panda", raccoon: "Raccoon", wolf: "Wolf", crocodile: "Crocodile", fennec: "Fennec fox" };
-  const sections = ["site", "home", "papers", "gallery", "bottles", "farm", "voyager"];
+  const sections = ["site", "home", "papers", "gallery", "bottles", "farm", "voyager", "message"];
   let defaults, draft, revision = 0, dirty = false, busy = false, generation = 0, tab = "profile";
   let updatedAt = null;
   const newAnimalIds = new Set();
@@ -38,7 +38,7 @@
     parent[path[path.length - 1]] = value;
     setDirty();
   }
-  function field(path, title, { type = "text", options, required = false, rows = 3, min, max, maxLength, pattern, placeholder, help, image = false, ratio = "original" } = {}) {
+  function field(path, title, { type = "text", options, required = false, rows = 3, min, max, maxLength, pattern, placeholder, help, image = false, ratio = "original", defaultValue } = {}) {
     const label = node("label", undefined, "owner-field");
     label.append(node("span", title));
     const input = node(options ? "select" : type === "textarea" || type === "lines" || type === "json" ? "textarea" : "input");
@@ -53,6 +53,7 @@
     if (placeholder) input.placeholder = placeholder;
     input.required = required;
     let value = read(path);
+    if (value === undefined) value = defaultValue;
     if (type === "checkbox") { input.checked = Boolean(value); label.classList.add("owner-check"); }
     else input.value = type === "json" ? JSON.stringify(value == null ? [] : value, null, 2) : type === "lines" ? (value || []).join("\n") : value == null ? "" : value;
     if (path[0] === "voyager" && path[path.length - 1] === "title" && (!Array.isArray(value) || value.length !== 2 || value.some(line => !line.trim()))) input.setCustomValidity("Please enter exactly two nonempty title lines.");
@@ -110,7 +111,7 @@
     items.forEach((item, index) => {
       const card = node("details", undefined, "owner-item"); card.open = index === 0;
       const heading = node("summary", undefined, "owner-item-heading");
-      const titleNode = node("h4", item.title && (Array.isArray(item.title) ? item.title.join(" ") : item.title) || item.name || item.place || item.from || "Item " + (index + 1));
+      const titleNode = node("h4", item.title && (Array.isArray(item.title) ? item.title.join(" ") : item.title) || item.name || item.label || item.place || item.from || "Item " + (index + 1));
       const actions = node("div", undefined, "owner-item-actions");
       const reorder = (step) => {
         const target = index + step;
@@ -137,21 +138,30 @@
     const links = group("Public links", "Use an HTTPS URL or a site asset path. Leave a link empty to hide it.");
     grid(links, [["scholar", "Google Scholar"], ["linkedin", "LinkedIn"], ["github", "GitHub"], ["cv", "CV / résumé"]].map(([key, label]) => field(["site", "links", key], label, { placeholder: key === "cv" ? "assets/cv.pdf" : "https://" })));
     root.append(links);
+    collection(root, ["site", "extraLinks"], "Additional links", "Add a lab website, ORCID profile, project, or another public destination. These links appear beside your profile links in Home’s About section. Leave a URL empty to hide a link.", { label: "", href: "", icon: "globe" }, (card, path) => {
+      grid(card, [field(path.concat("label"), "Link label", { required: true, maxLength: 100 }), field(path.concat("href"), "Destination", { placeholder: "https://", maxLength: 2048 }), field(path.concat("icon"), "Icon", { options: ["globe", "scholar", "linkedin", "github", "mail", "cv", "book", "image", "star4"] })]);
+    });
     const observer = group("Star map location", "The sky is calculated from these coordinates.");
     grid(observer, [field(["site", "observer", "place"], "Place"), field(["site", "observer", "lat"], "Latitude", { type: "number", min: -90, max: 90 }), field(["site", "observer", "lon"], "Longitude", { type: "number", min: -180, max: 180 })]);
     observer.querySelectorAll('input[type="number"]').forEach(input => { input.step = "any"; });
     root.append(observer);
-    const pages = group("Page headings", "Edit each page’s title and introduction.");
-    for (const key of ["papers", "gallery", "message", "starmap", "farm", "woods", "pond", "voyager"]) {
+    const pages = group("Page headings & navigation", "Edit page titles, introductions, navigation labels, and browser descriptions. Leave a navigation label or description empty to use its automatic text. Home’s title is the browser title; its hero text is under Home.");
+    for (const key of ["home", "papers", "gallery", "message", "starmap", "farm", "woods", "pond", "voyager"]) {
       const row = node("div", undefined, "owner-page-copy"); row.append(node("h4", key[0].toUpperCase() + key.slice(1)));
-      grid(row, [field(["site", "pages", key, "title"], "Title"), field(["site", "pages", key, "subtitle"], "Introduction", { type: "textarea", rows: 2 })]); pages.append(row);
+      grid(row, [field(["site", "pages", key, "title"], key === "home" ? "Browser title (optional)" : "Title", { maxLength: 300 }), ...(key === "home" ? [] : [field(["site", "pages", key, "subtitle"], "Introduction", { type: "textarea", rows: 2, maxLength: 2000 })]), field(["site", "pages", key, "navLabel"], "Navigation label", { maxLength: 100 }), field(["site", "pages", key, "description"], "Page description", { type: "textarea", rows: 2, maxLength: 2000, help: "Updates the browser’s page description after the page loads." })]); pages.append(row);
     }
     root.append(pages);
   }
   function homePanel(root) {
     const hero = group("Welcome & about", "Line breaks in the hero title and introduction are preserved.");
-    grid(hero, [field(["home", "heroTitle"], "Hero title", { type: "textarea", rows: 2 }), field(["home", "heroLede"], "Hero introduction", { type: "textarea", rows: 2 }), field(["home", "avatar"], "Portrait image", { placeholder: "assets/avatar.jpg", image: true, ratio: "3:4" }), field(["home", "heroFoot"], "Hero footer")]);
+    grid(hero, [field(["home", "heroTitle"], "Hero title", { type: "textarea", rows: 2 }), field(["home", "heroLede"], "Hero introduction", { type: "textarea", rows: 2 }), field(["home", "avatar"], "Portrait image", { placeholder: "assets/avatar.jpg", image: true, ratio: "3:4" }), field(["home", "avatarAlt"], "Portrait description", { maxLength: 1000, help: "For screen readers. Leave empty to use your name." }), field(["home", "heroFoot"], "Hero footer")]);
     hero.append(field(["home", "bio"], "Biography", { type: "lines", rows: 6, help: "One paragraph per line." }), field(["home", "interests"], "Research interests", { type: "lines", help: "One interest per line." }), field(["home", "beyond"], "Beyond the lab", { type: "textarea" }), field(["home", "coda"], "Story closing text", { type: "textarea" })); root.append(hero);
+    const layout = group("Home sections", "Change section headings or hide a section while keeping its content for later.");
+    grid(layout, [["about", "About label"], ["beyond", "Beyond the lab label"], ["educationKicker", "Education overline"], ["education", "Education heading"], ["newsKicker", "News overline"], ["news", "News heading"], ["explore", "Explore heading"]].map(([key, label]) => field(["home", "labels", key], label, { maxLength: 200 })));
+    grid(layout, ["about", "education", "news", "explore"].map(key => field(["home", "visibility", key], "Show " + key + " section", { type: "checkbox", defaultValue: true })));
+    root.append(layout);
+    const finale = group("Home story finale", "The closing caption in the animated Cassini scene.");
+    grid(finale, [field(["home", "finale", "date"], "Date / overline", { maxLength: 200 }), field(["home", "finale", "title"], "Closing heading", { maxLength: 500 }), field(["home", "finale", "text"], "Closing caption", { type: "textarea", maxLength: 2000 })]); root.append(finale);
     collection(root, ["home", "education"], "Education", "", { date: "", title: "", detail: "" }, (card, path) => grid(card, [field(path.concat("date"), "Date / period"), field(path.concat("title"), "Qualification", { required: true }), field(path.concat("detail"), "Details", { type: "textarea" })]));
     collection(root, ["home", "news"], "News", "", { date: "", text: "", href: "" }, (card, path) => grid(card, [field(path.concat("date"), "Date"), field(path.concat("text"), "News", { type: "textarea", required: true }), field(path.concat("href"), "Optional link")]));
     collection(root, ["home", "explore"], "Explore cards", "Change destinations and descriptions here.", { title: "", text: "", href: "", icon: "star4" }, (card, path) => grid(card, [field(path.concat("title"), "Title", { required: true }), field(path.concat("text"), "Description"), field(path.concat("href"), "Destination", { required: true }), field(path.concat("icon"), "Icon", { options: ["book", "image", "bottle", "constel", "planet", "paw", "star4", "globe", "mail"] })]));
@@ -159,29 +169,35 @@
   function paperPanel(root) {
     collection(root, ["papers"], "Papers", "Add publications, preprints, or projects. The first image is the card cover; extra figures open in the image viewer.", () => ({ title: "", authors: [draft.site.name || ""], venue: "", year: new Date().getFullYear(), type: "publication", topics: [], image: "", selected: false, abstract: "", links: { pdf: "", code: "", project: "", data: "" }, bibtex: "", figures: [] }), (card, path, paper) => {
       paper.links ||= {}; paper.figures ||= [];
+      card.append(field(path.concat("published"), "Show this paper on the website", { type: "checkbox", defaultValue: true, help: "Turn off to hide it without deleting its details." }));
       card.append(field(path.concat("title"), "Title", { required: true }));
       grid(card, [field(path.concat("authors"), "Authors in order", { type: "lines", help: "One full author name per line.", required: true }), field(path.concat("venue"), "Venue / journal / status"), field(path.concat("year"), "Year", { type: "number", min: 1900, max: 2200, required: true }), field(path.concat("type"), "Type", { options: ["publication", "preprint", "project"] }), field(path.concat("topics"), "Topics", { type: "lines", help: "One topic per line." }), field(path.concat("selected"), "Selected paper", { type: "checkbox" })]);
-      card.append(field(path.concat("abstract"), "Abstract", { type: "textarea", rows: 6 }), field(path.concat("image"), "Cover figure URL / asset path", { image: true, ratio: "4:3" }));
+      card.append(field(path.concat("abstract"), "Abstract", { type: "textarea", rows: 6 }), field(path.concat("image"), "Cover figure URL / asset path", { image: true, ratio: "4:3" }), field(path.concat("imageAlt"), "Cover image description", { maxLength: 1000, help: "Optional text for screen readers; otherwise the paper title is used." }));
       if (paper.image) { const img = node("img", undefined, "owner-image-preview"); img.src = paper.image; img.alt = "Current paper cover"; img.loading = "lazy"; card.append(img); }
       grid(card, [["pdf", "PDF"], ["code", "Code"], ["project", "Project website"], ["data", "Dataset"]].map(([key, title]) => field(path.concat("links", key), title)));
       card.append(field(path.concat("bibtex"), "BibTeX", { type: "textarea", rows: 5, help: "Optional. Leave empty to generate a citation from the paper fields." }));
-      collection(card, path.concat("figures"), "Figures", "Upload and crop an image, or use an image URL or existing site asset.", { src: "", caption: "" }, (figure, figPath) => grid(figure, [field(figPath.concat("src"), "Image", { required: true, image: true }), field(figPath.concat("caption"), "Caption")]));
+      collection(card, path.concat("figures"), "Figures", "Upload and crop an image, or use an image URL or existing site asset.", { src: "", caption: "" }, (figure, figPath) => grid(figure, [field(figPath.concat("src"), "Image", { required: true, image: true }), field(figPath.concat("caption"), "Caption"), field(figPath.concat("alt"), "Image description", { maxLength: 1000 })]));
     });
   }
   function galleryPanel(root) {
     collection(root, ["gallery"], "Albums", "Each album appears in the timeline, photo wall, and map.", () => ({ id: "album-" + Date.now(), place: "", title: "", date: new Date().toISOString().slice(0, 7), coords: [0, 0], tags: ["Travel"], favorite: false, story: "", photos: [] }), (card, path, album) => {
       album.photos ||= [];
+      card.append(field(path.concat("published"), "Show this album on the website", { type: "checkbox", defaultValue: true, help: "Turn off to hide it from the wall, timeline, and map without deleting it." }));
       grid(card, [field(path.concat("id"), "Unique album ID", { required: true }), field(path.concat("place"), "Place", { required: true }), field(path.concat("title"), "Title", { required: true }), field(path.concat("date"), "Month (YYYY-MM)", { required: true }), field(path.concat("coords", 0), "Latitude", { type: "number", min: -90, max: 90 }), field(path.concat("coords", 1), "Longitude", { type: "number", min: -180, max: 180 }), field(path.concat("tags"), "Tags", { type: "lines", help: "Travel, Nature, Life, Food, People; one per line." }), field(path.concat("favorite"), "Favorite album", { type: "checkbox" })]);
       card.querySelectorAll('input[type="number"]').forEach(input => { input.step = "any"; });
       card.append(field(path.concat("story"), "Story", { type: "textarea" }));
       collection(card, path.concat("photos"), "Photos", "Leave image empty to display a painted placeholder.", { src: "", caption: "", paint: { sky: "dusk", land: "mountains" } }, (photo, pth, data) => {
         data.paint ||= { sky: "dusk", land: "mountains" };
-        grid(photo, [field(pth.concat("src"), "Image URL / asset path", { image: true }), field(pth.concat("caption"), "Caption"), field(pth.concat("paint", "sky"), "Placeholder sky", { options: ["dusk", "aurora", "milkyway", "sunset", "night", "dawn"] }), field(pth.concat("paint", "land"), "Placeholder landscape", { options: ["mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"] }), field(pth.concat("paint", "cabin"), "Cabin in placeholder", { type: "checkbox" })]);
+        grid(photo, [field(pth.concat("src"), "Image URL / asset path", { image: true }), field(pth.concat("caption"), "Caption"), field(pth.concat("alt"), "Image description", { maxLength: 1000, help: "Optional text for screen readers; otherwise the caption is used." }), field(pth.concat("text"), "Photo story", { type: "textarea", rows: 4, maxLength: 10000, help: "Shown beside this photo in the image viewer. Leave empty to use the album story." }), field(pth.concat("paint", "sky"), "Placeholder sky", { options: ["dusk", "aurora", "milkyway", "sunset", "night", "dawn"] }), field(pth.concat("paint", "land"), "Placeholder landscape", { options: ["mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"] }), field(pth.concat("paint", "cabin"), "Cabin in placeholder", { type: "checkbox" })]);
       });
     });
   }
   function publicPanel(root) {
+    const message = group("Message page", "Personalize the invitation and shared-note introduction. The recipient’s name follows Site & links automatically; new messages stay private.");
+    grid(message, [["introKicker", "Intro overline"], ["placeholder", "Message box prompt"], ["sharedIntro", "Shared notes introduction"], ["emptyText", "Empty shore message"]].map(([key, label]) => field(["message", key], label, { type: "textarea", rows: 2, maxLength: 1000 })));
+    root.append(message);
     collection(root, ["bottles"], "Public bottles", "Only these curated letters appear publicly. Private inbox letters are never published automatically.", () => ({ from: draft.site.name || "", date: new Date().toISOString().slice(0, 10), text: "", reply: "" }), (card, path) => {
+      card.append(field(path.concat("published"), "Show this note on the website", { type: "checkbox", defaultValue: true, help: "Turn off to take it off the shore while keeping your draft." }));
       grid(card, [field(path.concat("from"), "From"), field(path.concat("date"), "Date (YYYY-MM-DD)")]);
       card.append(field(path.concat("text"), "Letter", { type: "textarea", required: true, rows: 5 }), field(path.concat("reply"), "Public reply", { type: "textarea" }));
     });
@@ -245,6 +261,8 @@
     // Public overrides may contain only a subset of site/home fields.
     result.site = { ...clone(defaults.site), ...(content.site || {}), links: { ...defaults.site.links, ...(content.site || {}).links }, observer: { ...defaults.site.observer, ...(content.site || {}).observer }, pages: Object.fromEntries(Object.entries(defaults.site.pages).map(([key, values]) => [key, { ...values, ...(content.site || {}).pages?.[key] }])) };
     result.home = { ...clone(defaults.home), ...(content.home || {}) };
+    for (const key of ["labels", "visibility", "finale"]) result.home[key] = { ...defaults.home[key], ...content.home?.[key] };
+    result.message = { ...clone(defaults.message), ...(content.message || {}) };
     return result;
   }
   function setBusy(value) {
@@ -261,7 +279,7 @@
     setBusy(true); status("Loading the published website…");
     try {
       if (!defaults) {
-        const response = await fetch("data/site-defaults.json?v=20261010-owner1", { cache: "no-store" });
+        const response = await fetch("data/site-defaults.json?v=20261010-owner-polish1", { cache: "no-store" });
         if (!response.ok) throw new Error("The website’s starting content could not be loaded.");
         defaults = await response.json();
       }

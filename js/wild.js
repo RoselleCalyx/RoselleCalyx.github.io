@@ -7,6 +7,12 @@
    ===================================================================== */
 (function () {
   const { esc, store, modal } = window.Site;
+  const keeper = Site.keeper;
+  const keeperLine = text => text.replaceAll("Matcha", () => keeper.name);
+  const askKeeper = document.querySelector("#btnMatcha b");
+  if (askKeeper) askKeeper.textContent = "Ask " + keeper.name;
+  const carryCreel = document.querySelector('[data-wild="pond"] #btnBack2 small');
+  if (carryCreel) carryCreel.textContent = keeper.name + " will carry the creel";
   const params = new URLSearchParams(location.search);
   const SEASONS = ["spring", "summer", "autumn", "winter"];
   const SEASON_MS = 8 * 60 * 1000;
@@ -157,5 +163,5 @@
     modal(`<h2>${esc(title)}</h2><p class="muted">${esc(sub)} · ${found} / ${items.length} found</p>${note ? `<p class="journal-note">${note}</p>` : ""}<ul class="journal">${cards}</ul>`, { className: "wide" });
   }
 
-  window.Wild = { season, seasonChip, withSeason, arrive, back, rng, lerp, clamp, smooth, mix, glow, moon, range, icon, shareIcons, float, fly, journal, store, reduce, lowPower, cap, ICONS };
+  window.Wild = { keeper, keeperLine, season, seasonChip, withSeason, arrive, back, rng, lerp, clamp, smooth, mix, glow, moon, range, icon, shareIcons, float, fly, journal, store, reduce, lowPower, cap, ICONS };
 })();

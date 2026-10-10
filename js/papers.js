@@ -55,10 +55,10 @@
   }
 
   function figures(p) {
-    const items = (p.figures || []).filter(f => f && f.src).map(f => ({ src: f.src, title: f.caption || p.title, meta: p.venue, text: f.caption || p.abstract }));
+    const items = (p.figures || []).filter(f => f && f.src).map(f => ({ src: f.src, title: f.caption || p.title, alt: f.alt || f.caption || p.title, meta: p.venue, text: f.caption || p.abstract }));
     if (p.image) {
       const index = items.findIndex(f => f.src === p.image);
-      items.unshift(index < 0 ? { src: p.image, title: p.title, meta: p.venue, text: p.abstract } : items.splice(index, 1)[0]);
+      items.unshift(index < 0 ? { src: p.image, title: p.title, alt: p.imageAlt || p.title, meta: p.venue, text: p.abstract } : { ...items.splice(index, 1)[0], alt: p.imageAlt || p.title });
     }
     return items;
   }
@@ -70,7 +70,7 @@
     const typeLabel = { publication: "Publication", preprint: "Preprint", project: "Project" }[p.type] || "";
     const images = figures(p), cover = p.image || images[0]?.src;
     return `<article class="paper glass reveal" data-i="${i}">
-      <div class="paper-thumb"${cover ? ' role="button" tabindex="0" aria-label="Enlarge paper figures"' : ""}>${cover ? `<img src="${esc(cover)}" alt="${esc(images[0]?.title || p.title)}" loading="lazy">` : ""}</div>
+      <div class="paper-thumb"${cover ? ' role="button" tabindex="0" aria-label="Enlarge paper figures"' : ""}>${cover ? `<img src="${esc(cover)}" alt="${esc(images[0]?.alt ?? images[0]?.title ?? p.title)}" loading="lazy">` : ""}</div>
       <div class="paper-body">
         <div class="paper-top"><h3>${esc(p.title)}</h3>${p.selected ? `<span class="selected" title="Selected">${ICON.starF}</span>` : ""}</div>
         <div class="paper-authors">${authors}</div>

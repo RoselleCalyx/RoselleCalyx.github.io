@@ -116,6 +116,40 @@ async function main() {
     assert.equal(await publicPage.locator('[data-link="linkedin"]').first().isVisible(), false, 'empty links are hidden');
     console.log('[owner] Unified login, profile and public link publication passed');
 
+    // Added editorial fields travel through the same authenticated publication.
+    await field(owner, 'site.pages.papers.navLabel').fill('Research');
+    await field(owner, 'site.pages.home.description').fill('A researcher’s editable public profile.');
+    await owner.getByRole('button', { name:'＋ Add additional link', exact:true }).click();
+    await field(owner, 'site.extraLinks.0.label').fill('Research laboratory');
+    await field(owner, 'site.extraLinks.0.href').fill('https://example.org/lab');
+    await field(owner, 'site.extraLinks.0.icon').selectOption('globe');
+    await tab('home');
+    await field(owner, 'home.avatarAlt').fill('Researcher looking at the sky');
+    await field(owner, 'home.labels.education').fill('Research journey');
+    await field(owner, 'home.visibility.news').uncheck();
+    await field(owner, 'home.finale.title').fill('Always looking beyond.');
+    await tab('public');
+    await field(owner, 'message.introKicker').fill('A letter from your world');
+    await field(owner, 'message.placeholder').fill('Tell me about your idea…');
+    await save();
+    assert.equal(state.content.site.extraLinks[0].href, 'https://example.org/lab');
+    assert.equal(state.content.home.visibility.news, false);
+    await publicOpen('index.html');
+    assert.equal(await publicPage.locator('.nav a[href="papers.html"]').innerText(), 'Research');
+    assert.equal(await publicPage.locator('meta[name="description"]').getAttribute('content'), 'A researcher’s editable public profile.');
+    assert.equal(await publicPage.getByRole('link', { name:'Research laboratory', exact:true }).count(), 1);
+    assert.equal(await publicPage.locator('.bio-portrait img').getAttribute('alt'), 'Researcher looking at the sky');
+    assert.equal(await publicPage.locator('#education h2').innerText(), 'Research journey');
+    assert.equal(await publicPage.locator('#news').isVisible(), false);
+    assert.equal(await publicPage.locator('#finale h2').textContent(), 'Always looking beyond.');
+    await publicOpen('message.html');
+    assert.equal(await publicPage.locator('#bText').getAttribute('placeholder'), 'Tell me about your idea…');
+    assert.match(await publicPage.locator('.shore-kicker').innerText(), /A letter from your world/i);
+    await publicPage.locator('[name="delivery"][value="email"]').check();
+    assert.match(await publicPage.locator('#deliveryNote').innerText(), /Published Researcher/);
+    await tab('home'); await field(owner, 'home.visibility.news').check(); await save();
+    console.log('[owner] Additional links, navigation, descriptions, home visibility/labels, portrait text and Message copy publish');
+
     await tab('papers'); const paperIndex = defaults.papers.length;
     await owner.locator('[data-owner-panel="papers"] > .owner-group > .owner-add').click();
     const paperPath = 'papers.' + paperIndex;
@@ -124,6 +158,7 @@ async function main() {
     const paperCard = field(owner, paperPath + '.title').locator('..').locator('..');
     await paperCard.locator('.owner-group > .owner-add').click();
     await field(owner, paperPath + '.figures.0.src').fill('assets/home-landscape.webp'); await field(owner, paperPath + '.figures.0.caption').fill('Published detailed figure');
+    await field(owner, paperPath + '.imageAlt').fill('Paper overview diagram'); await field(owner, paperPath + '.figures.0.alt').fill('Detailed method diagram');
     await save(); await publicOpen('papers.html');
     const publicPaper = publicPage.locator('.paper').filter({ has:publicPage.getByRole('heading', { name:'A Complete Cloud Publication', exact:true }) });
     assert.equal(await publicPaper.count(), 1); assert.equal(await publicPaper.locator('.paper-authors strong').innerText(), 'Published Researcher');
@@ -134,6 +169,16 @@ async function main() {
     assert.equal(await publicPage.locator('.lightbox h3').innerText(), 'Published detailed figure'); await publicPage.locator('.lb-close').click();
     await publicPaper.locator('[data-act="bib"]').click(); assert.match(await publicPaper.locator('.bibtex').innerText(), /qa2026/);
     console.log('[owner] Complete paper publication, figures, links and BibTeX passed');
+
+    await field(owner, paperPath + '.title').evaluate(input => { input.closest('details').open = true; });
+    await field(owner, paperPath + '.published').uncheck(); await save(); await publicOpen('papers.html');
+    assert.equal(await publicPage.getByRole('heading', { name:'A Complete Cloud Publication', exact:true }).count(), 0);
+    assert.equal(state.content.papers[paperIndex].title, 'A Complete Cloud Publication', 'hidden papers retain all owner fields');
+    await field(owner, paperPath + '.title').evaluate(input => { input.closest('details').open = true; });
+    await field(owner, paperPath + '.published').check(); await save(); await publicOpen('papers.html');
+    assert.equal(await publicPage.getByRole('heading', { name:'A Complete Cloud Publication', exact:true }).count(), 1);
+    await field(owner, paperPath + '.title').evaluate(input => { input.closest('details').open = true; });
+    console.log('[owner] Paper can be hidden and restored without data loss');
 
     const deleteCard = field(owner, paperPath + '.title').locator('..').locator('..');
     owner.once('dialog', dialog => dialog.accept()); await deleteCard.locator(':scope > summary .owner-delete').click(); await save();
@@ -146,11 +191,14 @@ async function main() {
     await field(owner, albumPath + '.favorite').check();
     const albumCard = field(owner, albumPath + '.id').locator('..').locator('..').locator('..');
     await albumCard.locator('.owner-group > .owner-add').click(); await field(owner, albumPath + '.photos.0.src').fill('assets/avatar.jpg'); await field(owner, albumPath + '.photos.0.caption').fill('Published photo caption');
+    await field(owner, albumPath + '.photos.0.alt').fill('A photo near the Isar'); await field(owner, albumPath + '.photos.0.text').fill('The longer story of this particular photo.');
     await save(); await publicOpen('gallery.html');
     assert.ok(await publicPage.locator('#trail').innerText().then(text => text.includes('Munich QA')));
     assert.equal(await publicPage.locator('#tags').getByRole('button', { name:'Published Tag', exact:true }).count(), 1);
     assert.equal(await publicPage.evaluate(() => GALLERY.find(album => album.id === 'qa-munich').photos[0].caption), 'Published photo caption');
-    console.log('[owner] Gallery album, coordinates, custom tags and photo publication passed');
+    assert.equal(state.content.gallery.at(-1).photos[0].text, 'The longer story of this particular photo.');
+    assert.equal(state.content.gallery.at(-1).photos[0].alt, 'A photo near the Isar');
+    console.log('[owner] Gallery album, coordinates, custom tags and photo stories/descriptions publish');
 
     await tab('animals'); await field(owner, 'farm.keeper.name').fill('Chai'); await field(owner, 'farm.keeper.title').fill('The meadow caretaker');
     await field(owner, 'farm.keeper.species').selectOption('fox'); await field(owner, 'farm.keeper.note').fill('A keeper story published from the workspace.'); await save();

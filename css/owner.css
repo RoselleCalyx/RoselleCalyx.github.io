@@ -29,13 +29,41 @@ body.owner-signed-in .inbox-toolbar { align-items: center; }
 .owner-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
 .owner-field { display: flex; flex-direction: column; gap: 6px; margin: 0 0 16px; min-width: 0; font-size: 12px; color: #c2cdd3; }
 .owner-field-grid .owner-field { margin-bottom: 2px; }
-.owner-field input, .owner-field textarea, .owner-field select, .letter-management textarea, .letter-management select {
-  width: 100%; min-width: 0; border: 1px solid rgba(198, 211, 219, .2); border-radius: 8px;
-  background: #081724; color: #e6e8e6; padding: 10px 12px; font: 400 13px/1.7 var(--text, sans-serif);
+/* Match the translucent writing fields and warm focus light on the Message shore. */
+.owner-field input:not([type="checkbox"]), .owner-field textarea, .owner-field select,
+.letter-management textarea, .letter-management select, .adoption-filter select,
+.owner-image-dialog .owner-crop-control input[type="number"], .owner-crop-control select, .owner-select .owner-select-trigger {
+  width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--line); border-radius: 10px;
+  background: rgba(255, 255, 255, .025); color: var(--ink); padding: 10px 12px;
+  font: 400 .97rem/1.5 var(--text, sans-serif);
+  transition: background .2s, border-color .2s, box-shadow .2s;
+  box-shadow: inset 0 1px 0 #eef2f704;
 }
-.owner-field textarea, .letter-management textarea { resize: vertical; }
-.owner-field input::placeholder { color: #8398a7; }
-.owner-field input:focus-visible, .owner-field textarea:focus-visible, .owner-field select:focus-visible, .letter-management textarea:focus-visible, .letter-management select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.owner-field textarea, .letter-management textarea { padding: 14px 16px; line-height: 1.8; resize: vertical; }
+.owner-field input::placeholder { color: #92a2ae; font-style: italic; }
+.owner-field textarea::placeholder, .letter-management textarea::placeholder { color: #a4b1bb; opacity: .85; }
+.owner-field input:not([type="checkbox"]):focus, .owner-field textarea:focus, .owner-field select:focus,
+.letter-management textarea:focus, .letter-management select:focus,
+.owner-image-dialog .owner-crop-control input[type="number"]:focus, .owner-select .owner-select-trigger:focus-visible {
+  outline: 2px solid rgba(226, 192, 124, .25); outline-offset: 2px;
+  border-color: rgba(226, 192, 124, .5); background: rgba(255, 255, 255, .045);
+}
+.owner-field input:disabled, .owner-field textarea:disabled, .owner-select-trigger:disabled { opacity: .5; }
+.owner-select { display: block; position: relative; min-width: 0; width: 100%; }
+/* Retain the native form control and input/change contract without opening its platform popup. */
+.owner-select > select.owner-select-native { position: absolute; inset: 0; margin: 0; opacity: 0; pointer-events: none; }
+.owner-select .owner-select-trigger { position: relative; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; margin: 0; }
+.owner-select-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owner-select-trigger::after { content: ""; flex: 0 0 6px; width: 6px; height: 6px; border-right: 1.5px solid #c8b18c; border-bottom: 1.5px solid #c8b18c; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+.owner-select-trigger[aria-expanded="true"] { border-color: rgba(226, 192, 124, .5); background: rgba(226, 192, 124, .055); }
+.owner-select-trigger[aria-expanded="true"]::after { transform: translateY(2px) rotate(225deg); }
+.owner-select-trigger[aria-invalid="true"] { border-color: #dda89a; }
+.owner-select-trigger:disabled { cursor: not-allowed; }
+.owner-select-menu { position: fixed; z-index: 100; overflow-y: auto; overscroll-behavior: contain; padding: 5px; box-sizing: border-box; border: 1px solid #d6c09a55; border-radius: 10px; background: #112333; color: var(--ink); box-shadow: 0 14px 36px #02081088, inset 0 1px 0 #eef2f708; font: 400 .97rem/1.5 var(--text, sans-serif); }
+.owner-select-option { position: relative; padding: 10px 30px 10px 10px; min-height: 42px; border-radius: 6px; cursor: pointer; overflow-wrap: anywhere; }
+.owner-select-option.is-highlighted { background: #e2c07c17; color: #f1dfb9; outline: 1px solid #e2c07c22; outline-offset: -1px; }
+.owner-select-check { position: absolute; right: 10px; color: #dfc69e; }
+.adoption-filter .owner-select { max-width: 280px; }
 .owner-field small { color: #94a8b6; font-size: 10px; }
 .owner-field.owner-check { flex-direction: row; align-items: center; gap: 12px; align-self: center; }
 .owner-check input { width: 18px; height: 18px; accent-color: #dfc69e; }
@@ -68,7 +96,6 @@ body.owner-signed-in .inbox-toolbar { align-items: center; }
 .letter-management select { min-height: 42px; }
 #lettersWorkspace .filters { flex-wrap: wrap; }
 .adoption-filter { display: flex; align-items: center; gap: 10px; margin: 16px 0; font-size: 11px; color: #b6c6d0; }
-.adoption-filter select { background: #081724; color: #e6e8e6; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font: inherit; }
 .owner-animal-activity, .owner-animal-controls, .owner-animals-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .owner-animal-activity { margin: 0 0 20px; justify-content: space-between; }
 .owner-animal-activity button, .owner-animal-controls button { font-size: 11px; min-height: 38px; }
@@ -96,3 +123,5 @@ body.owner-signed-in .inbox-toolbar { align-items: center; }
   .letter-management { grid-template-columns: minmax(0, 1fr); }
   .letter-management button { justify-self: start; }
 }
+
+@media (prefers-reduced-motion: reduce) { .owner-select-trigger, .owner-select-trigger::after, .owner-field input, .owner-field textarea { transition: none; } }

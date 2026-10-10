@@ -733,7 +733,7 @@
   }
 
   /* ================= Matcha keeps you company on the dock ================= */
-  const yuki = new Image(); yuki.src = "assets/farm/snowcat.webp";
+  const yuki = new Image(); yuki.src = Wild.keeper.image;
   const yukiBox = () => { const h = 108 * k, x = W * 0.745, y = H * 0.9; return { x: x - h / 2, y: y - h, w: h, h, cx: x, cy: y - h / 2 }; };
   const YUKI = ["Matcha watches the float without blinking.", "Matcha: “The big ones bite at dusk.”", "Matcha is hoping you share.", "Matcha: “Patience. Then — strike!”", "Matcha dips a paw in the water and regrets it."];
 
@@ -1060,7 +1060,7 @@
     cv.style.cursor = hover || hoverTrap >= 0 ? "pointer" : rod.state === "reeling" ? "grabbing" : "default";
     if (e.pointerType === "mouse" && (hover === "yuki" || hoverTrap >= 0)) {
       const st = hoverTrap >= 0 ? trapState(hoverTrap) : "";
-      tip.textContent = hover === "yuki" ? "Matcha · snow leopard cat" : st === "free" ? "Set a crab trap" : st === "ready" ? "Haul up the trap!" : `Soaking… ${Math.ceil((save.traps[hoverTrap].t0 + save.traps[hoverTrap].dur - Date.now()) / 1000)}s`;
+      tip.textContent = hover === "yuki" ? Wild.keeper.name + " · " + Wild.keeper.species : st === "free" ? "Set a crab trap" : st === "ready" ? "Haul up the trap!" : `Soaking… ${Math.ceil((save.traps[hoverTrap].t0 + save.traps[hoverTrap].dur - Date.now()) / 1000)}s`;
       const half = tip.offsetWidth / 2 + 8;
       tip.style.left = Math.max(half, Math.min(stage.clientWidth - half, x)) + "px";
       tip.style.top = Math.max(tip.offsetHeight + 24, y) + "px"; tip.classList.add("on");
@@ -1090,7 +1090,7 @@
     if (candidate.moved || Math.hypot(x - candidate.x, y - candidate.y) > 10 || busyCard || haul || tool !== candidate.tool
       || (rod.state !== candidate.rodState && !stillWaiting) || !w || w.kind !== candidate.target.kind
       || (w.kind === "trap" && w.i !== candidate.target.i)) return;
-    if (w.kind === "yuki") { const b = yukiBox(); Wd.float(stage, b.cx, b.y + 6, YUKI[(Math.random() * YUKI.length) | 0], "say"); sparkle(b.cx, b.y + b.h * 0.3, 8, "220,230,255"); return; }
+    if (w.kind === "yuki") { const b = yukiBox(); Wd.float(stage, b.cx, b.y + 6, Wd.keeperLine(YUKI[(Math.random() * YUKI.length) | 0]), "say"); sparkle(b.cx, b.y + b.h * 0.3, 8, "220,230,255"); return; }
     if (w.kind === "trap") { const st = trapState(w.i); if (st === "free") setTrap(w.i); else if (st === "ready") haulTrap(w.i); else Wd.float(stage, x, y - 20, `Soaking… ${Math.ceil((save.traps[w.i].t0 + save.traps[w.i].dur - Date.now()) / 1000)}s`, "soft"); return; }
     if (tool === "rod" && rod.state === "idle") castTo(x, y);
     else if (tool === "rod" && (rod.state === "waiting" || rod.state === "approach")) { rod.state = "idle"; rod.bob = null; if (rod.fish) rod.fish.mode = "wander"; rod.fish = null; castTo(x, y); }

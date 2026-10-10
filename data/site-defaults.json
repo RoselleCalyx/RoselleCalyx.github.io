@@ -20,39 +20,62 @@
     },
     "footer": "Same sky, different places.",
     "pages": {
+      "home": {
+        "title": "",
+        "subtitle": "",
+        "navLabel": "Home",
+        "description": ""
+      },
       "papers": {
         "title": "Papers",
-        "subtitle": "Research papers and projects."
+        "subtitle": "Research papers and projects.",
+        "navLabel": "Papers",
+        "description": ""
       },
       "gallery": {
         "title": "Gallery",
-        "subtitle": "Footprints on Earth,\nunder the same sky."
+        "subtitle": "Footprints on Earth,\nunder the same sky.",
+        "navLabel": "Gallery",
+        "description": ""
       },
       "message": {
         "title": "Message\nin a Bottle.",
-        "subtitle": "A thought, a question, a story.\nLeave a little of your world here."
+        "subtitle": "A thought, a question, a story.\nLeave a little of your world here.",
+        "navLabel": "Message",
+        "description": ""
       },
       "starmap": {
         "title": "Starmap",
-        "subtitle": "Choose a star. Meet its story."
+        "subtitle": "Choose a star. Meet its story.",
+        "navLabel": "Starmap",
+        "description": ""
       },
       "farm": {
         "title": "My Little Farm",
-        "subtitle": "A small place for lovely lives."
+        "subtitle": "A small place for lovely lives.",
+        "navLabel": "Farm",
+        "description": ""
       },
       "woods": {
         "title": "Into the Woods",
-        "subtitle": "Wild bayberries, mushrooms, and bamboo shoots."
+        "subtitle": "Wild bayberries, mushrooms, and bamboo shoots.",
+        "navLabel": "Woods",
+        "description": ""
       },
       "pond": {
         "title": "By the Pond",
-        "subtitle": "A wooden rod, a bamboo fish cover, and traps left to soak."
+        "subtitle": "A wooden rod, a bamboo fish cover, and traps left to soak.",
+        "navLabel": "Pond",
+        "description": ""
       },
       "voyager": {
         "title": "A LONELY VOYAGER",
-        "subtitle": "The Cassini Odyssey"
+        "subtitle": "The Cassini Odyssey",
+        "navLabel": "Voyager",
+        "description": ""
       }
-    }
+    },
+    "extraLinks": []
   },
   "home": {
     "heroTitle": "Exploring\nthe Unknown.",
@@ -144,7 +167,28 @@
       }
     ],
     "coda": "For thirteen years, Cassini studied Saturn.\nHere on Earth, I’m still looking up.",
-    "heroFoot": "Same sky. Different places."
+    "heroFoot": "Same sky. Different places.",
+    "avatarAlt": "",
+    "labels": {
+      "about": "About",
+      "beyond": "Beyond the lab",
+      "educationKicker": "Trajectory",
+      "education": "Education",
+      "newsKicker": "Signals",
+      "news": "News",
+      "explore": "Explore"
+    },
+    "visibility": {
+      "about": true,
+      "education": true,
+      "news": true,
+      "explore": true
+    },
+    "finale": {
+      "date": "15 September 2017",
+      "title": "Cassini became part of Saturn.",
+      "text": "Thirteen years of discovery. A final gift of data."
+    }
   },
   "papers": [
     {
@@ -1053,5 +1097,11 @@
         "description": "A small, long-haired traveller in a pale blue and lavender jacket looks toward The deeper universe. Obsidian crystals and pale dunes beneath a vast nebula. Seated comfortably on the crystal ledge, legs loosely folded and shoulders relaxed."
       }
     }
-  ]
+  ],
+  "message": {
+    "introKicker": "Under the same sky",
+    "placeholder": "What would you like to share?",
+    "sharedIntro": "A few words the sea has kept.",
+    "emptyText": "No bottles on the shore tonight."
+  }
 }

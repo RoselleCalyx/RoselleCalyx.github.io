@@ -248,7 +248,7 @@
       al.photos.forEach((ph, i) => items.push({ al, i, ph }));
     });
     let html = items.map((it, k) => `<button class="tile reveal" type="button" data-k="${k}" aria-label="${esc(it.ph.caption || it.al.place)}">
-        <img alt="${esc(it.ph.caption || "")}" data-k="${k}" style="aspect-ratio:${it.ph.src ? "auto" : ASPECTS[(albums.indexOf(it.al) * 2 + it.i) % ASPECTS.length]}">
+        <img alt="${esc(it.ph.alt || it.ph.caption || "")}" data-k="${k}" style="aspect-ratio:${it.ph.src ? "auto" : ASPECTS[(albums.indexOf(it.al) * 2 + it.i) % ASPECTS.length]}">
         <span class="tile-cap"><b>${esc(it.ph.caption || it.al.title)}</b><span>${esc(it.al.place)} · ${fmtDate(it.al.date)}</span></span>
       </button>`);
     if (!state.album && html.length > 2) html.splice(3, 0, `<div class="tile note reveal"><p>Same sky.<br>Different places.<br>Still me.</p></div>`);
@@ -264,6 +264,7 @@
     Site.lightbox(items.map((it) => ({
       src: () => photoSrc(it.al, it.i),
       title: it.ph.caption || it.al.title,
+      alt: it.ph.alt || it.ph.caption || it.al.title,
       meta: `${it.al.place} · ${fmtDate(it.al.date)}`,
       text: it.ph.text || it.al.story || ""
     })), +t.dataset.k);

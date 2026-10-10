@@ -102,6 +102,55 @@ test('published indoor/outdoor state survives public parsing without inventing a
   assert.equal(p.context.window.FARM.residents[2].active, true);
 });
 
+test('owner presentation fields survive public parsing and partial page overrides keep earlier copy', async () => {
+  const content = {
+    site: { pages: { home: { navLabel: 'Start', description: 'A research notebook.' }, papers: { navLabel: 'Research' } },
+      extraLinks: [{ label: 'Research group', href: 'https://example.com/lab', icon: 'globe' }] },
+    home: { avatarAlt: 'Portrait in a garden', labels: { about: 'Hello', news: 'Updates' }, visibility: { about: true, education: false }, finale: { date: 'Today', title: 'Keep looking.', text: 'A new horizon.' } },
+    message: { introKicker: 'Say hello', placeholder: 'Your thought…', sharedIntro: 'From the shore', emptyText: 'No shared notes yet.' },
+    papers: [{ title: 'Paper', authors: ['Host'], imageAlt: 'Architecture diagram', figures: [{ src: 'assets/figure.png', caption: 'A figure', alt: 'Three linked views' }] }],
+    gallery: [{ id: 'garden', photos: [{ src: 'assets/garden.jpg', caption: 'Spring', text: 'A longer story.', alt: 'Cherry blossoms against a clear sky' }] }]
+  };
+  const p = page({ settings: { pages: { papers: { title: 'Existing title', subtitle: 'Existing introduction' } } }, fetch: async () => response(content) });
+  await p.api.started;
+  assert.deepEqual(plain(p.context.window.SITE.pages.papers), { title: 'Existing title', subtitle: 'Existing introduction', navLabel: 'Research' });
+  assert.deepEqual(plain(p.context.window.SITE.pages.home), content.site.pages.home);
+  assert.deepEqual(plain(p.context.window.SITE.extraLinks), content.site.extraLinks);
+  assert.deepEqual(plain(p.context.window.HOME_CONTENT), content.home);
+  assert.deepEqual(plain(p.context.window.MESSAGE_CONTENT), content.message);
+  assert.equal(p.context.window.PAPERS[0].imageAlt, 'Architecture diagram');
+  assert.equal(p.context.window.PAPERS[0].figures[0].alt, 'Three linked views');
+  assert.equal(p.context.window.GALLERY[0].photos[0].text, 'A longer story.');
+  assert.equal(p.context.window.GALLERY[0].photos[0].alt, 'Cherry blossoms against a clear sky');
+});
+
+test('public pages exclude unpublished records while legacy items remain visible', async () => {
+  const p = page({ fetch: async () => response({
+    papers: [{ title: 'Legacy paper' }, { title: 'Published paper', published: true }, { title: 'Draft paper', published: false }],
+    gallery: [{ id: 'legacy' }, { id: 'draft', published: false }],
+    bottles: [{ text: 'Legacy note' }, { text: 'Draft note', published: false }]
+  }) });
+  await p.api.started;
+  assert.deepEqual(plain(p.context.window.PAPERS.map(item => item.title)), ['Legacy paper', 'Published paper']);
+  assert.deepEqual(plain(p.context.window.GALLERY.map(item => item.id)), ['legacy']);
+  assert.deepEqual(plain(p.context.window.BOTTLES.map(item => item.text)), ['Legacy note']);
+});
+
+test('new display fields keep plain text, reject unsafe links and ignore invalid visibility types', async () => {
+  const p = page(); await p.api.started;
+  const clean = p.api.normalize({ site: { extraLinks: [
+    { label: '<script>text only</script>', href: 'https://example.com', icon: 'unknown' },
+    { label: 'Unsafe', href: 'javascript:alert(1)', icon: 'globe' },
+    { label: 'Temporarily hidden link', href: '', icon: 'book' },
+    { label: ' ', href: 'https://example.com', icon: 'globe' }
+  ], pages: { home: { title: '<b>text only</b>', description: 'Description', navLabel: 123 } } },
+  home: { visibility: { about: 'false', education: false, news: 0 }, labels: { news: '<b>Updates</b>', unknown: 'Ignore' } } });
+  assert.deepEqual(plain(clean.site.extraLinks), [{ label: '<script>text only</script>', href: 'https://example.com', icon: 'globe' }]);
+  assert.deepEqual(plain(clean.site.pages.home), { title: '<b>text only</b>', description: 'Description' });
+  assert.deepEqual(plain(clean.home.visibility), { education: false });
+  assert.deepEqual(plain(clean.home.labels), { news: '<b>Updates</b>' });
+});
+
 test('each public HTML page uses data defaults before the cloud gate and retains runtime ordering', () => {
   for (const page of ['index', 'papers', 'gallery', 'message', 'starmap', 'voyager', 'farm', 'woods', 'pond']) {
     const html = fs.readFileSync(require('node:path').join(__dirname, '../' + page + '.html'), 'utf8');

@@ -4,6 +4,11 @@
   const $ = id => document.getElementById(id);
   const form = $('bottleForm'), text = $('bText'), count = $('bCount'), status = $('bStatus');
   const bottle = $('heroBottle'), effects = $('seaEffects'), scene = $('nightSea');
+  const content = window.MESSAGE_CONTENT || {};
+  const hostName = SITE.name || 'the host';
+  if (typeof content.introKicker === 'string') $('messageKicker').replaceChildren($('messageKicker').firstElementChild, document.createTextNode(content.introKicker));
+  if (typeof content.placeholder === 'string') text.placeholder = content.placeholder;
+  if (typeof content.sharedIntro === 'string') document.querySelector('.ashore-head > p').textContent = content.sharedIntro;
   const submit = form.querySelector('[type="submit"]');
   const tabs = [...document.querySelectorAll('.shore-tabs [role="tab"]')];
   let sending = false, casting = false;
@@ -35,7 +40,7 @@
     $('contactField').hidden = mail; $('bContact').disabled = mail || $('bAnon').checked;
     $('bChallenge').hidden = mail || !needsChallenge;
     $('sendLabel').textContent = mail ? 'Open mail app' : 'Send the bottle';
-    $('deliveryNote').textContent = mail ? 'Open the draft in your mail app, then press Send. Your email address will be visible to Chen.'
+    $('deliveryNote').textContent = mail ? 'Open the draft in your mail app, then press Send. Your email address will be visible to ' + hostName + '.'
       : MessageDelivery.enabled ? 'Messages are private and are not published here.' : 'Bottle delivery is not connected yet. Choose email to send a message.';
     status.textContent = ''; status.dataset.error = 'false';
   }
@@ -87,7 +92,7 @@
       const unchanged = text.value === rawText;
       if (unchanged) { text.value = ''; count.textContent = '0 / 500'; }
       else count.textContent = `${text.value.length} / 500`;
-      const delivered = result.transport === 'form' ? 'Message submitted.' : 'Message sent to Chen’s private inbox.';
+      const delivered = result.transport === 'form' ? 'Message submitted.' : 'Message sent to ' + hostName + '’s private inbox.';
       say(unchanged ? delivered : delivered.replace(/^Message/, 'Previous message') + ' Your current text has not been sent.'); castBottle();
     } catch (_) { say('Delivery could not be confirmed. Your text is still on this page. Try again.', true); }
     finally {
@@ -132,7 +137,8 @@
     finally { ghost.remove(); bottle.style.opacity = '1'; casting = false; }
   }
   const shared = window.BOTTLES || [];
-  $('bottleList').innerHTML = shared.map((b,i) => `<li><button type="button" data-i="${i}">${ICON.bottle}<span>${esc(b.from || 'A stranger')}<small>${esc(b.date || '')}</small><span class="ex">${esc(b.text)}</span></span></button></li>`).join('') || '<li>No bottles on the shore tonight.</li>';
+  $('bottleList').innerHTML = shared.map((b,i) => `<li><button type="button" data-i="${i}">${ICON.bottle}<span>${esc(b.from || 'A stranger')}<small>${esc(b.date || '')}</small><span class="ex">${esc(b.text)}</span></span></button></li>`).join('') || '<li>' + esc(content.emptyText ?? 'No bottles on the shore tonight.') + '</li>';
+  $('pickBottle').disabled = !shared.length;
   function openBottle(b) {
     if (!b) return;
     Site.modal(`<div class="unrolled"><p class="kicker">Shared note · ${esc(b.date || '')}</p><div>${esc(b.text)}</div><div class="sig">${esc(b.from || 'A stranger')}</div>${b.reply ? `<div class="reply">${esc(b.reply)}</div>` : ''}</div>`,{className:'shore-modal'});

@@ -40,20 +40,24 @@ const day = (value, path) => {
 };
 const species = oneOf("snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec");
 const resident = object({ id, species, name: string(24, true), adoptedBy: string(40), note: string(140), since: month, active: boolean }, ["species", "name"]);
-const photo = object({ src: link, caption: string(2000), paint: object({ sky: oneOf("dusk", "aurora", "milkyway", "sunset", "night", "dawn"), land: oneOf("mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"), cabin: boolean }) }, ["src"]);
+const photo = object({ src: link, caption: string(2000), text: string(10000), alt: string(1000), paint: object({ sky: oneOf("dusk", "aurora", "milkyway", "sunset", "night", "dawn"), land: oneOf("mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"), cabin: boolean }) }, ["src"]);
 const pair = (min, max) => array(number(min, max), 2, 2);
-const page = object({ title: string(300), subtitle: string(2000) });
+const page = object({ title: string(300), subtitle: string(2000), navLabel: string(100), description: string(2000) });
 
 const schema = object({
   site: object({
     name: string(200), brand: string(200), tagline: string(300), location: string(300), role: string(300), affiliation: string(500), footer: string(3000),
     email: (value, path) => { string(254)(value, path); if (value && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(value)) invalid(path); },
     links: object({ scholar: link, linkedin: link, github: link, cv: link }),
+    extraLinks: array(object({ label: string(100, true), href: link, icon: oneOf("globe", "scholar", "linkedin", "github", "mail", "cv", "book", "image", "star4") }, ["label", "href", "icon"]), 24),
     observer: object({ place: string(200), lat: number(-90, 90), lon: number(-180, 180) }),
-    pages: object({ papers: page, gallery: page, message: page, starmap: page, farm: page, woods: page, pond: page, voyager: page })
+    pages: object({ home: page, papers: page, gallery: page, message: page, starmap: page, farm: page, woods: page, pond: page, voyager: page })
   }),
   home: object({
-    heroTitle: string(500), heroLede: string(2000), bio: array(string(10000), 30), interests: array(string(100), 50), beyond: string(10000), avatar: link,
+    heroTitle: string(500), heroLede: string(2000), bio: array(string(10000), 30), interests: array(string(100), 50), beyond: string(10000), avatar: link, avatarAlt: string(1000),
+    labels: object({ about: string(200), beyond: string(200), educationKicker: string(200), education: string(200), newsKicker: string(200), news: string(200), explore: string(200) }),
+    visibility: object({ about: boolean, education: boolean, news: boolean, explore: boolean }),
+    finale: object({ date: string(200), title: string(500), text: string(2000) }),
     education: array(object({ date: string(100), title: string(300), detail: string(3000) }, ["date", "title", "detail"]), 50),
     news: array(object({ date: string(100), text: string(3000), href: link }, ["date", "text"]), 200),
     explore: array(object({ title: string(200), text: string(2000), href: link, icon: pattern(/^[a-zA-Z][a-zA-Z0-9]{0,39}$/, 40) }, ["title", "text", "href", "icon"]), 32),
@@ -61,16 +65,17 @@ const schema = object({
   }),
   papers: array(object({
     id, title: string(500, true), authors: array(string(200, true), 100, 1), venue: string(500), year: number(1800, 2200, true),
-    type: oneOf("publication", "preprint", "project"), topics: array(string(100), 50), image: link, selected: boolean, abstract: string(30000),
+    type: oneOf("publication", "preprint", "project"), topics: array(string(100), 50), image: link, imageAlt: string(1000), selected: boolean, published: boolean, abstract: string(30000),
     links: object({ pdf: link, code: link, project: link, data: link }), bibtex: string(30000),
-    figures: array(object({ src: link, caption: string(3000) }, ["src", "caption"]), 100)
+    figures: array(object({ src: link, caption: string(3000), alt: string(1000) }, ["src", "caption"]), 100)
   }, ["title", "authors", "venue", "year", "type", "topics", "image", "selected", "abstract", "links"]), 500),
   gallery: array(object({
     id, place: string(300), title: string(500), date: month,
     coords: (value, path) => { if (!Array.isArray(value) || value.length !== 2) invalid(path); number(-90, 90)(value[0], path + "[0]"); number(-180, 180)(value[1], path + "[1]"); },
-    tags: array(string(100), 30), favorite: boolean, story: string(30000), photos: array(photo, 100)
+    tags: array(string(100), 30), favorite: boolean, published: boolean, story: string(30000), photos: array(photo, 100)
   }, ["id", "place", "title", "date", "coords", "tags", "story", "photos"]), 100),
-  bottles: array(object({ from: string(100), date: day, text: string(10000, true), reply: string(10000) }, ["from", "date", "text", "reply"]), 500),
+  bottles: array(object({ from: string(100), date: day, text: string(10000, true), reply: string(10000), published: boolean }, ["from", "date", "text", "reply"]), 500),
+  message: object({ introKicker: string(1000), placeholder: string(1000), sharedIntro: string(1000), emptyText: string(1000) }),
   farm: object({ keeper: object({ species, name: string(24, true), title: string(200), note: string(2000) }, ["species", "name", "title", "note"]), residents: array(resident, 24) }),
   voyager: array(object({
     id, date: nullable(day), place: string(500), en: string(500), title: array(string(500, true), 2, 2), poem: string(10000), fact: string(10000), body: oneOf("earth", "venus", "jupiter", "saturn", "titan", "enceladus", "iapetus", "phoebe", "nebula"),
@@ -97,10 +102,16 @@ export function validateSiteContent(content) {
   return content;
 }
 
-export async function readSiteContent(env) {
+export async function readSiteContent(env, { publicOnly = false } = {}) {
   const row = await env.DB.prepare("SELECT revision, updated_at, content_json FROM site_content WHERE id = 1").first();
   if (!row) throw Error("content row missing");
-  return { ok: true, revision: row.revision, updatedAt: row.updated_at, content: JSON.parse(row.content_json) };
+  const content = JSON.parse(row.content_json);
+  if (publicOnly) {
+    for (const key of ["papers", "gallery", "bottles"]) {
+      if (Array.isArray(content[key])) content[key] = content[key].filter(item => item.published !== false);
+    }
+  }
+  return { ok: true, revision: row.revision, updatedAt: row.updated_at, content };
 }
 
 export async function saveSiteContent(env, body) {

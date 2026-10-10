@@ -20,10 +20,10 @@
     } catch (_) {}
     return "";
   };
-  const figure = value => record(value) ? { src: url(value.src), caption: string(value.caption) } : null;
+  const figure = value => record(value) ? { src: url(value.src), caption: string(value.caption), ...textFields(value, ["alt"]) } : null;
   const paper = value => {
     if (!record(value) || typeof value.title !== "string") return null;
-    const result = { ...textFields(value, ["id", "title", "venue", "abstract", "bibtex"]),
+    const result = { ...textFields(value, ["id", "title", "venue", "abstract", "bibtex", "imageAlt"]),
       authors: strings(value.authors), topics: strings(value.topics),
       year: Number.isSafeInteger(value.year) ? value.year : 0,
       type: ["publication", "preprint", "project"].includes(value.type) ? value.type : "publication",
@@ -36,7 +36,7 @@
     if (!record(value) || typeof value.id !== "string") return null;
     const result = { ...textFields(value, ["id", "title", "place", "date", "story"]), tags: strings(value.tags), favorite: value.favorite === true,
       photos: (Array.isArray(value.photos) ? value.photos : []).filter(record).map(photo => ({
-        src: url(photo.src), caption: string(photo.caption), text: string(photo.text),
+        src: url(photo.src), caption: string(photo.caption), text: string(photo.text), ...textFields(photo, ["alt"]),
         paint: { sky: string(photo.paint?.sky), land: string(photo.paint?.land), cabin: photo.paint?.cabin === true }
       })) };
     if (Array.isArray(value.coords) && value.coords.length === 2 && value.coords.every(Number.isFinite) && Math.abs(value.coords[0]) <= 90 && Math.abs(value.coords[1]) <= 180) result.coords = value.coords.slice();
@@ -68,19 +68,26 @@
         result.site.links = {};
         for (const key of ["scholar", "linkedin", "github", "cv"]) if (own(content.site.links, key)) result.site.links[key] = url(content.site.links[key]);
       }
+      if (Array.isArray(content.site.extraLinks)) result.site.extraLinks = content.site.extraLinks.filter(record).map(item => ({
+        label: string(item.label), href: url(item.href),
+        icon: ["globe", "scholar", "linkedin", "github", "mail", "cv", "book", "image", "star4"].includes(item.icon) ? item.icon : "globe"
+      })).filter(item => item.label.trim() && item.href).slice(0, 24);
       const observer = content.site.observer;
       if (record(observer) && Number.isFinite(observer.lat) && Math.abs(observer.lat) <= 90 && Number.isFinite(observer.lon) && Math.abs(observer.lon) <= 180) {
         result.site.observer = { place: string(observer.place), lat: observer.lat, lon: observer.lon };
       }
       if (record(content.site.pages)) {
         result.site.pages = {};
-        for (const key of ["papers", "gallery", "message", "starmap", "farm", "woods", "pond", "voyager"]) {
-          if (record(content.site.pages[key])) result.site.pages[key] = textFields(content.site.pages[key], ["title", "subtitle"]);
+        for (const key of ["home", "papers", "gallery", "message", "starmap", "farm", "woods", "pond", "voyager"]) {
+          if (record(content.site.pages[key])) result.site.pages[key] = textFields(content.site.pages[key], ["title", "subtitle", "navLabel", "description"]);
         }
       }
     }
     if (record(content.home)) {
-      result.home = textFields(content.home, ["heroTitle", "heroLede", "beyond", "coda", "heroFoot"]);
+      result.home = textFields(content.home, ["heroTitle", "heroLede", "beyond", "coda", "heroFoot", "avatarAlt"]);
+      if (record(content.home.labels)) result.home.labels = textFields(content.home.labels, ["about", "beyond", "educationKicker", "education", "newsKicker", "news", "explore"]);
+      if (record(content.home.visibility)) result.home.visibility = Object.fromEntries(["about", "education", "news", "explore"].filter(key => typeof content.home.visibility[key] === "boolean").map(key => [key, content.home.visibility[key]]));
+      if (record(content.home.finale)) result.home.finale = textFields(content.home.finale, ["date", "title", "text"]);
       if (own(content.home, "avatar")) result.home.avatar = url(content.home.avatar);
       for (const key of ["bio", "interests"]) if (Array.isArray(content.home[key])) result.home[key] = strings(content.home[key]);
       for (const [key, fields] of [["education", ["date", "title", "detail"]], ["news", ["date", "text"]], ["explore", ["title", "text", "icon"]]]) {
@@ -89,9 +96,10 @@
         }));
       }
     }
-    if (Array.isArray(content.papers)) result.papers = content.papers.map(paper).filter(Boolean);
-    if (Array.isArray(content.gallery)) result.gallery = content.gallery.map(album).filter(Boolean);
-    if (Array.isArray(content.bottles)) result.bottles = content.bottles.filter(record).map(value => textFields(value, ["id", "from", "date", "text", "reply"]));
+    if (Array.isArray(content.papers)) result.papers = content.papers.filter(value => value?.published !== false).map(paper).filter(Boolean);
+    if (Array.isArray(content.gallery)) result.gallery = content.gallery.filter(value => value?.published !== false).map(album).filter(Boolean);
+    if (Array.isArray(content.bottles)) result.bottles = content.bottles.filter(value => record(value) && value.published !== false).map(value => textFields(value, ["id", "from", "date", "text", "reply"]));
+    if (record(content.message)) result.message = textFields(content.message, ["introKicker", "placeholder", "sharedIntro", "emptyText"]);
     if (record(content.farm)) {
       result.farm = {};
       if (own(content.farm, "keeper")) result.farm.keeper = animal(content.farm.keeper);
@@ -111,9 +119,10 @@
       Object.assign(settings, fields);
       if (links) settings.links = { ...settings.links, ...links };
       if (observer) settings.observer = { ...settings.observer, ...observer };
-      if (pages) settings.pages = { ...settings.pages, ...pages };
+      if (pages) settings.pages = Object.fromEntries(Object.entries({ ...settings.pages, ...pages }).map(([key, value]) => [key, { ...settings.pages?.[key], ...value }]));
     }
     if (clean.home) window.HOME_CONTENT = clean.home;
+    if (clean.message) window.MESSAGE_CONTENT = clean.message;
     for (const [key, global] of [["papers", "PAPERS"], ["gallery", "GALLERY"], ["bottles", "BOTTLES"], ["voyager", "VOYAGER_STOPS"]]) {
       if (own(clean, key)) window[global] = clean[key];
     }

@@ -544,12 +544,18 @@
     for (let node = el; node; node = node.offsetParent) y += node.offsetTop;
     return y;
   }
+  function descentAnchor() {
+    // Hidden owner sections have no layout border; stop above the next visible section instead.
+    return [bio, ...["education", "news", "explore", "site-footer"].map(id => document.getElementById(id))]
+      .find(el => el && !el.hidden && el.getClientRects().length);
+  }
   function descentGeometry() {
-    if (!F || !bio) return null;
+    const anchor = descentAnchor();
+    if (!F || !anchor) return null;
     const f = burnFlight(FINAL_ENTRY), [sx, sy] = P(f.x, f.y);
     const clearance = vw < 680 ? 18 : 24;
     const start = documentTop(story) + story.offsetHeight - vh * 1.02;
-    const border = documentTop(bio);
+    const border = documentTop(anchor);
     const endY = Math.min(vh * .8, Math.max(sy / dpr + vh * .18, vh * .52));
     return { sx, sy, start, border, clearance, endY: endY * dpr,
       distance: Math.max(vh * .25, border - start - endY - clearance) };
