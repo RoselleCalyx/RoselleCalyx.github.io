@@ -887,7 +887,21 @@
       a.el.remove(); animals.splice(animals.indexOf(a), 1);
     });
     snapshot.residents.forEach(def => {
-      if (animals.some(a => a.sharedId === def.id)) return;
+      const existing = animals.find(a => a.sharedId === def.id);
+      if (existing) {
+        const changed = ["species", "name", "adoptedBy", "note", "since"].some(key => existing.def[key] !== def[key]);
+        if (!changed) return;
+        if (bubble?.anchor === existing.el) closeBubble();
+        if (existing.def.species === def.species) {
+          existing.def = def;
+          const label = existing.el.querySelector(".resident-label");
+          if (label) label.textContent = def.name;
+          existing.el.setAttribute("aria-label", `${def.name}, ${existing.sp.label}`);
+          return;
+        }
+        // A different species needs its own sprites and habitat placement.
+        existing.el.remove(); animals.splice(animals.indexOf(existing), 1);
+      }
       const a = addAnimal(def); if (a) a.sharedId = def.id;
     });
     document.getElementById("residentCount").textContent = animals.length + " little lives";
@@ -1183,7 +1197,7 @@
   if (window.FarmFX) FarmFX.init(world);
   preloadWalks();
   if (FARM.keeper) addAnimal(FARM.keeper, { keeper: true });
-  (FARM.residents || []).forEach((d) => addAnimal(d));
+  (FARM.residents || []).filter(d => d.active !== false).forEach((d) => addAnimal(d));
   document.getElementById("residentCount").textContent = animals.length + " little lives";
   document.getElementById("meetKeeper").onclick = () => {
     const keeper = animals.find(a => a.keeper); if (!keeper) return;

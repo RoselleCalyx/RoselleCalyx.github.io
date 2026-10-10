@@ -80,6 +80,12 @@ async function main() {
         }
         if (pathname === '/api/farm' && method === 'GET') return respond({ ok:true, maxTrees:8, trees:copy(trees), residents:[] });
         if (pathname === '/api/host/farm/adoptions') return respond(copy(adoptions.filter(row => row.status === url.searchParams.get('status'))));
+        if (pathname === '/api/host/farm/residents' && method === 'GET') return respond(adoptions.filter(row => row.status === 'approved' && row.id === residentId).map(row => ({ id:row.id, name:row.name, species:row.species, adoptedBy:row.adoptedBy, note:row.note, created_at:row.created_at, since:row.since || row.created_at.slice(0,7), active:row.active !== false, version:row.version || 0 })));
+        if (pathname === '/api/host/farm/residents/' + residentId && method === 'PATCH') {
+          const row = adoptions[1], changes = request.postDataJSON(); assert.equal(changes.version, row.version || 0);
+          Object.assign(row, changes); row.version++;
+          return respond({ id:row.id, name:row.name, species:row.species, adoptedBy:row.adoptedBy, note:row.note, created_at:row.created_at, since:row.since || row.created_at.slice(0,7), active:row.active !== false, version:row.version });
+        }
         if (pathname === '/api/host/farm/adoptions/7' && method === 'PATCH') {
           Object.assign(adoptions[0], request.postDataJSON()); state.reviews.push(copy(adoptions[0])); return respond(copy(adoptions[0]));
         }
@@ -146,7 +152,7 @@ async function main() {
     assert.equal(await publicPage.evaluate(() => GALLERY.find(album => album.id === 'qa-munich').photos[0].caption), 'Published photo caption');
     console.log('[owner] Gallery album, coordinates, custom tags and photo publication passed');
 
-    await tab('public'); await field(owner, 'farm.keeper.name').fill('Chai'); await field(owner, 'farm.keeper.title').fill('The meadow caretaker');
+    await tab('animals'); await field(owner, 'farm.keeper.name').fill('Chai'); await field(owner, 'farm.keeper.title').fill('The meadow caretaker');
     await field(owner, 'farm.keeper.species').selectOption('fox'); await field(owner, 'farm.keeper.note').fill('A keeper story published from the workspace.'); await save();
     await publicOpen('farm.html');
     assert.equal(await publicPage.locator('#meetKeeper img').getAttribute('src'), 'assets/farm/fox.webp');
@@ -161,7 +167,7 @@ async function main() {
     assert.match(await owner.locator('#ownerEditorStatus').innerText(), /another|changed|draft|reload/i);
     assert.equal(await field(owner, 'site.tagline').inputValue(), 'A draft kept through publishing failures'); assert.equal(await owner.locator('#ownerSaveState').innerText(), 'Unpublished changes');
     state.failure = 'network'; await owner.locator('#saveContentButton').click();
-    await owner.waitForFunction(() => document.querySelector('#ownerEditorStatus').textContent.includes('interrupted'));
+    await owner.waitForFunction(() => document.querySelector('#ownerEditorStatus').textContent.includes('could not be reached'));
     assert.equal(await field(owner, 'site.tagline').inputValue(), 'A draft kept through publishing failures'); assert.equal(state.revision, revisionBefore); assert.equal(await owner.locator('#saveContentButton').isDisabled(), false);
     state.failure = ''; await save(); console.log('[owner] Conflict and network failure keep the unpublished draft');
 
@@ -189,14 +195,19 @@ async function main() {
       await owner.getByRole('button', { name:'Save handling', exact:true }).click(); await owner.waitForFunction(() => !document.querySelector('.letter-management button').disabled);
     }
     await owner.getByRole('button', { name:'Approve Clover', exact:true }).click(); await owner.waitForFunction(() => document.querySelector('#adoptionList').children.length === 0); assert.equal(state.reviews[0].status, 'approved');
-    await owner.locator('#adoptionFilter').selectOption('approved'); await owner.getByRole('button', { name:'Remove resident Fern', exact:true }).waitFor();
+    await owner.locator('#adoptionFilter').selectOption('approved'); await owner.getByRole('button', { name:'Manage animal Fern', exact:true }).waitFor();
     assert.equal(await owner.getByRole('button', { name:'Approve Fern', exact:true }).count(), 0, 'approved filter does not offer another approval');
-    owner.once('dialog', dialog => dialog.accept()); await owner.getByRole('button', { name:'Remove resident Fern', exact:true }).click();
-    await owner.waitForFunction(() => document.querySelector('#adoptionStatus').textContent.includes('Fern has left')); assert.deepEqual(state.removals, [residentId]);
+    await owner.getByRole('button', { name:'Manage animal Fern', exact:true }).click();
+    const fern = owner.locator('[data-resident-id="' + residentId + '"]');
+    await fern.getByRole('button', { name:'Send indoors', exact:true }).click();
+    await fern.getByRole('button', { name:'Save animal', exact:true }).click();
+    await owner.waitForFunction(() => document.querySelector('.owner-adopted-animal .owner-animal-badge').textContent === 'Resting indoors');
+    assert.equal(adoptions[1].status, 'approved'); assert.equal(adoptions[1].active, false); assert.deepEqual(state.removals, []);
+    await tab('letters');
     await owner.locator('#adoptionFilter').selectOption('rejected'); await owner.waitForFunction(() => document.querySelector('#adoptionList').textContent.includes('Seed'));
-    assert.match(await owner.locator('#adoptionList').innerText(), /Fern/); assert.equal(await owner.locator('#adoptionList button').count(), 0, 'rejected history has no mutation controls');
+    assert.equal((await owner.locator('#adoptionList').innerText()).includes('Fern'), false, 'indoor rest preserves approved adoption status'); assert.equal(await owner.locator('#adoptionList button').count(), 0, 'rejected history has no mutation controls');
     await owner.getByRole('button', { name:'Remove Apple tree in space 1', exact:true }).click(); await owner.getByRole('button', { name:'Remove Apple tree in space 1', exact:true }).click(); await owner.waitForFunction(() => document.querySelector('#orchardList').children.length === 0);
-    console.log('[owner] Handling drafts/focus survive refresh; private notes, adoption filters/approval, resident removal and orchard removal passed');
+    console.log('[owner] Handling drafts/focus survive refresh; private notes, adoption filters/approval, reversible resident rest and orchard removal passed');
 
     await tab('profile');
     const downloadReady = owner.waitForEvent('download'); await owner.locator('#exportContentButton').click(); const download = await downloadReady;
@@ -229,7 +240,7 @@ async function main() {
     assert.ok(await owner.locator('#inboxPanel').evaluate(el => el.getBoundingClientRect().width) >= 900, 'desktop workspace uses a wide editing area');
     await owner.screenshot({ path:path.join(output, 'owner-workspace-desktop.png') });
     await owner.setViewportSize({ width:390, height:844 });
-    for (const name of ['profile', 'home', 'papers', 'gallery', 'public', 'letters']) {
+    for (const name of ['profile', 'home', 'papers', 'gallery', 'animals', 'public', 'letters']) {
       await tab(name); assert.equal(await owner.locator('[data-owner-tab="' + name + '"]').getAttribute('aria-pressed'), 'true');
       const widths = await owner.evaluate(() => ({ width:innerWidth, scroll:document.documentElement.scrollWidth }));
       assert.ok(widths.scroll <= widths.width + 1, name + ' mobile form must not overflow horizontally: ' + JSON.stringify(widths));

@@ -65,6 +65,8 @@ All requests, including host requests and command-line checks, must supply the e
 | GET | `/api/host/site-content` | Bearer access token → the same content envelope |
 | PUT | `/api/host/site-content` | Bearer access token + `{revision,content}` → the committed content envelope |
 | GET | `/api/host/farm/adoptions?status=approved` | Bearer access token → approved visitor residents, with UUID `id` values |
+| GET | `/api/host/farm/residents` | Bearer access token → approved animals including those resting indoors |
+| PATCH | `/api/host/farm/residents/{UUID}` | Bearer access token + `{version,...changes}` → confirmed animal details and incremented version |
 | DELETE | `/api/host/farm/residents/{UUID}` | Bearer access token → `{ok:true,deleted:true}` after retiring an approved visitor resident |
 
 Private message rows expose `id,created_at,name,contact,text,read_at,status,host_note`. Owner notes allow 2,000 Unicode code points and remain private. Unsupported body fields, public message reads, deletes, and edits to a visitor's submitted text are rejected. Empty nickname/contact become `null`. Names allow 60 Unicode code points, contact 120, and trimmed text 2–500.
@@ -94,6 +96,10 @@ The supported public sections are:
 Content and private request handling share the existing owner session. The public content endpoint exposes only the saved presentation overlay; it never queries messages, owner notes, sessions, farm pending requests, visitor credentials, or notification records. PUT CORS is permitted for the owner content path while unsupported routes still reject writes.
 
 Approved visitor residents are managed separately from CMS baseline residents. Listing `status=approved` returns the same adoption UUIDs used for reviews. The authenticated resident removal endpoint preserves the adoption request record, changes its status to `rejected`, records the removal time in `reviewed_at`, frees its place, and immediately excludes it from public farm snapshots. Pending/rejected/unknown IDs return HTTP 404 `resident_not_found`; removed requests cannot be approved again. A repeated removal returns 404, so refresh the approved list after an uncertain connection. No visitor credential can authorize owner moderation.
+
+`0006_resident_management.sql` adds `active`, `version`, and an editable `since` month without replacing adoption records. In the owner's Animals tab, resting uses `active:false` while the adoption stays approved; restoring uses `active:true`. Both indoor and outdoor animals retain their places in the 24-resident capacity. CMS baseline residents also accept optional `active` (omitted means outdoors).
+
+The resident PATCH accepts a required nonnegative integer `version` and at least one of `species`, `name`, `adoptedBy`, `note`, `since`, or `active`. Success returns `{id,species,name,adoptedBy,note,since,active,version,created_at}` with the next version; a concurrent update returns HTTP 409 `resident_conflict`. The public farm includes only outdoor approved residents and never returns management versions or visitor credentials. Apply the migration before deploying this Worker.
 
 ## Security and notification behavior
 

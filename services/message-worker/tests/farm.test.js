@@ -10,7 +10,7 @@ import worker from '../src/worker.js';
 class D1 {
   constructor() {
     this.sqlite = new DatabaseSync(':memory:');
-    for (const migration of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql']) this.sqlite.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
+    for (const migration of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql', '0006_resident_management.sql']) this.sqlite.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
     this.failOperation = false;
     this.queries = [];
   }
@@ -408,4 +408,149 @@ test('farm writes never create private letters, sessions or Telegram notificatio
   assert.equal(f.env.DB.rows('messages').length, 0);
   assert.equal(f.env.DB.rows('host_sessions').length, 0);
   assert.equal(f.env.DB.rows('notification_outbox').length, 0);
+});
+
+function insertResident(f, overrides = {}) {
+  const row = { id: crypto.randomUUID(), species: 'rabbit', name: 'Comet', adoptedBy: 'A friend', note: 'Likes the orchard.', status: 'approved', created_at: '2026-04-10T12:30:00.000Z', ...overrides };
+  f.env.DB.sqlite.prepare('INSERT INTO farm_adoptions (id, submission_id, payload_hash, visitor_hash, species, name, adopted_by, note, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(row.id, crypto.randomUUID(), '0'.repeat(64), '1'.repeat(64), row.species, row.name, row.adoptedBy, row.note, row.status, row.created_at);
+  return row;
+}
+
+test('resident management migration preserves old approvals, pending rows, credentials and public months', () => {
+  const sqlite = new DatabaseSync(':memory:');
+  for (const file of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql']) sqlite.exec(readFileSync(new URL('../migrations/' + file, import.meta.url), 'utf8'));
+  const insert = sqlite.prepare('INSERT INTO farm_adoptions (id, submission_id, payload_hash, visitor_hash, species, name, adopted_by, note, status, created_at, reviewed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  for (const [index, status] of ['approved', 'pending', 'rejected'].entries()) insert.run(crypto.randomUUID(), crypto.randomUUID(), '0'.repeat(64), '1'.repeat(64), 'redpanda', 'Existing ' + index, 'A visitor', 'Keep every detail.', status, '2024-02-10T00:00:00.000Z', status === 'pending' ? null : '2024-03-01T00:00:00.000Z');
+  const before = sqlite.prepare('SELECT * FROM farm_adoptions ORDER BY id').all();
+  sqlite.exec(readFileSync(new URL('../migrations/0006_resident_management.sql', import.meta.url), 'utf8'));
+  const after = sqlite.prepare('SELECT * FROM farm_adoptions ORDER BY id').all();
+  assert.deepEqual(after.map(({ active, version, since, ...row }) => row), before.map(row => ({ ...row })));
+  assert.ok(after.every(row => row.active === 1 && row.version === 0 && row.since === '2024-02'));
+  const first = after[0].id;
+  for (const since of ['2024-00', '2024-13', '2024-1', '24-01', 'abcd-01', '2024-01-extra']) assert.throws(() => sqlite.prepare('UPDATE farm_adoptions SET since = ? WHERE id = ?').run(since, first), /CHECK/);
+  assert.throws(() => sqlite.prepare('UPDATE farm_adoptions SET active = 2 WHERE id = ?').run(first), /CHECK/);
+  assert.throws(() => sqlite.prepare('UPDATE farm_adoptions SET version = -1 WHERE id = ?').run(first), /CHECK/);
+  assert.doesNotThrow(() => sqlite.prepare('UPDATE farm_adoptions SET since = NULL WHERE id = ?').run(first));
+  sqlite.close();
+});
+
+test('owner resident list includes every approved animal and exposes only its management fields', async () => {
+  const f = fixture(), token = await f.login();
+  const outside = insertResident(f), resting = insertResident(f, { name: 'Sleeping friend' });
+  insertResident(f, { status: 'pending' }); insertResident(f, { status: 'rejected' });
+  f.env.DB.sqlite.prepare('UPDATE farm_adoptions SET active = 0 WHERE id = ?').run(resting.id);
+  const response = await f.call('/api/host/farm/residents', { token });
+  assert.equal(response.status, 200);
+  const rows = await response.json();
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows.map(row => row.id).sort(), [outside.id, resting.id].sort());
+  for (const row of rows) {
+    assert.deepEqual(Object.keys(row).sort(), ['active', 'adoptedBy', 'created_at', 'id', 'name', 'note', 'since', 'species', 'version']);
+    assert.equal(typeof row.active, 'boolean'); assert.equal(row.version, 0); assert.equal(row.since, '2026-04');
+  }
+  assert.equal(rows.find(row => row.id === resting.id).active, false);
+  const publicRows = (await f.snapshot()).residents;
+  assert.deepEqual(publicRows.map(row => row.id), [outside.id]);
+  assert.deepEqual(Object.keys(publicRows[0]).sort(), ['adoptedBy', 'id', 'name', 'note', 'since', 'species']);
+});
+
+test('resident details update atomically, accept all new species, and keep original submission credentials', async () => {
+  const f = fixture(), token = await f.login(), resident = insertResident(f);
+  const original = f.env.DB.rows('farm_adoptions')[0];
+  const path = '/api/host/farm/residents/' + resident.id.toUpperCase();
+  let version = 0;
+  for (const species of ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec']) {
+    const changes = { version, species, name: ' 月亮 🌙 ', adoptedBy: '   ', note: ' Likes flowers. ', since: '2024-09', active: true };
+    const response = await f.call(path, { method: 'PATCH', token, body: changes });
+    assert.equal(response.status, 200, species);
+    const row = await response.json();
+    assert.equal(row.species, species); assert.equal(row.name, '月亮 🌙'); assert.equal(row.adoptedBy, 'a visitor'); assert.equal(row.note, 'Likes flowers.');
+    assert.equal(row.since, '2024-09'); assert.equal(row.active, true); assert.equal(row.version, ++version); assert.equal(row.created_at, resident.created_at);
+    assert.equal((await f.snapshot()).residents[0].since, '2024-09');
+  }
+  const stored = f.env.DB.rows('farm_adoptions')[0];
+  for (const field of ['id', 'submission_id', 'payload_hash', 'visitor_hash', 'created_at', 'status', 'reviewed_at']) assert.equal(stored[field], original[field], field);
+});
+
+test('resting and waking are partial updates that preserve adoption approval and details', async () => {
+  const f = fixture(), token = await f.login(), resident = insertResident(f);
+  const path = '/api/host/farm/residents/' + resident.id;
+  const asleep = await f.call(path, { method: 'PATCH', token, body: { version: 0, active: false } });
+  assert.equal(asleep.status, 200);
+  const resting = await asleep.json();
+  assert.equal(resting.active, false); assert.equal(resting.version, 1);
+  assert.equal(resting.name, resident.name); assert.equal(resting.adoptedBy, resident.adoptedBy); assert.equal(resting.note, resident.note); assert.equal(resting.since, '2026-04');
+  assert.deepEqual((await f.snapshot()).residents, []);
+  assert.equal(f.env.DB.rows('farm_adoptions')[0].status, 'approved');
+  const editWhileResting = await f.call(path, { method: 'PATCH', token, body: { version: 1, name: 'Night reader' } });
+  assert.equal(editWhileResting.status, 200); assert.equal((await editWhileResting.json()).active, false);
+  const awake = await f.call(path, { method: 'PATCH', token, body: { version: 2, active: true } });
+  assert.equal(awake.status, 200); assert.equal((await awake.json()).version, 3);
+  assert.equal((await f.snapshot()).residents[0].name, 'Night reader');
+});
+
+test('stale and simultaneous resident edits return conflicts without overwriting the winner', async () => {
+  const f = fixture(), token = await f.login(), resident = insertResident(f);
+  const path = '/api/host/farm/residents/' + resident.id;
+  const responses = await Promise.all(['First', 'Second'].map(name => f.call(path, { method: 'PATCH', token, body: { version: 0, name } })));
+  assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
+  const winner = await responses.find(response => response.status === 200).json();
+  assert.equal((await responses.find(response => response.status === 409).json()).code, 'resident_conflict');
+  const before = f.env.DB.rows('farm_adoptions');
+  const stale = await f.call(path, { method: 'PATCH', token, body: { version: 0, active: false, adoptedBy: 'Overwrite' } });
+  assert.equal(stale.status, 409); assert.equal((await stale.json()).code, 'resident_conflict');
+  assert.deepEqual(f.env.DB.rows('farm_adoptions'), before);
+  assert.equal((await f.snapshot()).residents[0].name, winner.name);
+});
+
+test('resident management requires authentication and exact origin, and refuses pending, rejected and missing IDs', async () => {
+  const f = fixture(), token = await f.login(), resident = insertResident(f);
+  const path = '/api/host/farm/residents/' + resident.id;
+  for (const invalidToken of [undefined, 'bad', '0'.repeat(64)]) {
+    assert.equal((await f.call('/api/host/farm/residents', { token: invalidToken })).status, 401);
+    assert.equal((await f.call(path, { method: 'PATCH', token: invalidToken, body: { version: 0, active: false } })).status, 401);
+  }
+  for (const origin of [null, 'null', 'https://evil.example']) {
+    const read = await f.call('/api/host/farm/residents', { token, origin });
+    assert.equal(read.status, 403); assert.equal(read.headers.get('Access-Control-Allow-Origin'), null);
+    assert.equal((await f.call(path, { method: 'PATCH', token, origin, body: { version: 0, active: false } })).status, 403);
+  }
+  for (const id of [insertResident(f, { status: 'pending' }).id, insertResident(f, { status: 'rejected' }).id, crypto.randomUUID()]) {
+    const response = await f.call('/api/host/farm/residents/' + id, { method: 'PATCH', token, body: { version: 0, name: 'Edited' } });
+    assert.equal(response.status, 404); assert.equal((await response.json()).code, 'resident_not_found');
+  }
+  f.env.DB.sqlite.exec('UPDATE host_sessions SET access_expires = 0');
+  assert.equal((await f.call('/api/host/farm/residents', { token })).status, 401);
+  assert.equal((await f.call(path, { method: 'PATCH', token, body: { version: 0, active: false } })).status, 401);
+  assert.equal(f.env.DB.rows('farm_adoptions').find(row => row.id === resident.id).active, 1);
+});
+
+test('resident PATCH validates fields, version, month, strict booleans and character lengths before writing', async () => {
+  const f = fixture(), token = await f.login(), resident = insertResident(f);
+  const path = '/api/host/farm/residents/' + resident.id, before = f.env.DB.rows('farm_adoptions');
+  const bad = [{ version: 0 }, { name: 'No version' }, { version: -1, active: false }, { version: 0.5, active: false }, { version: '0', active: false },
+    { version: 0, name: '' }, { version: 0, name: 'x'.repeat(25) }, { version: 0, name: null }, { version: 0, name: 'bad\nname' }, { version: 0, name: 'spoof\u202etest' },
+    { version: 0, adoptedBy: 'x'.repeat(41) }, { version: 0, adoptedBy: null }, { version: 0, note: 'x'.repeat(141) }, { version: 0, note: 42 },
+    { version: 0, species: 'snowcat' }, { version: 0, species: 'dragon' }, { version: 0, active: 0 }, { version: 0, active: 'false' }, { version: 0, active: null },
+    ...['', '2024-00', '2024-13', '2024-1', '24-01', '2024-01-01', null, 2024].map(since => ({ version: 0, since })),
+    { version: 0, visitor_hash: '2'.repeat(64) }, { version: 0, status: 'rejected' }, { version: 0, created_at: '2024-01' }];
+  for (const body of bad) assert.equal((await f.call(path, { method: 'PATCH', token, body })).status, 400, JSON.stringify(body));
+  assert.deepEqual(f.env.DB.rows('farm_adoptions'), before);
+  const unicode = await f.call(path, { method: 'PATCH', token, body: { version: 0, name: '🌙'.repeat(24) } });
+  assert.equal(unicode.status, 200); assert.equal((await unicode.json()).name, '🌙'.repeat(24));
+});
+
+test('resting residents still reserve farm capacity for both approvals and CMS additions', async () => {
+  const f = fixture(), token = await f.login();
+  const residents = Array.from({ length: 14 }, () => insertResident(f));
+  for (const resident of residents) assert.equal((await f.call('/api/host/farm/residents/' + resident.id, { method: 'PATCH', token, body: { version: 0, active: false } })).status, 200);
+  assert.deepEqual((await f.snapshot()).residents, []);
+  assert.equal((await (await f.call('/api/host/farm/residents', { token })).json()).length, 14);
+  const pending = insertResident(f, { status: 'pending' });
+  const approval = await f.call('/api/host/farm/adoptions/' + pending.id, { method: 'PATCH', token, body: { status: 'approved' } });
+  assert.equal(approval.status, 409); assert.equal((await approval.json()).code, 'farm_full');
+  const content = { farm: { residents: Array.from({ length: 11 }, (_, i) => ({ species: 'rabbit', name: 'Baseline ' + i, active: false })) } };
+  const publication = await f.call('/api/host/site-content', { method: 'PUT', token, body: { revision: 0, content } });
+  assert.equal(publication.status, 409); assert.equal((await publication.json()).code, 'farm_capacity');
 });

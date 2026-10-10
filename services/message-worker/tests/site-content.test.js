@@ -8,7 +8,7 @@ import { validateSiteContent } from "../src/site-content.js";
 class D1 {
   constructor() {
     this.sqlite = new DatabaseSync(":memory:");
-    for (const file of ["0001_message_inbox.sql", "0002_shared_farm.sql", "0003_owner_content.sql", "0004_farm_species.sql"]) this.sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
+    for (const file of ["0001_message_inbox.sql", "0002_shared_farm.sql", "0003_owner_content.sql", "0004_farm_species.sql", "0006_resident_management.sql"]) this.sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
     this.failContentWrite = false;
   }
   prepare(sql) {
@@ -111,6 +111,15 @@ test("CMS accepts and publishes the new farm species", async () => {
   assert.equal(response.status, 200);
   assert.deepEqual((await (await f.call("/api/site-content")).json()).content, content);
   assert.throws(() => validateSiteContent({ farm: { residents: [{ species: "dragon", name: "Unknown" }] } }), /species/);
+});
+
+test("CMS resident activity is optional, strictly boolean, and included in the published draft", async () => {
+  const f = fixture(), token = await f.login();
+  const content = { farm: { residents: [{ species: "rabbit", name: "Outside", active: true }, { species: "fennec", name: "Resting", active: false }, { species: "panda", name: "Legacy" }] } };
+  const response = await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 0, content } });
+  assert.equal(response.status, 200);
+  assert.deepEqual((await (await f.call("/api/site-content")).json()).content, content);
+  for (const active of [0, 1, "true", "false", null]) assert.throws(() => validateSiteContent({ farm: { residents: [{ species: "rabbit", name: "Bad", active }] } }), /active/);
 });
 
 test("CMS content without a farm override reserves space for the ten default residents", async () => {

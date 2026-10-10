@@ -6,9 +6,11 @@
   if (!api || !$("ownerContentForm")) return;
   const clone = value => JSON.parse(JSON.stringify(value));
   const species = ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"];
+  const speciesLabels = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin", redpanda: "Red panda", raccoon: "Raccoon", wolf: "Wolf", crocodile: "Crocodile", fennec: "Fennec fox" };
   const sections = ["site", "home", "papers", "gallery", "bottles", "farm", "voyager"];
   let defaults, draft, revision = 0, dirty = false, busy = false, generation = 0, tab = "profile";
   let updatedAt = null;
+  const newAnimalIds = new Set();
 
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -36,16 +38,18 @@
     parent[path[path.length - 1]] = value;
     setDirty();
   }
-  function field(path, title, { type = "text", options, required = false, rows = 3, min, max, placeholder, help, image = false, ratio = "original" } = {}) {
+  function field(path, title, { type = "text", options, required = false, rows = 3, min, max, maxLength, pattern, placeholder, help, image = false, ratio = "original" } = {}) {
     const label = node("label", undefined, "owner-field");
     label.append(node("span", title));
     const input = node(options ? "select" : type === "textarea" || type === "lines" || type === "json" ? "textarea" : "input");
     input.dataset.ownerField = path.join(".");
-    if (options) for (const item of options) { const option = node("option", item); option.value = item; input.append(option); }
+    if (options) for (const item of options) { const option = node("option", path.at(-1) === "species" ? speciesLabels[item] || item : item); option.value = item; input.append(option); }
     else if (input.tagName === "INPUT") input.type = type === "checkbox" ? "checkbox" : type === "number" ? "number" : type === "email" ? "email" : "text";
     else input.rows = rows;
     if (min !== undefined) input.min = min;
     if (max !== undefined) input.max = max;
+    if (maxLength !== undefined) input.maxLength = maxLength;
+    if (pattern) input.pattern = pattern;
     if (placeholder) input.placeholder = placeholder;
     input.required = required;
     let value = read(path);
@@ -92,7 +96,7 @@
   function grid(parent, fields) {
     const el = node("div", undefined, "owner-field-grid"); el.append(...fields); parent.append(el);
   }
-  function collection(parent, path, title, text, blank, build) {
+  function collection(parent, path, title, text, blank, build, { removable = true } = {}) {
     const wrapper = group(title, text), list = node("div", undefined, "owner-collection");
     const add = button("＋ Add " + title.toLowerCase().replace(/s$/, ""), () => {
       const items = read(path); items.push(clone(typeof blank === "function" ? blank() : blank)); setDirty(); render();
@@ -120,7 +124,7 @@
         if (!window.confirm("Remove this item? The removal will become public when you save.")) return;
         items.splice(index, 1); setDirty(); render();
       }, "owner-delete");
-      actions.append(up, down, remove); heading.append(titleNode, actions); card.append(heading);
+      actions.append(up, down); if (removable) actions.append(remove); heading.append(titleNode, actions); card.append(heading);
       build(card, path.concat(index), item); list.append(card);
     });
     parent.append(wrapper);
@@ -181,9 +185,6 @@
       grid(card, [field(path.concat("from"), "From"), field(path.concat("date"), "Date (YYYY-MM-DD)")]);
       card.append(field(path.concat("text"), "Letter", { type: "textarea", required: true, rows: 5 }), field(path.concat("reply"), "Public reply", { type: "textarea" }));
     });
-    const keeper = group("Farm keeper", "The character who looks after the farm.");
-    grid(keeper, [field(["farm", "keeper", "name"], "Name", { required: true }), field(["farm", "keeper", "title"], "Title"), field(["farm", "keeper", "species"], "Species", { options: species }), field(["farm", "keeper", "note"], "Story", { type: "textarea" })]); root.append(keeper);
-    collection(root, ["farm", "residents"], "Farm residents", "These are your original residents. Approved visitor adoptions join them through Letters & requests.", () => ({ species: "rabbit", name: "", adoptedBy: draft.site.name || "", note: "", since: new Date().toISOString().slice(0, 7) }), (card, path) => grid(card, [field(path.concat("name"), "Name", { required: true }), field(path.concat("species"), "Species", { options: species }), field(path.concat("adoptedBy"), "Adopted by"), field(path.concat("since"), "Since (YYYY-MM)"), field(path.concat("note"), "Story", { type: "textarea" })]));
     collection(root, ["voyager"], "Voyager stops", "Edit the journey’s story and scene images. Existing body IDs and positions keep the scene connected to its map.", () => ({ id: "stop-" + Date.now(), date: new Date().toISOString().slice(0, 10), place: "", en: "", title: ["", ""], poem: "", fact: "", body: "saturn", chapter: 0, color: "#dfc69e", map: [50, 50], scene: { art: "", target: "", label: "", vantage: "", terrain: "", pose: "", haze: 0, particles: "", description: "" } }), (card, path, stop) => {
       stop.scene ||= {};
       grid(card, [field(path.concat("id"), "Unique stop ID", { required: true }), field(path.concat("date"), "Date (YYYY-MM-DD)"), field(path.concat("place"), "Place", { required: true }), field(path.concat("en"), "Scene heading"), field(path.concat("title"), "Title lines", { type: "lines", required: true, help: "Exactly two nonempty title lines." }), field(path.concat("body"), "Celestial body", { options: ["earth", "venus", "jupiter", "saturn", "titan", "enceladus", "iapetus", "phoebe", "nebula"] }), field(path.concat("chapter"), "Chapter", { type: "number", min: 0, max: 3 }), field(path.concat("color"), "Accent color"), field(path.concat("map", 0), "Map X (%)", { type: "number", min: 0, max: 100 }), field(path.concat("map", 1), "Map Y (%)", { type: "number", min: 0, max: 100 })]);
@@ -196,20 +197,44 @@
     const extras = group("Additional text & links", "Structured page content is editable above. The JSON backup contains the full public content for transfer or recovery.");
     extras.append(node("p", "Choose Upload & crop beside an image field, or use an HTTPS URL or a path such as assets/paper1.png. Uploaded images enter your draft; Save & publish makes the change visible on the website.", "owner-help")); root.append(extras);
   }
+  function animalsPanel(root) {
+    const keeper = group("Farm keeper", "The character who looks after the farm. These changes publish with Save & publish.");
+    grid(keeper, [field(["farm", "keeper", "name"], "Name", { required: true, maxLength: 24 }), field(["farm", "keeper", "title"], "Title", { maxLength: 200 }), field(["farm", "keeper", "species"], "Species", { options: species }), field(["farm", "keeper", "note"], "Story", { type: "textarea", maxLength: 2000 })]); root.append(keeper);
+    collection(root, ["farm", "residents"], "Farm residents", "Add animals, edit their details, or send them indoors to rest. Resting animals keep their information and can return at any time. There are 24 resident homes, including resting animals and approved adoptions; the keeper has a separate home. Save & publish applies these changes to the website.", () => {
+      const id = "resident-" + crypto.randomUUID(); newAnimalIds.add(id);
+      return { id, species: "rabbit", name: "", adoptedBy: draft.site.name || "", note: "", since: new Date().toISOString().slice(0, 7), active: true };
+    }, (card, path, animal) => {
+      const activity = node("div", undefined, "owner-animal-activity");
+      const badge = node("span", animal.active !== false ? "Out on the farm" : "Resting indoors", "owner-animal-badge");
+      const toggle = button(animal.active !== false ? "Send indoors" : "Let outside", () => {
+        write(path.concat("active"), animal.active === false);
+        badge.textContent = animal.active !== false ? "Out on the farm" : "Resting indoors";
+        toggle.textContent = animal.active !== false ? "Send indoors" : "Let outside";
+        status("Animal activity changed in your draft. Save & publish to update the farm.");
+      });
+      activity.append(badge, toggle); card.append(activity);
+      if (newAnimalIds.has(animal.id)) activity.append(button("Remove draft animal", () => {
+        const animals = read(["farm", "residents"]); animals.splice(path[path.length - 1], 1); newAnimalIds.delete(animal.id); setDirty(); render();
+        status("New animal removed from your unpublished draft.");
+      }, "owner-delete"));
+      grid(card, [field(path.concat("name"), "Name", { required: true, maxLength: 24 }), field(path.concat("species"), "Species", { options: species }), field(path.concat("adoptedBy"), "Adopted by", { maxLength: 40 }), field(path.concat("since"), "Since (YYYY-MM)", { required: true, pattern: "[0-9]{4}-(0[1-9]|1[0-2])", placeholder: "YYYY-MM" }), field(path.concat("note"), "Story", { type: "textarea", maxLength: 140 })]);
+      card.append(node("p", "The activity above is a draft. Save & publish applies it for every visitor.", "owner-help"));
+    }, { removable: false });
+  }
   function render() {
     if (!draft) return;
     window.OwnerImages?.cleanup();
-    for (const [key, fn] of [["profile", profilePanel], ["home", homePanel], ["papers", paperPanel], ["gallery", galleryPanel], ["public", publicPanel]]) {
+    for (const [key, fn] of [["profile", profilePanel], ["home", homePanel], ["papers", paperPanel], ["gallery", galleryPanel], ["animals", animalsPanel], ["public", publicPanel]]) {
       const root = document.querySelector('[data-owner-panel="' + key + '"]'); root.replaceChildren(); fn(root);
     }
     showTab(tab);
   }
   function showTab(value) {
-    tab = ["profile", "home", "papers", "gallery", "public", "letters"].includes(value) ? value : "profile";
+    tab = ["profile", "home", "papers", "gallery", "animals", "public", "letters"].includes(value) ? value : "profile";
     document.querySelectorAll("[data-owner-tab]").forEach(el => el.setAttribute("aria-pressed", String(el.dataset.ownerTab === tab)));
-    document.querySelectorAll("[data-owner-panel]").forEach(el => { el.hidden = el.dataset.ownerPanel !== tab; });
+    document.querySelectorAll("[data-owner-panel]").forEach(el => { el.hidden = el.dataset.ownerPanel !== tab || !api.signedIn; });
     $("ownerEditor").hidden = tab === "letters" || !api.signedIn;
-    $("ownerViewPage").href = { papers: "papers.html", gallery: "gallery.html", public: "message.html" }[tab] || "index.html";
+    $("ownerViewPage").href = { papers: "papers.html", gallery: "gallery.html", animals: "farm.html", public: "message.html" }[tab] || "index.html";
     $("refreshButton").hidden = tab !== "letters";
     $("notifyButton").hidden = tab !== "letters";
     $("messageCount").hidden = tab !== "letters";
@@ -242,7 +267,7 @@
       }
       const result = await api.getContent();
       if (version !== generation || !api.signedIn) return;
-      draft = merged(result.content); revision = result.revision; updatedAt = result.updatedAt;
+      draft = merged(result.content); revision = result.revision; updatedAt = result.updatedAt; newAnimalIds.clear();
       $("ownerRevision").textContent = "Version " + revision + (updatedAt ? " · " + new Date(updatedAt).toLocaleString() : " · Original website content");
       render(); setDirty(false); status("Choose a section to edit. Save & publish updates the website for everyone.");
     } catch (error) {
@@ -263,7 +288,7 @@
     try {
       const result = await api.saveContent(revision, submitted);
       if (version !== generation || !api.signedIn) return;
-      revision = result.revision; updatedAt = result.updatedAt; draft = merged(result.content);
+      revision = result.revision; updatedAt = result.updatedAt; draft = merged(result.content); newAnimalIds.clear();
       $("ownerRevision").textContent = "Version " + revision + " · " + new Date(updatedAt).toLocaleString();
       render(); setDirty(false); status("Published. Visitors will see your changes when they open or refresh a page.");
     } catch (error) {
@@ -304,6 +329,7 @@
     finally { event.target.value = ""; }
   });
   window.addEventListener("beforeunload", event => { if (dirty && draft) { event.preventDefault(); event.returnValue = ""; } });
+  window.addEventListener("host-manage-residents", () => { showTab("animals"); history.replaceState(null, "", "#animals"); });
   window.addEventListener("host-session-change", event => {
     window.OwnerImages?.cancelAll();
     generation += 1; busy = false;
@@ -312,10 +338,10 @@
       if (draft && dirty) { setBusy(false); status("Signed in again. Your unpublished draft is still here. Save to publish, or export a backup."); }
       else load(true);
     } else {
-      $("ownerEditor").hidden = true; $("lettersWorkspace").hidden = true;
+      $("ownerEditor").hidden = true; $("lettersWorkspace").hidden = true; $("ownerAdoptionAnimals").hidden = true;
       if (event.detail.explicit || !dirty) {
         window.OwnerImages?.cleanup();
-        draft = null; dirty = false;
+        draft = null; dirty = false; newAnimalIds.clear();
         document.querySelectorAll("#ownerContentForm [data-owner-panel]").forEach(el => el.replaceChildren());
         status("");
       }

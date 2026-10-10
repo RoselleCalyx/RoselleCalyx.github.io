@@ -43,7 +43,7 @@
     return result;
   };
   const animal = value => record(value) && ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"].includes(value.species)
-    ? { ...textFields(value, ["id", "species", "name", "title", "note", "adoptedBy", "since"]) } : null;
+    ? { ...textFields(value, ["id", "species", "name", "title", "note", "adoptedBy", "since"]), ...(typeof value.active === "boolean" ? { active: value.active } : {}) } : null;
   const stop = value => {
     if (!record(value) || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(value.id || "") || !Array.isArray(value.title) || value.title.length !== 2 ||
         !value.title.every(item => typeof item === "string") || !["place", "en", "poem", "fact"].every(key => typeof value[key] === "string") ||

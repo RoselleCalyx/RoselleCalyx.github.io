@@ -92,8 +92,9 @@
         if (data && data.code === "adoption_reviewed") throw new InboxError("adoption_reviewed", "This request has already been reviewed. Refresh the requests to see the latest state.", response.status);
         if (data && data.code === "tree_not_found") throw new InboxError("tree_not_found", "This tree has already been removed. Refresh the orchard to see the latest state.", response.status);
         if (data && data.code === "content_conflict") throw new InboxError("content_conflict", "The website was updated elsewhere. Your draft is preserved. Reload the published version before saving again.", response.status);
-        if (data && data.code === "farm_capacity") throw new InboxError("farm_capacity", "The farm can hold 24 residents in total. Remove a resident before adding more. Your draft is preserved.", response.status);
+        if (data && data.code === "farm_capacity") throw new InboxError("farm_capacity", "The farm can hold 24 residents, including animals resting indoors. Cancel a new animal draft before adding more. Your draft is preserved.", response.status);
         if (data && data.code === "resident_not_found") throw new InboxError("resident_not_found", "This resident has already left the farm. Refresh the resident list.", response.status);
+        if (data && data.code === "resident_conflict") throw new InboxError("resident_conflict", "This animal was updated elsewhere. Your changes are kept here. Refresh its published details before saving again.", response.status);
         if (data && /^media_|^upload_/.test(data.code || "")) throw new InboxError(data.code, data.message || "This image could not be uploaded. Please try again.", response.status);
         if (response.status === 413) throw new InboxError("too_large", path === "/api/host/media" ? data?.message || "This cropped image is too large to upload. Choose a smaller output." : "This content is too large to publish. Reduce the text or number of items, then try again.", 413);
         if (data && data.code === "validation") throw new InboxError("validation", data.message || "Please check the content fields.", response.status);
@@ -261,7 +262,7 @@
     return rows[0];
   }
 
-  const farmSpecies = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin" };
+  const farmSpecies = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin", redpanda: "Red panda", raccoon: "Raccoon", wolf: "Wolf", crocodile: "Crocodile", fennec: "Fennec fox" };
   const orchardTypes = { apple: "Apple", peach: "Peach", orange: "Orange", cherry: "Cherry", kiwi: "Kiwi vine", grape: "Grape vine", durian: "Durian", mango: "Mango" };
   function requireFarmService() {
     if (mode !== "cloudflare") throw new InboxError("not_configured", "Shared farm management requires the Cloudflare farm service.");
@@ -289,6 +290,39 @@
     if (!/^(?:[1-9]\d*|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(String(id)) || !["approved", "rejected"].includes(decision)) throw new InboxError("validation", "Invalid adoption review.");
     const row = await farmRequest("/api/host/farm/adoptions/" + encodeURIComponent(id), { method: "PATCH", body: JSON.stringify({ status: decision }) });
     if (!adoptionRow(row) || String(row.id) !== String(id) || row.status !== decision) throw new InboxError("invalid_response", "The review could not be confirmed. Refresh the requests before trying again.");
+    return row;
+  }
+  const residentID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const residentFields = ["species", "name", "adoptedBy", "note", "since", "active"];
+  function residentText(value, maximum, required = false) {
+    return typeof value === "string" && !/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/.test(value)
+      && Array.from(value.trim()).length <= maximum && (!required || Boolean(value.trim()));
+  }
+  function residentField(key, value) {
+    if (key === "species") return typeof value === "string" && value !== "snowcat" && Object.hasOwn(farmSpecies, value);
+    if (key === "active") return typeof value === "boolean";
+    if (key === "since") return typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+    return residentText(value, key === "name" ? 24 : key === "adoptedBy" ? 40 : 140, key === "name");
+  }
+  function residentRow(row) {
+    return row && residentID.test(String(row.id)) && residentFields.every(key => residentField(key, row[key]))
+      && row.adoptedBy.trim() && Number.isSafeInteger(row.version) && row.version >= 0
+      && typeof row.created_at === "string" && Number.isFinite(new Date(row.created_at).getTime());
+  }
+  async function listResidents() {
+    const rows = await farmRequest("/api/host/farm/residents");
+    if (!Array.isArray(rows) || rows.length > 24 || rows.some(row => !residentRow(row)) || new Set(rows.map(row => row.id)).size !== rows.length) throw new InboxError("invalid_response", "The animal list could not be loaded. Please try again.");
+    return rows;
+  }
+  async function updateResident(id, changes) {
+    if (!residentID.test(String(id)) || !changes || typeof changes !== "object" || Array.isArray(changes)
+      || !Number.isSafeInteger(changes.version) || changes.version < 0
+      || Object.keys(changes).some(key => key !== "version" && !residentFields.includes(key))
+      || !residentFields.some(key => Object.hasOwn(changes, key))
+      || residentFields.some(key => Object.hasOwn(changes, key) && !residentField(key, changes[key]))) throw new InboxError("validation", "Check the animal’s name, species, adopter, story, month, and outdoor status before saving.");
+    const row = await farmRequest("/api/host/farm/residents/" + encodeURIComponent(id), { method: "PATCH", body: JSON.stringify(changes) });
+    if (!residentRow(row) || row.id.toLowerCase() !== String(id).toLowerCase() || row.version !== changes.version + 1
+      || residentFields.some(key => Object.hasOwn(changes, key) && row[key] !== (typeof changes[key] === "string" ? changes[key].trim() || (key === "adoptedBy" ? "a visitor" : "") : changes[key]))) throw new InboxError("invalid_response", "The animal update could not be confirmed. Your changes are kept here. Refresh to check the published details.");
     return row;
   }
   async function listOrchard() {
@@ -343,7 +377,7 @@
   const api = window.HostInbox = Object.freeze({
     configured: Boolean(base) && !localPreview, localPreview, mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
     farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
-    getContent, saveContent, uploadImage, updateMessage, removeResident,
+    getContent, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
     get identity() { return session && session.user; },
     get signedIn() { return Boolean(session); }
   });
@@ -504,22 +538,28 @@
       item.append(farmElement("p", "farm-review-meta", "Requested by " + (row.adoptedBy || "a visitor") + when));
       if (row.note) item.append(farmElement("p", "farm-review-text", row.note));
       const actions = farmElement("div", "farm-review-actions");
-      for (const [decision, label] of row.status === "pending" ? [["approved", "Approve"], ["rejected", "Decline"]] : row.status === "approved" ? [["remove", "Remove resident"]] : []) {
+      if (row.status === "approved") {
+        const manage = farmElement("button", "", "Manage animal"); manage.type = "button";
+        manage.setAttribute("aria-label", "Manage animal " + row.name);
+        manage.addEventListener("click", () => window.dispatchEvent(new CustomEvent("host-manage-residents", { detail: { id: row.id } })));
+        actions.append(manage);
+      }
+      for (const [decision, label] of row.status === "pending" ? [["approved", "Approve"], ["rejected", "Decline"]] : []) {
         const button = farmElement("button", decision === "approved" ? "approve-button" : "", label);
         button.type = "button"; button.disabled = reviewing.has(id);
         button.setAttribute("aria-label", label + " " + row.name);
         button.addEventListener("click", async () => {
           if (reviewing.has(id) || !adoptions.has(id) || !api.signedIn) return;
-          if (decision === "remove" && !window.confirm("Remove " + row.name + " from the shared farm for every visitor?")) return;
           reviewing.add(id); adoptionMutationVersion += 1;
           const version = viewVersion;
           actions.querySelectorAll("button").forEach(action => { action.disabled = true; });
-          farmStatus("adoptionStatus", decision === "approved" ? "Approving the adoption…" : decision === "remove" ? "Removing the resident…" : "Declining the request…");
+          farmStatus("adoptionStatus", decision === "approved" ? "Approving the adoption…" : "Declining the request…");
           try {
-            if (decision === "remove") await api.removeResident(row.id); else await api.reviewAdoption(row.id, decision);
+            await api.reviewAdoption(row.id, decision);
             if (version !== viewVersion) return;
             adoptions.delete(id); renderAdoptions();
-            farmStatus("adoptionStatus", decision === "approved" ? row.name + " has joined the shared farm." : decision === "remove" ? row.name + " has left the shared farm." : "The adoption request was declined.");
+            if (decision === "approved") window.dispatchEvent(new CustomEvent("host-residents-changed"));
+            farmStatus("adoptionStatus", decision === "approved" ? row.name + " has joined the shared farm." : "The adoption request was declined.");
             $("refreshAdoptionsButton").focus({ preventScroll: true });
           } catch (error) {
             if (version !== viewVersion) return;

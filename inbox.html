@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
   <link rel="stylesheet" href="css/inbox.css?v=20261010-farm-review" />
-  <link rel="stylesheet" href="css/owner.css?v=20261010-owner1" />
+  <link rel="stylesheet" href="css/owner.css?v=20261010-animals1" />
   <link rel="stylesheet" href="css/owner-images.css?v=20261010-crop1" />
 </head>
 <body data-page="inbox">
@@ -105,6 +105,7 @@
         <button type="button" data-owner-tab="home" aria-pressed="false">Home</button>
         <button type="button" data-owner-tab="papers" aria-pressed="false">Papers</button>
         <button type="button" data-owner-tab="gallery" aria-pressed="false">Gallery</button>
+        <button type="button" data-owner-tab="animals" aria-pressed="false">Animals</button>
         <button type="button" data-owner-tab="public" aria-pressed="false">More content</button>
         <button type="button" data-owner-tab="letters" aria-pressed="false">Letters &amp; requests</button>
       </nav>
@@ -119,10 +120,12 @@
           <section data-owner-panel="home" aria-label="Home content" hidden></section>
           <section data-owner-panel="papers" aria-label="Paper editor" hidden></section>
           <section data-owner-panel="gallery" aria-label="Gallery editor" hidden></section>
+          <section data-owner-panel="animals" aria-label="Farm animals editor" hidden></section>
           <section data-owner-panel="public" aria-label="Other public content" hidden></section>
           <div class="owner-save-footer"><p>Save publishes your changes for every visitor. Empty links are hidden.</p><button id="saveContentButton" type="submit" disabled>Save &amp; publish</button><a id="ownerViewPage" href="index.html" target="_blank" rel="noopener">View website ↗</a></div>
         </form>
       </div>
+      <section id="ownerAdoptionAnimals" data-owner-panel="animals" hidden aria-label="Approved adoption animals"></section>
       <section id="lettersWorkspace" data-owner-panel="letters" hidden aria-label="Private letters and requests">
       <p class="polling-note" id="pollingNote">Checks for new letters every 20 seconds while open. Enable desktop notifications to receive alerts; they stop when this page closes.</p>
       <div class="filters" role="group" aria-label="Filter letters">
@@ -157,9 +160,10 @@
     </div>
   </main>
   <script src="js/config.js?v=20261010-cloudflare"></script>
-  <script src="js/inbox.js?v=20261010-connection1"></script>
+  <script src="js/inbox.js?v=20261010-animals1"></script>
   <script src="js/owner-images.js?v=20261010-crop1"></script>
-  <script src="js/owner.js?v=20261010-crop1"></script>
+  <script src="js/owner.js?v=20261010-animals1"></script>
+  <script src="js/owner-animals.js?v=20261010-animals1"></script>
   <script src="js/water-surface.js?v=20261010-water1"></script>
   <script src="js/inbox-scene.js?v=20261010-language"></script>
 </body>

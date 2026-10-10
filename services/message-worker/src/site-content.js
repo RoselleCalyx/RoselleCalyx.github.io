@@ -39,7 +39,7 @@ const day = (value, path) => {
   if (!Number.isFinite(new Date(value).getTime()) || new Date(value).toISOString().slice(0, 10) !== value) invalid(path);
 };
 const species = oneOf("snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec");
-const resident = object({ id, species, name: string(24, true), adoptedBy: string(40), note: string(140), since: month }, ["species", "name"]);
+const resident = object({ id, species, name: string(24, true), adoptedBy: string(40), note: string(140), since: month, active: boolean }, ["species", "name"]);
 const photo = object({ src: link, caption: string(2000), paint: object({ sky: oneOf("dusk", "aurora", "milkyway", "sunset", "night", "dawn"), land: oneOf("mountains", "sea", "city", "hills", "desert", "lake", "sakura", "fuji"), cabin: boolean }) }, ["src"]);
 const pair = (min, max) => array(number(min, max), 2, 2);
 const page = object({ title: string(300), subtitle: string(2000) });
@@ -111,7 +111,7 @@ export async function saveSiteContent(env, body) {
     .bind(new Date().toISOString(), JSON.stringify(content), body.revision, baselineResidents).first();
   if (!row) {
     const current = await env.DB.prepare("SELECT revision FROM site_content WHERE id = 1").first();
-    if (current && current.revision === body.revision) throw new HTTPError(409, "farm_capacity", "The baseline farm residents and approved adoptions cannot exceed 24. Remove a resident before saving.");
+    if (current && current.revision === body.revision) throw new HTTPError(409, "farm_capacity", "The farm cannot exceed 24 residents, including animals resting indoors. Cancel a new animal draft before saving.");
     throw new HTTPError(409, "content_conflict", "The site was changed in another session. Reload the latest content before saving again.");
   }
   return { ok: true, revision: row.revision, updatedAt: row.updated_at, content: JSON.parse(row.content_json) };

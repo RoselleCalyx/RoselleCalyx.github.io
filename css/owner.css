@@ -69,6 +69,17 @@ body.owner-signed-in .inbox-toolbar { align-items: center; }
 #lettersWorkspace .filters { flex-wrap: wrap; }
 .adoption-filter { display: flex; align-items: center; gap: 10px; margin: 16px 0; font-size: 11px; color: #b6c6d0; }
 .adoption-filter select { background: #081724; color: #e6e8e6; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font: inherit; }
+.owner-animal-activity, .owner-animal-controls, .owner-animals-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.owner-animal-activity { margin: 0 0 20px; justify-content: space-between; }
+.owner-animal-activity button, .owner-animal-controls button { font-size: 11px; min-height: 38px; }
+.owner-animal-badge { color: #b8d5c7; border: 1px solid #8bb49b44; padding: 5px 10px; border-radius: 999px; font-size: 10px; white-space: nowrap; }
+.owner-animal-controls { margin-top: 18px; }
+.owner-animal-save { color: #f4e2b4; border-color: #dfc69e77; background: #dfc69e16; }
+.owner-animal-status { margin-bottom: 0; }
+.owner-animals-heading { justify-content: space-between; margin-bottom: 10px; }
+.owner-animals-heading h3 { margin: 0; }
+.owner-adopted-animals { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); }
+.has-animal-draft { border-color: #dfc69e77; }
 @media (max-width: 760px) {
   body.owner-signed-in .inbox-shell:has(#inboxPanel:not([hidden])) { padding: 25px 14px; }
   body.owner-signed-in .inbox-heading { display: none; }

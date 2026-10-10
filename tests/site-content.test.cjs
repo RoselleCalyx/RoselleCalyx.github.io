@@ -93,6 +93,15 @@ test('all ten farm defaults match the static roster and retain the five new spec
   }
 });
 
+test('published indoor/outdoor state survives public parsing without inventing a state on legacy records', async () => {
+  const residents = defaults.farm.residents.slice(0, 3).map((resident, index) => ({ ...resident, ...(index === 0 ? {} : { active: index === 2 }) }));
+  const p = page({ fetch: async () => response({ farm: { residents } }) }); await p.api.started;
+  assert.deepEqual(plain(p.context.window.FARM.residents), residents);
+  assert.equal(Object.hasOwn(p.context.window.FARM.residents[0], 'active'), false);
+  assert.equal(p.context.window.FARM.residents[1].active, false);
+  assert.equal(p.context.window.FARM.residents[2].active, true);
+});
+
 test('each public HTML page uses data defaults before the cloud gate and retains runtime ordering', () => {
   for (const page of ['index', 'papers', 'gallery', 'message', 'starmap', 'voyager', 'farm', 'woods', 'pond']) {
     const html = fs.readFileSync(require('node:path').join(__dirname, '../' + page + '.html'), 'utf8');

@@ -365,3 +365,71 @@ for (const [name, createError, code, message] of [
     assert.equal(f.api.signedIn, true); assert.equal(f.saved.size, 1);
   });
 }
+
+const managedId = '22222222-2222-4222-8222-222222222222';
+const managedResident = changes => ({ id: managedId, species: 'raccoon', name: 'Pebble', adoptedBy: 'A friend', note: 'Likes stones.', since: '2026-10', active: true, version: 0, created_at: '2026-10-10T00:00:00.000Z', ...changes });
+
+test('approved animal management cannot read or write without a host session', async () => {
+  const f = browser();
+  await assert.rejects(f.api.listResidents(), error => error.code === 'auth_expired');
+  await assert.rejects(f.api.updateResident(managedId, { version: 0, active: false }), error => error.code === 'auth_expired');
+  assert.equal(f.calls.length, 0);
+});
+
+test('resident management includes resting animals and every new species while adoption review accepts the same species', async () => {
+  const species = ['redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'];
+  const rows = species.map((species, index) => managedResident({ id: `22222222-2222-4222-8222-22222222222${index}`, species, active: index !== 0 }));
+  const f = browser(url => reply(200, url.endsWith('/residents') ? rows : species.map((species, index) => ({ ...adoption, id: index + 1, species }))));
+  await f.signIn();
+  assert.deepEqual(JSON.parse(JSON.stringify(await f.api.listResidents())), rows);
+  assert.equal((await f.api.listAdoptions()).length, 5);
+});
+
+test('an indoor toggle sends an authenticated partial PATCH and requires the matching next version', async () => {
+  const f = browser((url, options) => {
+    assert.equal(url, base + '/api/host/farm/residents/' + managedId);
+    assert.equal(options.method, 'PATCH'); assert.equal(options.headers.Authorization, 'Bearer test-access');
+    assert.deepEqual(JSON.parse(options.body), { version: 0, active: false });
+    return reply(200, managedResident({ active: false, version: 1 }));
+  });
+  await f.signIn();
+  assert.equal((await f.api.updateResident(managedId, { version: 0, active: false })).active, false);
+});
+
+test('confirmed animal edits accept only the server-normalized requested fields', async () => {
+  const changes = { version: 0, name: ' Moon ', species: 'fennec', adoptedBy: ' ', note: ' New story ', since: '2025-12', active: true };
+  const f = browser(() => reply(200, managedResident({ ...changes, version: 1, name: 'Moon', adoptedBy: 'a visitor', note: 'New story' })));
+  await f.signIn();
+  const row = await f.api.updateResident(managedId, changes); assert.equal(row.name, 'Moon'); assert.equal(row.adoptedBy, 'a visitor');
+});
+
+test('invalid animal fields and unsafe paths never reach the host service', async () => {
+  const f = browser(); await f.signIn(); const count = f.calls.length;
+  for (const changes of [{ active: false }, { version: 0 }, { version: -1, active: false }, { version: 0, active: 'false' }, { version: 0, name: ' ' }, { version: 0, name: 'x'.repeat(25) }, { version: 0, species: 'snowcat' }, { version: 0, since: '2026-13' }, { version: 0, note: '\n' }, { version: 0, status: 'rejected' }]) {
+    await assert.rejects(f.api.updateResident(managedId, changes), error => error.code === 'validation');
+  }
+  await assert.rejects(f.api.updateResident('../resident', { version: 0, active: false }), error => error.code === 'validation');
+  assert.equal(f.calls.length, count);
+});
+
+test('a mismatched resident confirmation cannot falsely report success or clear the host session', async () => {
+  for (const row of [managedResident({ active: true, version: 1 }), managedResident({ active: false, version: 0 }), managedResident({ active: false, version: 1, species: 'dragon' }), managedResident({ active: false, version: 1, id: '33333333-3333-4333-8333-333333333333' })]) {
+    const f = browser(() => reply(200, row)); await f.signIn();
+    await assert.rejects(f.api.updateResident(managedId, { version: 0, active: false }), error => error.code === 'invalid_response');
+    assert.equal(f.api.signedIn, true);
+  }
+});
+
+test('stale animal versions return an actionable conflict and leave the current host session intact', async () => {
+  const f = browser(() => reply(409, { code: 'resident_conflict' })); await f.signIn();
+  await assert.rejects(f.api.updateResident(managedId, { version: 0, active: false }), error => error.code === 'resident_conflict' && /changes are kept/.test(error.message));
+  assert.equal(f.api.signedIn, true);
+});
+
+test('a late animal save from a signed-out session cannot confirm an update in a new login', async () => {
+  const gate = deferred(), f = browser(() => gate.promise); await f.signIn();
+  const save = f.api.updateResident(managedId, { version: 0, active: false });
+  await new Promise(resolve => setImmediate(resolve)); await f.api.signOut(); await f.signIn();
+  gate.resolve(reply(200, managedResident({ active: false, version: 1 })));
+  await assert.rejects(save, error => error.code === 'session_changed'); assert.equal(f.api.signedIn, true);
+});

@@ -8,7 +8,7 @@ import worker from '../src/worker.js';
 class DB {
   constructor() {
     this.sql = new DatabaseSync(':memory:');
-    for (const name of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0005_owner_media.sql']) this.sql.exec(readFileSync(new URL('../migrations/' + name, import.meta.url), 'utf8'));
+    for (const name of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql', '0005_owner_media.sql', '0006_resident_management.sql']) this.sql.exec(readFileSync(new URL('../migrations/' + name, import.meta.url), 'utf8'));
   }
   prepare(query) {
     const db = this.sql; let args = [];

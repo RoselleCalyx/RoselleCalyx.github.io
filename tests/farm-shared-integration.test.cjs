@@ -69,9 +69,11 @@ function page(options = {}) {
     return queued || Promise.resolve(method === 'load' ? json(state) : { ok: true });
   };
   const TREES = Object.fromEntries(['apple', 'peach', 'orange', 'cherry', 'kiwi', 'grape', 'durian', 'mango'].map(key => [key, { label: key, ripe: 'summer' }]));
-  const SPECIES = Object.fromEntries(['snowcat', 'rabbit', 'panda', 'fox', 'shiba', 'hedgehog', 'duckling', 'penguin'].map(key => [key, { label: key }]));
+  const SPECIES = Object.fromEntries(['snowcat', 'rabbit', 'panda', 'fox', 'shiba', 'hedgehog', 'duckling', 'penguin', 'redpanda', 'raccoon', 'wolf', 'crocodile', 'fennec'].map(key => [key, { label: key }]));
   function addAnimal(def, opts = {}) {
-    const a = { def: { ...def }, el: new Element(), keeper: !!opts.keeper, pending: !!opts.pending };
+    const a = { def: { ...def }, sp: SPECIES[def.species], el: new Element(), keeper: !!opts.keeper, pending: !!opts.pending };
+    a.el.selectors.set('.resident-label', new Element('span'));
+    a.el.querySelector('.resident-label').textContent = def.name;
     animals.push(a); added.push(a); return a;
   }
   function modal(html, { onOpen }) {
@@ -221,6 +223,37 @@ test('approved shared residents are added once and removed independently of the 
   assert.ok(p.animals.includes(keeper)); assert.ok(p.animals.includes(base));
   assert.equal(shared.el.removed, true); assert.equal(bubble.removed, true);
   assert.equal(p.get('residentCount').textContent, '2 little lives');
+});
+
+test('owner edits refresh existing animal labels and details without duplicating or restarting that actor', () => {
+  const p = page(); p.apply(snapshot([], [resident()]));
+  const shared = p.animals[0], bubble = p.api.setBubble(shared.el, shared);
+  const edited = resident({ name: '<Comet & Moon>', adoptedBy: 'New adopter', note: 'New story', since: '2025-12' });
+  p.apply(snapshot([], [edited]));
+  assert.equal(p.animals.length, 1); assert.equal(p.animals[0], shared); assert.equal(p.added.length, 1);
+  assert.deepEqual(json(shared.def), edited);
+  assert.equal(shared.el.querySelector('.resident-label').textContent, edited.name);
+  assert.equal(shared.el['aria-label'], edited.name + ', rabbit');
+  assert.equal(bubble.removed, true, 'old interaction closures cannot keep displaying the former name');
+});
+
+test('a species edit replaces sprites, while resting and returning never duplicate a resident or remove the keeper', () => {
+  const p = page(), keeper = p.resident({ species: 'snowcat', name: 'Matcha' }, { keeper: true });
+  p.apply(snapshot([], [resident()])); const old = p.animals.find(a => a.sharedId);
+  p.apply(snapshot([], [resident({ species: 'crocodile', name: 'Moss' })]));
+  assert.equal(old.el.removed, true); assert.equal(p.animals.filter(a => a.sharedId).length, 1);
+  assert.equal(p.animals.find(a => a.sharedId).sp.label, 'crocodile');
+  p.apply(snapshot()); assert.deepEqual(p.animals, [keeper]);
+  p.apply(snapshot([], [resident({ species: 'crocodile', name: 'Moss' })]));
+  p.apply(snapshot([], [resident({ species: 'crocodile', name: 'Moss' })]));
+  assert.equal(p.animals.length, 2); assert.ok(p.animals.includes(keeper));
+});
+
+test('static residents resting indoors do not create actors, while old records default to being outside', () => {
+  const context = { FARM: { residents: [resident({ id: 'one' }), resident({ id: 'two', active: false }), resident({ id: 'three', active: true })] }, added: [] };
+  context.addAnimal = def => context.added.push(def.id);
+  vm.runInNewContext(source.match(/\(FARM\.residents \|\| \[\]\)\.filter[^\n]+/)[0], context);
+  assert.deepEqual(context.added, ['one', 'three']);
 });
 
 test('pending adoption is saved for review and never added to the public farm or local pending storage', async () => {

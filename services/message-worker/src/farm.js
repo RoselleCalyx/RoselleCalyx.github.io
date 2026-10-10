@@ -7,6 +7,7 @@ const TOKEN = /^[0-9a-f]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TREE_COLUMNS = 'id, type, slot, seed, variant, planted_abs, water, owner_hash, initial';
 const ADOPTION_COLUMNS = 'id, species, name, adopted_by AS adoptedBy, note, created_at, status';
+const RESIDENT_COLUMNS = 'id, species, name, adopted_by AS adoptedBy, note, COALESCE(since, substr(created_at, 1, 7)) AS since, active, version, created_at';
 const EMPTY_SLOT = "SELECT CAST(value AS INTEGER) AS slot FROM json_each('[0,1,2,3,4,5,6,7]') WHERE value NOT IN (SELECT slot FROM farm_trees) ORDER BY value LIMIT 1";
 const TREE_JSON = "json_object('id', id, 'type', type, 'slot', slot, 'seed', seed, 'variant', variant, 'planted_abs', planted_abs, 'water', water, 'owner_hash', owner_hash, 'initial', initial)";
 const equal = (left, right) => typeof left === 'string' && typeof right === 'string' && left === right;
@@ -38,6 +39,7 @@ export async function farmRoute(request, env, path, url, helpers) {
     plantedAbs: row.planted_abs, water: row.water,
     canRemove: !!(host || (!row.initial && visitorHash && equal(row.owner_hash, visitorHash)))
   });
+  const hostResident = row => ({ ...row, active: row.active === 1 });
   const previousOperation = async (id, fingerprint) => {
     const row = await env.DB.prepare('SELECT payload_hash, result_json FROM farm_operations WHERE submission_id = ?').bind(id).first();
     if (!row) return null;
@@ -58,7 +60,7 @@ export async function farmRoute(request, env, path, url, helpers) {
     const host = request.headers.has('Authorization') ? !!(await authorize(request, env)) : false;
     const results = await env.DB.batch([
       env.DB.prepare('SELECT ' + TREE_COLUMNS + ' FROM farm_trees ORDER BY slot'),
-      env.DB.prepare("SELECT id, species, name, adopted_by AS adoptedBy, note, substr(created_at, 1, 7) AS since FROM farm_adoptions WHERE status = 'approved' ORDER BY created_at, id")
+      env.DB.prepare("SELECT id, species, name, adopted_by AS adoptedBy, note, COALESCE(since, substr(created_at, 1, 7)) AS since FROM farm_adoptions WHERE status = 'approved' AND active = 1 ORDER BY created_at, id")
     ]);
     return { ok: true, maxTrees: MAX_TREES, trees: checked(results[0]).map(row => publicTree(row, hash, host)), residents: checked(results[1]) };
   }
@@ -148,7 +150,44 @@ export async function farmRoute(request, env, path, url, helpers) {
 
   if (path.startsWith('/api/host/farm/')) {
     await authorize(request, env);
+    if (path === '/api/host/farm/residents' && request.method === 'GET') {
+      const rows = checked(await env.DB.prepare('SELECT ' + RESIDENT_COLUMNS + " FROM farm_adoptions WHERE status = 'approved' ORDER BY created_at, id").all());
+      return rows.map(hostResident);
+    }
     const resident = /^\/api\/host\/farm\/residents\/([0-9a-f-]{36})$/i.exec(path);
+    if (resident && UUID.test(resident[1]) && request.method === 'PATCH') {
+      const body = await jsonBody(request, ['version', 'species', 'name', 'adoptedBy', 'note', 'since', 'active']);
+      if (!Number.isSafeInteger(body.version) || body.version < 0) fail(400, 'validation', 'Please use the latest resident version.');
+      const changes = [], values = [];
+      const change = (field, value) => { changes.push(field + ' = ?'); values.push(value); };
+      if (Object.hasOwn(body, 'species')) {
+        if (!SPECIES.includes(body.species)) fail(400, 'validation', 'Choose an animal species other than the keeper.');
+        change('species', body.species);
+      }
+      if (Object.hasOwn(body, 'name')) change('name', text(body.name, 24, 'animal name', true));
+      for (const [field, column, maximum, label] of [['adoptedBy', 'adopted_by', 40, 'adopter name'], ['note', 'note', 140, 'animal note']]) {
+        if (!Object.hasOwn(body, field)) continue;
+        // PATCH accepts strings only: null never silently clears a field.
+        if (typeof body[field] !== 'string') fail(400, 'validation', 'Please check the ' + label + '.');
+        change(column, text(body[field], maximum, label) || (field === 'adoptedBy' ? 'a visitor' : ''));
+      }
+      if (Object.hasOwn(body, 'since')) {
+        if (typeof body.since !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.since)) fail(400, 'validation', 'Please use a valid resident month in YYYY-MM format.');
+        change('since', body.since);
+      }
+      if (Object.hasOwn(body, 'active')) {
+        if (typeof body.active !== 'boolean') fail(400, 'validation', 'Choose whether the animal is outside or resting.');
+        change('active', body.active ? 1 : 0);
+      }
+      if (!changes.length) fail(400, 'validation', 'Please change at least one resident field.');
+      const id = resident[1].toLowerCase();
+      const row = await env.DB.prepare('UPDATE farm_adoptions SET ' + changes.join(', ') + ", version = version + 1 WHERE id = ? AND status = 'approved' AND version = ? RETURNING " + RESIDENT_COLUMNS)
+        .bind(...values, id, body.version).first();
+      if (row) return hostResident(row);
+      const current = await env.DB.prepare("SELECT version FROM farm_adoptions WHERE id = ? AND status = 'approved'").bind(id).first();
+      if (!current) fail(404, 'resident_not_found', 'This approved resident was not found. Refresh the resident list.');
+      fail(409, 'resident_conflict', 'This animal was changed in another session. Reload its latest details before saving again.');
+    }
     if (resident && UUID.test(resident[1]) && request.method === 'DELETE') {
       if (request.body) await jsonBody(request, []);
       const row = await env.DB.prepare("UPDATE farm_adoptions SET status = 'rejected', reviewed_at = ? WHERE id = ? AND status = 'approved' RETURNING id")
