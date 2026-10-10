@@ -55,6 +55,13 @@
     summer: [["crayfish", 5], ["shrimp", 3], ["loach", 2], ["crab", 1.5], ["eel", 1.1], ["boot", 0.2]],
     autumn: [["crab", 5], ["shrimp", 3], ["loach", 2], ["crayfish", 1], ["eel", 0.6], ["boot", 0.2]]
   };
+  // Extra scarcity applies to fish only; junk odds and trap catches retain their own tables.
+  const rodTable = () => ROD[season.name].map(([id, weight]) => [id, BY[id].kind === "fish" ? weight / Math.pow(BY[id].rarity, .55) : weight]);
+  const fishDifficulty = s => {
+    const c = BY[s.id], tier = Math.max(0, c.rarity - 1);
+    const size = s.specimen ? clamp((s.specimen.cm - c.len[0]) / Math.max(1, c.len[1] - c.len[0]), 0, 1) : .5;
+    return { tier, fight: clamp((c.fight || .3) * (.85 + size * .3) + tier * .025, .08, .98), biteWindow: Math.max(.55, .95 - tier * .09) };
+  };
   const pickFrom = (table) => { const tot = table.reduce((a, [, w]) => a + w, 0); let x = Math.random() * tot; for (const [id, w] of table) if ((x -= w) <= 0) return id; return table[0][0]; };
   function sizeOf(id) {
     const c = BY[id]; if (!c.len[1]) return null;
@@ -444,7 +451,7 @@
 
   /* ================= living water ================= */
   let shadows = [], ripples = [], parts = [], reeds = [], pads = [], weather = [], flies = [], bubbles = [];
-  function makeShadow(anywhere, id = pickFrom(ROD[season.name].filter(([i]) => BY[i].kind === "fish"))) {
+  function makeShadow(anywhere, id = pickFrom(rodTable().filter(([i]) => BY[i].kind === "fish"))) {
     const specimen = sizeOf(id);
     let x, y;
     for (let i = 0; i < 30; i++) { x = W * (0.05 + Math.random() * 0.9); y = H * (HZ + 0.1 + Math.random() * 0.48); if (inWater(x, y)) break; }
@@ -511,7 +518,7 @@
     let f = null, best = 1e9;
     shadows.forEach((s) => { if (s.mode === "wander") { const d = Math.hypot(s.x - rod.bob.x, s.y - rod.bob.y); if (d < best) { best = d; f = s; } } });
     if (!f || frozen() || best > 120 * k) {                    // a fish from the deep (or under the ice)
-      f = makeShadow(false, pickFrom(ROD[season.name])); f.x = rod.bob.x + (Math.random() - 0.5) * 160 * k; f.y = clamp(rod.bob.y + (Math.random() - 0.5) * 60 * k, H * (HZ + 0.08), H * 0.95); f.hidden = frozen(); shadows.push(f);
+      f = makeShadow(false, pickFrom(rodTable())); f.x = rod.bob.x + (Math.random() - 0.5) * 160 * k; f.y = clamp(rod.bob.y + (Math.random() - 0.5) * 60 * k, H * (HZ + 0.08), H * 0.95); f.hidden = frozen(); shadows.push(f);
     }
     // A visible individual keeps its species and measured size when it bites.
     f.mode = "approach"; rod.fish = f; rod.nibbles = 1 + ((Math.random() * 3) | 0);
@@ -546,10 +553,10 @@
       if (--rod.nibbles <= 0) { rod.state = "bite"; rod.t0 = time; rod.bob.dip = 3; splash(rod.bob.x, rod.bob.y, 8, 0.6); Wd.float(stage, rod.bob.x, rod.bob.y - 30, "!", "bang"); }
       else rod.next = time + 0.55 + Math.random() * 0.8;
     }
-    if (rod.state === "bite" && time - rod.t0 > (frozen() ? 1.2 : 0.95)) scare("It stole the bait and got away.");
+    if (rod.state === "bite" && time - rod.t0 > (frozen() ? 1.2 : fishDifficulty(rod.fish).biteWindow)) scare("It stole the bait and got away.");
     if (rod.bob) rod.bob.dip = Math.max(rod.state === "bite" ? 2.6 : 0, rod.bob.dip - dt * 4);
     if (rod.state === "reeling") {
-      const f = rod.fish, fight = BY[f.id].fight || 0.3;
+      const f = rod.fish, fight = fishDifficulty(f).fight;
       if (time > rod.surge) { rod.surge = time + 0.8 + Math.random() * (2.2 - fight); rod.tension += 0.12 + fight * 0.28; rod.progress -= 0.03 * fight; splash(f.x, f.y, 5, 0.5); }
       if (rod.hold) { rod.tension += (0.35 + fight * 0.45) * dt; if (rod.tension > 0.22 && rod.tension < 0.85) rod.progress += (0.2 - fight * 0.08) * dt; }
       else { rod.tension -= 0.55 * dt; rod.progress -= 0.03 * fight * dt; }
@@ -852,7 +859,8 @@
         if (s.mode !== "hooked" && !(rod.fish === s && rod.state === "reeling")) {
           const want = Math.atan2(s.ty - s.y, s.tx - s.x);
           let dh = ((want - s.h + Math.PI * 3) % TAU) - Math.PI; s.h += clamp(dh, -1.6 * dt, 1.6 * dt);
-          const sp = (s.mode === "flee" ? 90 : s.mode === "approach" ? 75 : 18) * k * scaleAt(s.y);
+          const tier = Math.max(0, BY[s.id].rarity - 1);
+          const sp = (s.mode === "flee" ? 90 + tier * 20 : s.mode === "approach" ? 75 + tier * 12 : 18 + tier * 11) * k * scaleAt(s.y);
           if (s.mode !== "approach" || Math.hypot(s.tx - s.x, s.ty - s.y) > 4) { const nx = s.x + Math.cos(s.h) * sp * dt, ny = s.y + Math.sin(s.h) * sp * dt * 0.45; if (inWater(nx, ny)) { s.x = nx; s.y = ny; } else s.until = 0; }
         }
       }
@@ -1172,7 +1180,7 @@
   document.getElementById("btnBait").addEventListener("click", scatterBait);
   document.getElementById("btnTips").addEventListener("click", () => Site.modal(`<h2>Angler’s tips · 钓鱼指南</h2>
     <p>浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
-    <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。它挣扎很强，保持张力在安全区。</p>
+    <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。越稀有越少出现、游得越快，提竿窗口也越短。它挣扎很强，保持张力在安全区；同种鱼里，个体越大越难收线。</p>
     <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。锦鲤带红白斑块；鳜鱼身宽、有斑纹和棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
     <p>黄金锦鲤和其他大型鱼使用鱼竿；竹罩捕浅水小鱼。黄鳝用岸边地笼捕获，春夏秋都有，夏季较多；放下后约一分钟回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
 
