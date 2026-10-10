@@ -901,6 +901,8 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 .wild-back { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px 5px 10px; border-radius: 999px; border: 1px solid rgba(224, 211, 177, .3); background: rgba(240, 230, 200, .06); color: #e6dcc0; font-family: var(--ui); font-size: .7rem; letter-spacing: .04em; cursor: pointer; transition: background .2s, transform .2s; }
 .wild-back:hover { background: rgba(240, 230, 200, .15); transform: translateX(-2px); }
 .wild-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #0b1020; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+/* Keep the whole forest and its interactive layers at the painting's ratio. */
+[data-wild="woods"] .wild-stage { aspect-ratio: 1920 / 1081; max-height: none; }
 .wild-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .wild-body .basket > span { gap: 4px; }
 .wild-body .basket { gap: 10px; }
