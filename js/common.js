@@ -80,14 +80,21 @@
           `<a href="${href}"${id === page ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</nav>
         <button class="icon-btn sky-toggle calm-toggle" id="calmToggle" type="button" aria-pressed="false" aria-label="Calm sky: less motion">${ICON.moon}<span class="tip"></span></button>
         <button class="icon-btn sky-toggle" id="skyToggle" type="button" aria-label="Change how the sky is painted">${ICON.star4}<span class="tip"></span></button>
-        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false">${ICON.menu}</button>
+        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">${ICON.menu}</button>
       </div>`;
     const nav = header.querySelector("#nav"), menuBtn = header.querySelector("#menuBtn");
-    menuBtn.addEventListener("click", () => {
-      const open = nav.classList.toggle("open");
+    const setMenuOpen = (open) => {
+      nav.classList.toggle("open", open);
       menuBtn.setAttribute("aria-expanded", open);
+      menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
       menuBtn.innerHTML = open ? ICON.close : ICON.menu;
-    });
+    };
+    menuBtn.addEventListener("click", () => setMenuOpen(!nav.classList.contains("open")));
+    document.addEventListener("click", (e) => {
+      if (nav.classList.contains("open") && !nav.contains(e.target) && !menuBtn.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }, true);
     const toggle = header.querySelector("#skyToggle"), tip = toggle.querySelector(".tip");
     const label = () => {
       if (!window.Sky) return;
