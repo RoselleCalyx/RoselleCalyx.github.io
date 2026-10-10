@@ -13,15 +13,15 @@
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
-  <link rel="stylesheet" href="css/inbox.css?v=20261010-shore-form" />
+  <link rel="stylesheet" href="css/inbox.css?v=20261010-water1" />
 </head>
 <body data-page="inbox">
   <div class="inbox-harbor" id="inboxHarbor" aria-hidden="true">
     <img class="harbor-background" src="assets/inbox/harbor-night-v2.webp" alt="" fetchpriority="high" />
+    <canvas class="scene-water" data-water-scene="harbor" aria-hidden="true"></canvas>
     <div class="harbor-shade"></div>
     <div class="harbor-island-glow"></div>
     <div class="harbor-haze"></div>
-    <div class="harbor-surface"></div>
     <canvas id="inboxSky"></canvas>
   </div>
   <nav class="inbox-nav" aria-label="Inbox navigation">
@@ -108,6 +108,7 @@
   </main>
   <script src="js/config.js?v=20261010-cloudflare"></script>
   <script src="js/inbox.js?v=20261010-language"></script>
+  <script src="js/water-surface.js?v=20261010-water1"></script>
   <script src="js/inbox-scene.js?v=20261010-language"></script>
 </body>
 </html>

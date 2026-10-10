@@ -33,6 +33,7 @@ button:disabled { opacity: .5; cursor: wait; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .inbox-harbor { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .harbor-background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 34% 50%; }
+.inbox-harbor > .scene-water { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .harbor-shade {
   position: absolute; inset: 0;
   background: linear-gradient(180deg, #05111d44, transparent 37%, #06131c1a 72%, #040d1740), linear-gradient(90deg, #07111a22, transparent 33%, #08131d28 70%, #06121c50);
@@ -47,18 +48,11 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   background: radial-gradient(ellipse at 47% 61%, #e7b8710c, transparent 65%);
   opacity: .8; animation: harbor-light 18s ease-in-out infinite alternate;
 }
-.harbor-surface {
-  position: absolute; inset: 61% -6% 0;
-  background: repeating-linear-gradient(177deg, transparent 0 22px, #c7dbea24 23px, transparent 25px 56px);
-  opacity: .1; mask-image: radial-gradient(ellipse at 35% 33%, #0008, transparent 64%);
-  animation: harbor-water 24s ease-in-out infinite alternate;
-}
 #inboxSky { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 @keyframes harbor-haze { to { transform: translateX(5%); opacity: .55; } }
 @keyframes harbor-light { to { opacity: .45; } }
-@keyframes harbor-water { to { transform: translate(1%, -4px); opacity: .065; } }
-body.harbor-calm .harbor-haze, body.harbor-calm .harbor-island-glow, body.harbor-calm .harbor-surface { animation: none; }
-body.harbor-paused .harbor-haze, body.harbor-paused .harbor-island-glow, body.harbor-paused .harbor-surface { animation-play-state: paused; }
+body.harbor-calm .harbor-haze, body.harbor-calm .harbor-island-glow { animation: none; }
+body.harbor-paused .harbor-haze, body.harbor-paused .harbor-island-glow { animation-play-state: paused; }
 .inbox-nav {
   position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px;
   max-width: 1680px; margin: 0 auto; padding: 26px clamp(28px, 6vw, 104px) 0;
@@ -246,7 +240,7 @@ code { font-size: 12px; color: #ccdbe4; overflow-wrap: anywhere; }
   .intro { max-width: 160px; font-size: 12px; margin-top: 18px; }
   .harbor-caption { margin-top: 220px; }
 }
-@media (prefers-reduced-motion: reduce) { .harbor-haze, .harbor-island-glow, .harbor-surface { animation: none; } button, .login-panel input { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .harbor-haze, .harbor-island-glow { animation: none; } button, .login-panel input { transition: none; } }
 @media (prefers-reduced-transparency: reduce) {
   .setup-panel, .login-panel, #inboxPanel { background: #112333f5; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .login-panel { background: rgba(12, 17, 34, .84); }
