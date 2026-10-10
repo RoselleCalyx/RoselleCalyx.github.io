@@ -1,5 +1,10 @@
-/* Small painted-looking geometry, cached once; shared by the farm and forest. */
+/* Natural rock artwork in the farm; cached geometry remains a forest fallback. */
 (function(){
+  const rockArt={
+    'rock-west':'assets/wild/objects/rock-shape3-v1.webp',
+    'rock-path':'assets/wild/objects/rock-shape1-v1.webp',
+    'rock-bank':'assets/wild/objects/rock-shape2-v1.webp'
+  };
   const PROPS=[
     {id:'rock-west',kind:'rock',x:11,y:91,w:5.1,h:3,r:1.9,lift:1.65},
     {id:'rock-path',kind:'rock',x:33,y:75,w:4.6,h:2.5,r:1.65,lift:1.4},
@@ -47,7 +52,14 @@
     PROPS.forEach((p,i)=>{
       const el=document.createElement('div');el.className='meadow-prop prop-'+p.kind;el.dataset.prop=p.id;el.dataset.seed=i+1;el.dataset.season=season;el.setAttribute('aria-hidden','true');
       Object.assign(el.style,{left:p.x+'%',top:p.y+'%',width:p.w+'%',height:p.h+'%',zIndex:Math.round(p.y*10)});
-      const img=document.createElement('img');img.src=sprite(p.kind,i+1,season).toDataURL();img.alt='';img.draggable=false;el.append(img);parent.append(el);
+      const img=document.createElement('img');img.alt='';img.draggable=false;
+      if(p.kind==='rock'){
+        img.src=rockArt[p.id];img.decoding='async';
+        img.style.objectFit='contain';img.style.objectPosition='center bottom';
+        img.style.filter=season==='winter'?'saturate(.7) brightness(.91)':'brightness(.91) saturate(.9)';
+        el.style.transform='translate(-50%, -100%)';
+      }else img.src=sprite(p.kind,i+1,season).toDataURL();
+      el.append(img);parent.append(el);
     });
   }
   window.MeadowProps={PROPS,sprite,mount};
