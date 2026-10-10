@@ -10,6 +10,8 @@ The built-in imagegen tool produced eight selected 4-season × 3-shape atlases. 
 
 Each species/variant has its own cached image-derived flower, leaf and snow anchors. Fruit attachment positions are snapped to the corresponding summer foliage, or to woody branches for durian. Live and clickable fruit share those positions, and the clickable layer updates once the anchors finish loading. Flowers, fruit and snow remain dynamic canvas/SVG layers.
 
+The live canopy now adds shaded, veined leaf clusters along the painting's foliage and outer edges. Each species keeps its leaf shape; the planted seed controls cluster density, size and orientation without changing its saved tree shape. Cached foliage layers keep branch and trellis gaps open, while a few outer shoots move gently in the breeze. Spring leaves fill out, autumn leaves turn and thin, and the remaining autumn canopy fades into bare winter branches. Evergreen foliage stays beneath winter snow. Calm mode holds the new leaves still; mobile devices animate fewer shoots with the same canopy density.
+
 `orchard-preview.html` displays the three shapes side by side for any of the eight species, with season/progress controls and clickable fruit.
 
 ## Verification

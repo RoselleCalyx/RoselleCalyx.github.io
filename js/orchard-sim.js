@@ -32,18 +32,22 @@
     const key=`${type}:${variant}`;
     if(speciesArt.has(key))return speciesArt.get(key);
     const promise=Promise.all(['summer','autumn','winter'].map(s=>load(FarmArt.treeSrc(type,s,variant)).then(img=>[s,img]))).then(pairs=>{
-      const img=Object.fromEntries(pairs),a={ground:302,tops:{summer:[],winter:[]},blossoms:[],leaves:{summer:[],autumn:[]}},branches=[];
+      const img=Object.fromEntries(pairs),a={ground:302,tops:{summer:[],winter:[]},blossoms:[],leaves:{summer:[],autumn:[]},leafEdges:[]},branches=[];
       for(const s of ['summer','winter'])scan(img[s],(x,y,r,g,b,top,fy,i,j,alpha)=>{
         if(top&&fy<.85&&alpha(i,j+2)>100){
           const edge=col=>{for(let v=j-4;v<=j+4;v++)if(alpha(col,v)>100&&alpha(col,v-2)<40)return v;return j;};
           a.tops[s].push([x,y,Math.atan2(edge(i+3)-edge(i-3),6)]);
         }
-        if(s==='summer'&&fy<.82&&g>r*.93&&g>b*1.08)a.leaves.summer.push([x,y,r,g,b]);
+        if(s==='summer'&&fy<.82&&g>r*.93&&g>b*1.08){
+          const point=[x,y,r,g,b];a.leaves.summer.push(point);
+          if(alpha(i-3,j)<80||alpha(i+3,j)<80||alpha(i,j-3)<80||alpha(i,j+3)<80)a.leafEdges.push(point);
+        }
         if(s==='summer'&&y>70&&y<235&&r>g*1.12&&r>b*1.2)branches.push([x,y]);
       });
       scan(img.autumn,(x,y,r,g,b,top,fy)=>{if(fy<.82&&r>g*1.05)a.leaves.autumn.push([x,y,r,g,b]);});
       for(const s of ['summer','winter'])a.tops[s]=spread(a.tops[s],5);
       a.leaves.summer=spread(a.leaves.summer,5);a.leaves.autumn=spread(a.leaves.autumn,5);
+      a.leafEdges=spread(a.leafEdges,6);
       a.blossoms=a.leaves.summer.map(p=>p.slice(0,2));
       // Hang fruit on this actual plant's foliage/branches, including irregular vine supports.
       const candidates=type==='durian'&&branches.length?branches:a.blossoms;
@@ -208,7 +212,7 @@
     const sim = {
       tree, el, a: el.querySelector(".base-a"), b: el.querySelector(".base-b"), cv: el.querySelector(".tree-sim"),
       ctx: null, cw: 0, ch: 0, dpr: 1, flowers: [], caps: [], parts: [], resting: [], flyers: [],
-      abs: null, slideT: 0, leafT: 0, petalT: 0, built: false, lastDraw: 0
+      abs: null, slideT: 0, leafT: 0, petalT: 0, built: false, lastDraw: 0, canopy: null
     };
     sim.ctx = sim.cv.getContext("2d");
     sim.a.src = FarmArt.treeSrc(tree.type,'summer',FarmArt.treeVariant(tree));
@@ -231,6 +235,7 @@
     sim.caps = pick(csrc, Math.round((EVERGREEN[t.type] ? 80 : 140) * k), r).map(([x, y, ang]) => ({ x, y, ang: ang || 0, start: r() * 0.45, w: 2.2 + r() * 2.2, k: 1 }));
     sim.leafSrc = EVERGREEN[t.type] ? A.leaves.summer : A.leaves.autumn;
     sim.flyers = Array.from({ length: t.type === "cherry" ? 2 : 1 }, (_, i) => ({ ph: r() * 6.28 + i * 2, col: ["#f6e49a", "#bcd6f4", "#fdf7f2", "#f7c6d8"][(r() * 4) | 0] }));
+    sim.canopy = buildCanopy(sim);
     sim.built = true;
   }
   function fit(sim) {
@@ -255,6 +260,118 @@
       const narrow=type==='mango'?.28:type==='durian'?.42:.8;
       g.moveTo(-size,0);g.quadraticCurveTo(0,-size*narrow,size,0);g.quadraticCurveTo(0,size*narrow,-size,0);
     }g.fill();
+  }
+
+  /* Cached leaf clusters follow the painted foliage, leaving branch gaps open.
+     Only a handful of outer shoots move; density stays the same on phones. */
+  const LEAF = {
+    apple: { length: 6.2, width: .57 }, peach: { length: 7.4, width: .27 },
+    cherry: { length: 6.5, width: .44 }, orange: { length: 6.3, width: .50 },
+    kiwi: { length: 7.8, width: .81 }, grape: { length: 7.5, width: .87 },
+    durian: { length: 7.4, width: .33 }, mango: { length: 8.5, width: .25 }
+  };
+  function leafOutline(g, type) {
+    g.beginPath();
+    if (type === 'kiwi') {
+      g.moveTo(0,-.06);g.bezierCurveTo(-.62,.15,-1.12,-.14,-.83,-.53);
+      g.bezierCurveTo(-.64,-.83,-.20,-.91,0,-1.06);
+      g.bezierCurveTo(.20,-.91,.64,-.83,.83,-.53);
+      g.bezierCurveTo(1.12,-.14,.62,.15,0,-.06);
+    } else if (type === 'grape') {
+      const points=[[0,0],[-.26,-.09],[-.66,-.02],[-.49,-.29],[-.96,-.43],[-.65,-.56],[-.73,-.83],[-.32,-.74],[0,-1.08],[.32,-.74],[.73,-.83],[.65,-.56],[.96,-.43],[.49,-.29],[.66,-.02],[.26,-.09]];
+      points.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));
+    } else {
+      const bend=type==='mango'?.20:type==='peach'?-.12:.04;
+      g.moveTo(0,0);g.bezierCurveTo(-.91,-.24,-.93,-.69,bend,-1.04);
+      g.bezierCurveTo(.65,-.83,1,-.30,0,0);
+    }
+    g.closePath();
+  }
+  function leafPalette(points, fallback) {
+    if (!points.length) return fallback;
+    const total=points.reduce((sum,p)=>sum.map((v,i)=>v+p[i+2]),[0,0,0]);
+    return total.map(v=>v/points.length);
+  }
+  function canopyLeaf(type, color, tone) {
+    const c=document.createElement('canvas');c.width=64;c.height=80;
+    const g=c.getContext('2d'),rgb=(light,warm=0)=>`rgb(${color.map((v,i)=>Math.round(clamp(v*light+(i===2?0:warm),0,255))).join(',')})`;
+    const light=.70+tone*.14;
+    g.translate(32,70);g.scale(25,56);
+    leafOutline(g,type);
+    const shade=g.createLinearGradient(-.65,-.90,.65,-.12);
+    shade.addColorStop(0,rgb(light*1.24,6));shade.addColorStop(.48,rgb(light));shade.addColorStop(1,rgb(light*.66));
+    g.fillStyle=shade;g.fill();
+    g.strokeStyle='rgba(20,37,22,.22)';g.lineWidth=.025;g.stroke();
+    g.save();g.clip();
+    g.strokeStyle='rgba(215,224,170,.29)';g.lineWidth=.022;
+    g.beginPath();g.moveTo(0,0);g.quadraticCurveTo(.05,-.52,type==='mango'?.20:0,-1.02);g.stroke();
+    for(let i=1;i<=4;i++){
+      const y=-i*.18;
+      g.beginPath();g.moveTo(0,y);g.quadraticCurveTo(-.30,y-.12,-.65,y-.13);
+      g.moveTo(0,y);g.quadraticCurveTo(.30,y-.10,.65,y-.14);g.stroke();
+    }
+    g.restore();
+    return c;
+  }
+  function buildCanopy(sim) {
+    const a=sim.anchors,t=sim.tree,type=t.type,profile=LEAF[type],source=a.leaves.summer;
+    if (!profile||!source.length) return null;
+    const r=rng(t.seed*701+FarmArt.treeVariant(t)*977+53),density=.86+r()*.28;
+    const colors=leafPalette(source,[78,104,48]);
+    const amber=EVERGREEN[type]?colors:leafPalette(a.leaves.autumn,[166,116,49]);
+    const palettes=EVERGREEN[type]?[colors]:[colors,amber];
+    const sprites=palettes.map(color=>[0,1,2,3,4].map(tone=>canopyLeaf(type,color,tone)));
+    const layers=palettes.map(()=>{const c=document.createElement('canvas');c.width=c.height=640;return c;});
+    const contexts=layers.map(c=>{const g=c.getContext('2d');g.scale(2,2);return g;});
+    const edges=a.leafEdges||[];
+    const positions=[...pick(source,Math.round(175*density),r).map(p=>({p,edge:false})),...pick(edges,Math.round(105*density),r).map(p=>({p,edge:true}))];
+    const shoots=[];
+    for (const {p,edge} of positions) {
+      const cluster={x:p[0],y:p[1],ph:r()*Math.PI*2,leaves:[],edge};
+      const outward=Math.atan2(p[0]-160,150-p[1]);
+      const n=2+(r()>.35?1:0);
+      for(let i=0;i<n;i++){
+        const length=profile.length*(.66+r()*.52)*(edge?1:.86);
+        cluster.leaves.push({x:(r()-.5)*3,y:(r()-.5)*3,length,width:length*profile.width*2,angle:outward+(i-(n-1)/2)*.74+(r()-.5)*.75,tone:clamp(Math.round(2+(160-p[0])/160-p[1]/230+r()*2),0,4),alpha:edge?.86:.53});
+      }
+      if(edge&&shoots.length<(lowPower?8:14)&&r()>.55)shoots.push(cluster);
+      else contexts.forEach((g,i)=>drawLeafCluster(g,cluster,sprites[i],0));
+    }
+    return {layers,sprites,shoots,density};
+  }
+  function drawLeafCluster(g,cluster,sprites,sway) {
+    g.save();g.translate(cluster.x,cluster.y);g.rotate(sway);
+    for (const leaf of cluster.leaves) {
+      g.save();g.translate(leaf.x,leaf.y);g.rotate(leaf.angle);
+      g.globalAlpha*=leaf.alpha;
+      g.drawImage(sprites[leaf.tone],-leaf.width/2,-leaf.length,leaf.width,leaf.length*80/70);
+      g.restore();
+    }
+    g.restore();
+  }
+  function drawCanopy(sim,time,season,p,calm,wind) {
+    const canopy=sim.canopy,type=sim.tree.type;
+    if(!canopy)return;
+    let fullness=1,amber=0;
+    if(!EVERGREEN[type]){
+      if(season==='winter'){amber=1;fullness=.35*(1-smooth(0,.2,p));}
+      if(season==='spring')fullness=FarmArt.TREES[type].vine?smooth(.12,.48,p):smooth(.52,.94,p);
+      if(season==='autumn'){amber=smooth(.04,.45,p);fullness=1-.65*smooth(.55,1,p);}
+    }
+    if(fullness<.01)return;
+    const g=sim.ctx;
+    g.save();g.globalAlpha=fullness*(season==='winter'&&EVERGREEN[type]?.72:1);
+    for(let i=0;i<canopy.layers.length;i++){
+      const opacity=i?amber:1-amber;
+      if(opacity<.01)continue;
+      g.save();g.globalAlpha*=opacity;g.drawImage(canopy.layers[i],0,0,320,320);
+      for(const shoot of canopy.shoots){
+        const sway=calm?0:Math.sin(time*1.15+shoot.ph)*.025+wind*.035;
+        drawLeafCluster(g,shoot,canopy.sprites[i],sway);
+      }
+      g.restore();
+    }
+    g.restore();
   }
 
   function step(sim, dt, time, season, p, calm, wind) {
@@ -335,10 +452,10 @@
     const minGap = calm ? 1 : 1 / 30;
     if (time - sim.lastDraw < minGap) return;
     sim.lastDraw = time;
-    draw(sim, time, season, p, calm);
+    draw(sim, time, season, p, calm, wind);
   }
 
-  function draw(sim, time, season, p, calm) {
+  function draw(sim, time, season, p, calm, wind) {
     const A=sim.anchors;
     fit(sim);
     const { ctx, cw, dpr } = sim, t = sim.tree, type = t.type;
@@ -368,6 +485,8 @@
       if(q.kind==='leaf')leafShape(ctx,type,q.size);else{ctx.beginPath();ctx.ellipse(0,0,q.size,q.size*.62,0,0,Math.PI*2);ctx.fill();}ctx.restore();
     }
     ctx.globalAlpha = 1;
+
+    drawCanopy(sim,time,season.name,p,calm,wind);
 
     // snow building up on the branches
     if (season.name === "winter") {
