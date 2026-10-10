@@ -589,10 +589,8 @@
     const f=burnFlight(p),[sx,sy]=P(f.x,f.y),h=cvFall.height;
     const travel=calm?0:Math.pow(q,1.35);
     const endY = descent ? descent.endY : sy + h * .18;
-    // Fall below the burn point on every screen, with at most four CSS pixels
-    // of gentle sway. Scroll-based motion also follows the same path in reverse.
-    const sway=calm?0:(Math.sin(q*Math.PI*6)*.75+Math.sin(q*Math.PI*14)*.25)*Math.sin(q*Math.PI)*4*dpr;
-    return {x:sx+sway,y:sy+(endY-sy)*travel,
+    // Keep the burn point's horizontal position throughout the descent.
+    return {x:sx,y:sy+(endY-sy)*travel,
       sx,sy,scale:Math.pow(1-smooth(0,1,q),2)*.96+.04};
   }
   function drawHandoff(calm){
@@ -615,7 +613,6 @@
     if(q<=0){cFall.restore();return;}
     const cooling=smooth(.18,.96,q),heat=1-cooling;
     const length=(28+100*smooth(0,.4,q))*(1-.48*smooth(.48,1,q))*dpr;
-    const wind=calm?0:Math.sin(time*.4)*2*dpr;
     cFall.globalCompositeOperation='lighter';
     // A slender amber wake replaces the broad white flare without a sudden size change.
     for(let i=0;i<(lowPower?3:5);i++){
@@ -625,8 +622,8 @@
       trail.addColorStop(.5,`rgba(232,127,64,${heat*.13})`);
       trail.addColorStop(1,`rgba(255,221,165,${heat*.48})`);
       cFall.globalAlpha=1;cFall.strokeStyle=trail;cFall.lineWidth=(.65+scale*1.7)*dpr;
-      cFall.beginPath();cFall.moveTo(x+side+wind,y-length);
-      cFall.bezierCurveTo(x+side*3-wind,y-length*.7,x-side,y-length*.2,x,y);cFall.stroke();
+      cFall.beginPath();cFall.moveTo(x+side,y-length);
+      cFall.bezierCurveTo(x+side*3,y-length*.7,x-side,y-length*.2,x,y);cFall.stroke();
     }
     const glow=(12+50*scale)*dpr;
     spr(cFall,x,y,glow,heat*.7);
@@ -636,11 +633,10 @@
     spr(cFall,x,y,18*dpr,lastEmber*.3);
     spr(cFall,x,y,5.5*dpr,lastEmber*.7);
     // Seeded fragments cool continuously from pale gold through copper to soft grey.
-    // Their geometry depends on scroll; only the tiny air drift depends on elapsed time.
+    // Their geometry depends only on scroll, so pausing never shakes the remnant.
     for(let i=0;i<(lowPower?24:48);i++){
       const t=h1(i+312),spread=(5+42*cooling)*dpr*t;
-      const drift=calm?0:Math.sin(time*.35+i)*1.4*dpr;
-      const xx=x+(h1(i+184)-.5)*spread+drift+t*wind,yy=y-t*length;
+      const xx=x+(h1(i+184)-.5)*spread,yy=y-t*length;
       const size=(.85+h1(i+4)*1.9)*dpr*(1-.35*cooling);
       const rgb=[255-44*cooling,210-7*cooling,133+58*cooling].map(Math.round);
       const opacity=(1-t)*(.7-.18*cooling)*smooth(0,.16,q)*(1-smooth(.9,1,q));
