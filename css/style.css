@@ -908,6 +908,7 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 .wild-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #0b1020; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
 /* Keep the whole forest and its interactive layers at the painting's ratio. */
 [data-wild="woods"] .wild-stage { aspect-ratio: 1920 / 1081; max-height: none; }
+[data-wild="pond"] .wild-stage { aspect-ratio: 16 / 9; max-height: none; }
 .wild-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .wild-body .basket > span { gap: 4px; }
 .wild-body .basket { gap: 10px; }

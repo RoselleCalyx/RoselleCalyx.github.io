@@ -10,7 +10,7 @@ import worker from '../src/worker.js';
 class D1 {
   constructor() {
     this.sqlite = new DatabaseSync(':memory:');
-    for (const migration of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql', '0006_resident_management.sql']) this.sqlite.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
+    for (const migration of ['0001_message_inbox.sql', '0002_shared_farm.sql', '0003_owner_content.sql', '0004_farm_species.sql', '0006_resident_management.sql', '0007_visitor_aliases.sql']) this.sqlite.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url), 'utf8'));
     this.failOperation = false;
     this.queries = [];
   }
@@ -266,7 +266,7 @@ test('only approved animal additions appear publicly, without pending or visitor
   const review = await f.call('/api/host/farm/adoptions/' + submitted.id, { method: 'PATCH', token: host, body: { status: 'approved' } });
   assert.equal(review.status, 200); assert.equal((await review.json()).status, 'approved');
   const approved = (await f.snapshot()).residents;
-  assert.deepEqual(approved, [{ id: submitted.id, species: 'rabbit', name: 'Luna 🌙', adoptedBy: 'a visitor', note: 'A private pending note.', since: new Date().toISOString().slice(0, 7) }]);
+  assert.deepEqual(approved, [{ id: submitted.id, species: 'rabbit', name: 'Luna 🌙', adoptedBy: 'Enceladus-000002', note: 'A private pending note.', since: new Date().toISOString().slice(0, 7) }]);
   const stored = JSON.stringify(f.env.DB.rows('farm_adoptions'));
   assert.equal(stored.includes(visitorToken), false);
   assert.equal(JSON.stringify(approved).includes(f.env.DB.rows('farm_adoptions')[0].visitor_hash), false);
@@ -553,4 +553,25 @@ test('resting residents still reserve farm capacity for both approvals and CMS a
   const content = { farm: { residents: Array.from({ length: 11 }, (_, i) => ({ species: 'rabbit', name: 'Baseline ' + i, active: false })) } };
   const publication = await f.call('/api/host/site-content', { method: 'PUT', token, body: { revision: 0, content } });
   assert.equal(publication.status, 409); assert.equal((await publication.json()).code, 'farm_capacity');
+});
+
+
+test('public aliases are stable per visitor, unique, and real names require owner or host credentials', async () => {
+  const f = fixture(), owner = credential(), outsider = credential(), host = await f.login();
+  for (const name of ['Nova','Orbit']) {
+    const submitted = await (await f.adopt(owner,{name,adoptedBy:'Private Alice',note:'Private Alice loves the woods.'})).json();
+    assert.equal((await f.call('/api/host/farm/adoptions/'+submitted.id,{method:'PATCH',token:host,body:{status:'approved'}})).status,200);
+  }
+  const submitted = await (await f.adopt(outsider,{name:'Moon',adoptedBy:'Private Bob'})).json();
+  await f.call('/api/host/farm/adoptions/'+submitted.id,{method:'PATCH',token:host,body:{status:'approved'}});
+  const sorted = rows => rows.sort((a,b)=>a.name.localeCompare(b.name));
+  const anonymous = sorted((await f.snapshot()).residents);
+  assert.equal(anonymous[1].adoptedBy,anonymous[2].adoptedBy);
+  assert.notEqual(anonymous[0].adoptedBy,anonymous[1].adoptedBy);
+  assert.equal(JSON.stringify(anonymous).includes('Private Alice'),false);
+  assert.equal(JSON.stringify(anonymous).includes('Private Bob'),false);
+  assert.deepEqual(sorted((await f.snapshot()).residents),anonymous);
+  const mine = sorted((await f.snapshot({visitorToken:owner})).residents);
+  assert.equal(mine[1].adoptedBy,'Private Alice');assert.equal(mine[0].adoptedBy,anonymous[0].adoptedBy);
+  assert.equal(sorted((await f.snapshot({token:host})).residents)[0].adoptedBy,'Private Bob');
 });

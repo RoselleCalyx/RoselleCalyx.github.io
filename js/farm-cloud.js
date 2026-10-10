@@ -45,7 +45,7 @@
     if (!record(value) || !safeId(value.id) || !SPECIES.has(value.species) ||
         typeof value.since !== "string" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(value.since)) throw invalid();
     return { id: value.id, species: value.species, name: text(value.name, 24, true),
-      adoptedBy: text(value.adoptedBy, 40), note: text(value.note, 140), since: value.since };
+      adoptedBy: text(value.adoptedBy, 40), note: text(value.note, 4096), since: value.since };
   }
   function snapshot(value) {
     if (!record(value) || value.ok !== true || value.maxTrees !== MAX_TREES ||
@@ -116,7 +116,14 @@
     });
     const operation = (async () => {
       const headers = { Accept: "application/json" };
-      if (method === "GET") { const visitor = token(); if (visitor) headers["X-Farm-Token"] = visitor; }
+      if (method === "GET") {
+        const visitor = token(); if (visitor) headers["X-Farm-Token"] = visitor;
+        try {
+          const saved = JSON.parse(sessionStorage.getItem('message-host-session-v1') || 'null');
+          if (saved?.base === base && saved.backend === 'cloudflare' && saved.session?.expires_at > Date.now() / 1000)
+            headers.Authorization = 'Bearer ' + saved.session.access_token;
+        } catch (_) { /* Anonymous reads remain available. */ }
+      }
       if (body !== undefined) headers["Content-Type"] = "application/json";
       const response = await fetch(base + route, {
         method, headers, ...(body === undefined ? {} : { body: JSON.stringify(body) }),

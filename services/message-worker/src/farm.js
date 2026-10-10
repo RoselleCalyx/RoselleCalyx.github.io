@@ -1,3 +1,4 @@
+import { visitorAlias, redactNames } from './visitor-privacy.js';
 const MAX_TREES = 8;
 // CMS baseline residents and approved visitor additions share 24 places.
 const MAX_PENDING = 200, MAX_VISITOR_PENDING = 3;
@@ -60,9 +61,17 @@ export async function farmRoute(request, env, path, url, helpers) {
     const host = request.headers.has('Authorization') ? !!(await authorize(request, env)) : false;
     const results = await env.DB.batch([
       env.DB.prepare('SELECT ' + TREE_COLUMNS + ' FROM farm_trees ORDER BY slot'),
-      env.DB.prepare("SELECT id, species, name, adopted_by AS adoptedBy, note, COALESCE(since, substr(created_at, 1, 7)) AS since FROM farm_adoptions WHERE status = 'approved' AND active = 1 ORDER BY created_at, id")
+      env.DB.prepare("SELECT id, species, name, adopted_by AS adoptedBy, visitor_hash, note, COALESCE(since, substr(created_at, 1, 7)) AS since FROM farm_adoptions WHERE status = 'approved' AND active = 1 ORDER BY created_at, id")
     ]);
-    return { ok: true, maxTrees: MAX_TREES, trees: checked(results[0]).map(row => publicTree(row, hash, host)), residents: checked(results[1]) };
+    const rows = checked(results[1]);
+    const identities = await Promise.all(rows.map(async row => ({name:row.adoptedBy,key:row.visitor_hash,alias:await visitorAlias(env,row.visitor_hash)})));
+    return { ok: true, maxTrees: MAX_TREES, trees: checked(results[0]).map(row => publicTree(row, hash, host)), residents: rows.map((row,i) => {
+      const own = host || (hash && equal(hash, row.visitor_hash));
+      const note = host ? row.note : redactNames(row.note,identities.filter(identity=>!equal(identity.key,hash)));
+      return { id: row.id, species: row.species, name: row.name,
+        adoptedBy: own ? row.adoptedBy : identities[i].alias, note, since: row.since };
+    }) };
+
   }
 
   if (path === '/api/farm/trees' && request.method === 'POST') {

@@ -1,3 +1,4 @@
+import { visitorAlias, legacyIdentity, redactNames } from './visitor-privacy.js';
 import { HTTPError } from "./errors.js";
 
 const invalid = (path) => { throw new HTTPError(400, "validation", "Please check the public content field: " + path + "."); };
@@ -107,6 +108,24 @@ export async function readSiteContent(env, { publicOnly = false } = {}) {
   if (!row) throw Error("content row missing");
   const content = JSON.parse(row.content_json);
   if (publicOnly) {
+    const identities = [];
+    for (const resident of content.farm?.residents || []) {
+      if (!resident.adoptedBy) continue;
+      const name = resident.adoptedBy;
+      resident.adoptedBy = await visitorAlias(env, await legacyIdentity(name, env));
+      identities.push({name,alias:resident.adoptedBy});
+    }
+    for (const bottle of content.bottles || []) {
+      if (!bottle.from) continue;
+      const name = bottle.from;
+      bottle.from = await visitorAlias(env, await legacyIdentity(name, env));
+      identities.push({name,alias:bottle.from});
+    }
+    for (const resident of content.farm?.residents || []) resident.note = redactNames(resident.note,identities);
+    for (const bottle of content.bottles || []) {
+      bottle.text = redactNames(bottle.text,identities);
+      if (bottle.reply) bottle.reply = redactNames(bottle.reply,identities);
+    }
     for (const key of ["papers", "gallery", "bottles"]) {
       if (Array.isArray(content[key])) content[key] = content[key].filter(item => item.published !== false);
     }

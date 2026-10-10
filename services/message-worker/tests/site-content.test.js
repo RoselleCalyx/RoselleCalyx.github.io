@@ -8,7 +8,7 @@ import { validateSiteContent } from "../src/site-content.js";
 class D1 {
   constructor() {
     this.sqlite = new DatabaseSync(":memory:");
-    for (const file of ["0001_message_inbox.sql", "0002_shared_farm.sql", "0003_owner_content.sql", "0004_farm_species.sql", "0006_resident_management.sql"]) this.sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
+    for (const file of ["0001_message_inbox.sql", "0002_shared_farm.sql", "0003_owner_content.sql", "0004_farm_species.sql", "0006_resident_management.sql", "0007_visitor_aliases.sql"]) this.sqlite.exec(readFileSync(new URL("../migrations/" + file, import.meta.url), "utf8"));
     this.failContentWrite = false;
   }
   prepare(sql) {
@@ -113,7 +113,9 @@ test("unpublished papers, albums and curated notes remain editable and are absen
   assert.deepEqual(JSON.parse(f.env.DB.sqlite.prepare("SELECT content_json FROM site_content").get().content_json), content);
   content.papers[1].published = true; content.gallery[0].published = true; content.bottles[0].published = true;
   assert.equal((await f.call("/api/host/site-content", { method: "PUT", token, body: { revision: 1, content } })).status, 200);
-  assert.deepEqual((await (await f.call("/api/site-content")).json()).content, content, "showing a saved draft restores its complete public record");
+  const published = (await (await f.call("/api/site-content")).json()).content;
+  assert.match(published.bottles[0].from, /^[A-Za-z]+-\d+$/);
+  assert.deepEqual({...published,bottles:published.bottles.map((row,i)=>({...row,from:content.bottles[i].from}))}, content, "content stays intact apart from private sender names");
 });
 
 test("new owner settings reject unsafe URLs, malformed flags, unknown properties and excessive text", () => {

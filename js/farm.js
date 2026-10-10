@@ -556,22 +556,34 @@
   };
   const EMOJI = { farm: "🍎", woods: "🍄", pond: "🐟" };
   function pantry() {
+    basket = store.get('farm-basket', {});
     const woods = store.get("wild-woods", {}).basket || {}, pond = store.get("wild-pond", {}).creel || {}, icons = store.get("wild-icons", {});
     const list = [];
     Object.entries(FOOD).forEach(([id, [name, from]]) => {
       const n = from === "farm" ? basket[id] || 0 : from === "woods" ? woods[id] || 0 : pond[id] || 0;
       if (n > 0) list.push({ id, name, from, n, icon: from === "farm" ? fruitIcon(id) : icons[id] ? `<img src="${icons[id]}" alt="">` : `<span class="emo">${EMOJI[from]}</span>` });
     });
+    const meals = store.get('farm-meals', {});
+    for (const recipe of window.FarmKitchen?.recipes || []) {
+      if (meals[recipe.id] > 0) list.push({id:recipe.id,name:recipe.name,from:'kitchen',n:meals[recipe.id],icon:`<span class="emo">${recipe.icon}</span>`,recipe});
+    }
     return list;
   }
   function useFood(f) {
-    if (f.from === "farm") { basket[f.id] = Math.max(0, (basket[f.id] || 0) - 1); if (!basket[f.id]) delete basket[f.id]; store.set("farm-basket", basket); }
+    basket = store.get('farm-basket', {});
+    if (f.from === 'kitchen') {
+      const meals = store.get('farm-meals', {});
+      if (!(meals[f.id] > 0)) return false;
+      meals[f.id]--; if (!meals[f.id]) delete meals[f.id];
+      if (!store.set('farm-meals', meals)) return false;
+    } else if (f.from === "farm") { basket[f.id] = Math.max(0, (basket[f.id] || 0) - 1); if (!basket[f.id]) delete basket[f.id]; store.set("farm-basket", basket); }
     else {
       const key = f.from === "woods" ? "wild-woods" : "wild-pond", bag = f.from === "woods" ? "basket" : "creel", st = store.get(key, {});
       st[bag] = st[bag] || {}; st[bag][f.id] = Math.max(0, (st[bag][f.id] || 0) - 1); if (!st[bag][f.id]) delete st[bag][f.id];
       store.set(key, st);
     }
     renderBasket();
+    return true;
   }
   const fed = {};                                              // recent snacks, to know when someone is full
   const happyActions={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','pet-stretch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','wave','happy-hop'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop']};
@@ -612,9 +624,37 @@
       { duration: reduce ? 1 : 620, easing: "cubic-bezier(.4,0,.3,1)", fill: "forwards" });
     setTimeout(() => d.remove(), 700);
   }
+  function feedMeal(a, f, line, fromEl) {
+    const recipe = f.recipe;
+    if (!FarmKitchen.accepts(a.def.species, recipe)) { line.textContent = `${a.def.name} would prefer a ${recipe.diet === 'sea' ? 'plant' : 'fish'} meal.`; toast(line.textContent); return; }
+    if (!useFood(f)) { toast('This meal is no longer in your basket.'); return; }
+    const finishAt = performance.now() + 30000;
+    const hearts = store.get('farm-hearts', {}), key = a.def.species + ':' + a.def.name;
+    hearts[key] = (hearts[key] || 0) + 12; store.set('farm-hearts', hearts);
+    a.feeding = true; a.mealUntil = finishAt;
+    if (fromEl) flyTreat(fromEl, a.el, f);
+    window.AnimalReactions?.preload(a.def.species);
+    let step = 0;
+    const next = () => {
+      if (!a.el.isConnected) { a.feeding = false; return; }
+      const remaining = finishAt - performance.now();
+      if (remaining <= 0 || winterResting(a)) {
+        a.feeding = false; a.mealUntil = 0;
+        if (!bubble || bubble.a !== a) a.held = false;
+        return;
+      }
+      const choices = happyActions[a.def.species] || ['wave'];
+      const kind = step++ % 2 === 0 ? 'munch' : choices[(Math.floor(step / 2) - 1) % choices.length];
+      react(a, kind, {duration:Math.min(2500,remaining),onFinish:next});
+      emote(a, '♥'); fxAt(a.el, 'heart');
+    };
+    line.textContent = `${a.def.name} is enjoying ${f.name.toLowerCase()} — thirty seconds of happy munching and hearts!`;
+    next();
+  }
   function feed(a, f, line, fromEl) {
     if (winterResting(a)) { line.textContent = `${a.def.name} is resting in the heated pond-side shelter. Snacks can wait until spring.`; return; }
     if(a.feeding){line.textContent=`${a.def.name} is still enjoying that bite…`;return;}
+    if (f.from === 'kitchen') { feedMeal(a, f, line, fromEl); return; }
     const d = DIET[a.def.species] || { love: [], like: [], act: "munch", does: "" };
     const key = a.def.species + ":" + a.def.name, now = Date.now(), name = a.def.name, food = f.name.toLowerCase();
     const known = store.get("farm-diet", {}); known[a.def.species] = known[a.def.species] || {};
@@ -662,7 +702,7 @@
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', `Choose food for ${a.def.name}`);
     const tray = el.querySelector(".feed-tray"), line = document.getElementById('farmFeedback');
-    const list = pantry(), known = store.get("farm-diet", {})[a.def.species] || {};
+    const list = pantry().filter(f => !f.recipe || FarmKitchen.accepts(a.def.species, f.recipe)), known = store.get("farm-diet", {})[a.def.species] || {};
     tray.hidden = false;
     if (!list.length) { tray.innerHTML = `<p class="feed-empty">Nothing to offer yet. Pick ripe fruit in the orchard, forage in <a href="woods.html">the woods</a>, or fish at <a href="pond.html">the pond</a>.</p>`; positionBubble(); el.querySelector('.x').focus({ preventScroll: true }); return; }
     const mark = { love: "♥", like: "♪", meh: "✕", play: "✦" };
@@ -725,8 +765,8 @@
       fxAt(a.el, "heart");
     };
     el.querySelector("[data-pet]").onclick = () => {
+      if (a.feeding) { toast(`${a.def.name} is enjoying a meal. Watch those happy little paws!`); return; }
       if (winterResting(a)) { line.textContent = `${d.name} rests quietly on the warm stones. Let them save their energy until spring.`; emote(a, '♥'); return; }
-      if(a.feeding){line.textContent=`Let ${a.def.name} finish that bite first…`;return;}
       const choices=petActions[d.species],act=choices[(a.petAction||0)%choices.length];
       a.petAction=(a.petAction||0)+1;
       react(a,act,{duration:2600});
@@ -848,12 +888,14 @@
   function renderBasket() {
     const parts = Object.keys(TREES).filter((k) => basket[k]).map((k) => `<span class="fi">${fruitIcon(k)}${basket[k]}</span>`);
     const sum = (bag) => Object.entries(bag || {}).filter(([id]) => FOOD[id]).reduce((n, [, v]) => n + v, 0);
-    const wn = sum(store.get("wild-woods", {}).basket), pn = sum(store.get("wild-pond", {}).creel);
+    const wn = sum(store.get("wild-woods", {}).basket), pn = sum(store.get("wild-pond", {}).creel), mn = Object.values(store.get('farm-meals', {})).reduce((n,v)=>n+Math.max(0,Number(v)||0),0);
+    if (mn) parts.push(`<span class="fi">🥣 ${mn}</span>`);
     if (wn) parts.push(`<a class="fi wild-count" href="woods.html" title="Finds from the woods">🍄${wn}</a>`);
     if (pn) parts.push(`<a class="fi wild-count" href="pond.html" title="Catch from the pond">🐟${pn}</a>`);
     basketEl.innerHTML = `${ICON.basket}<span>${parts.length ? parts.join("") : "Your basket is empty"}</span>${sharedTotal != null ? `<span class="muted">· all visitors: ${sharedTotal}</span>` : ""}`;
   }
   function addToBasket(type, n) {
+    basket = store.get('farm-basket', {});
     basket[type] = (basket[type] || 0) + n;
     store.set("farm-basket", basket);
     setTimeout(renderBasket, 700);
@@ -1096,7 +1138,7 @@
   }
 
   function rosterModal() {
-    const list = animals.map((a, i) => `<li><button type="button" data-i="${i}">${ART[a.def.species]()}<span><b>${esc(a.def.name)}</b><small>${esc(a.sp.label)}${a.keeper ? " · keeper" : a.def.adoptedBy ? " · adopted by " + esc(a.def.adoptedBy) : ""}</small>${a.keeper && a.def.title ? `<small>${esc(a.def.title)}</small>` : ""}${a.def.note ? `<small class="resident-note">${esc(a.def.note)}</small>` : ""}</span>${a.pending ? `<span class="st">pending</span>` : ""}</button></li>`).join("");
+    const list = animals.map((a, i) => `<li><button type="button" data-i="${i}">${ART[a.def.species]()}<span><b>${esc(a.def.name)}</b><small class="resident-species">${esc(a.sp.label)}${a.keeper ? " · keeper" : ""}</small>${!a.keeper && a.def.adoptedBy ? `<small class="resident-adopter">Adopted by <span>${esc(a.def.adoptedBy)}</span></small>` : ""}${a.keeper && a.def.title ? `<small>${esc(a.def.title)}</small>` : ""}${a.def.note ? `<small class="resident-note">${esc(a.def.note)}</small>` : ""}</span>${a.pending ? `<span class="st">pending</span>` : ""}</button></li>`).join("");
     modal(`<h2>Farm Residents</h2><p class="muted">${animals.length} lovely lives on our shared farm.</p><ul class="roster">${list}</ul>`, {
       onOpen(m) {
         m.card.querySelector(".roster").addEventListener("click", (e) => {
@@ -1112,6 +1154,41 @@
     });
   }
 
+  /* ================= the cottage kitchen ================= */
+  function kitchenModal() {
+    if (!window.FarmKitchen) return;
+    const names = {orchard:'Orchard fruit',berries:'Wild berries',mushrooms:'Edible mushrooms',fish:'Fish',shellfish:'River seafood',shoots:'Bamboo shoots',lotus:'Lotus pods'};
+    const recipeHTML = () => {
+      const {stock,meals} = FarmKitchen.read();
+      return FarmKitchen.recipes.map(r => {
+        const ready = !!FarmKitchen.plan(r,stock), total = r.parts.reduce((sum,[,n])=>sum+n,0);
+        return `<article class="kitchen-recipe"><h3><span aria-hidden="true">${r.icon}</span> ${esc(r.name)}</h3><p>${r.parts.map(([group,n])=>`${n} ${names[group].toLowerCase()}`).join(' + ')}</p><div class="kitchen-ingredients">${r.parts.map(([group,n])=>{
+          const available = FarmKitchen.groups[group].reduce((sum,id)=>sum+(stock[id]||0),0);
+          return `<label>${esc(names[group])} <small>${available}/${n}</small><select class="select" data-group="${group}">${available ? "" : '<option value="" selected disabled>Not collected yet</option>'}${FarmKitchen.groups[group].map(id=>`<option value="${id}" ${stock[id] ? '' : 'disabled'}>${esc(FOOD[id][0])} (${stock[id]||0})</option>`).join('')}</select></label>`;
+        }).join('')}</div><button class="btn" type="button" data-cook="${r.id}" ${ready?'':'disabled'}>Cook · ${total} ingredients → 1 meal</button><small class="kitchen-made">${meals[r.id]||0} prepared</small></article>`;
+      }).join('');
+    };
+    modal(`<h2>Cottage kitchen</h2><p class="muted">Combine your harvest into a generous meal. Choose ingredients to use first; the rest comes from the same food group. Each meal brings thirty seconds of happy munching and hearts.</p><p class="kitchen-status" role="status" aria-live="polite"></p><div class="kitchen-menu">${recipeHTML()}</div>`,{className:'kitchen-card',onOpen(m){
+      m.card.addEventListener('click',async e=>{
+        const button=e.target.closest('[data-cook]');if(!button||button.disabled)return;
+        button.disabled=true;
+        const choices=Object.fromEntries([...button.closest('article').querySelectorAll('select')].map(select=>[select.dataset.group,select.value]));
+        try {
+          const run=()=>FarmKitchen.cook(button.dataset.cook,choices);
+          const result=navigator.locks ? await navigator.locks.request('farm-kitchen',run) : run();
+          basket=store.get('farm-basket',{});renderBasket();
+          m.card.querySelector('.kitchen-status').textContent=`${result.recipe.name} is ready. Tap an animal and choose it from the food tray.`;
+        } catch(error) {m.card.querySelector('.kitchen-status').textContent=error.message;}
+        m.card.querySelector('.kitchen-menu').innerHTML=recipeHTML();
+        m.card.querySelector(`[data-cook="${button.dataset.cook}"]`)?.focus({preventScroll:true});
+      });
+    }});
+  }
+  const kitchenDoor=document.createElement('button');
+  kitchenDoor.type='button';kitchenDoor.className='farm-kitchen-door';kitchenDoor.setAttribute('aria-label','Open the cottage kitchen');
+  kitchenDoor.innerHTML='<span>Cottage kitchen</span>';
+  kitchenDoor.addEventListener('click',e=>{e.stopPropagation();closeBubble();kitchenModal();});
+  world.appendChild(kitchenDoor);
   /* ================= ways out: the woods and the pond ================= */
   // the forest belt behind the fence, traced over the painting (percent of the world)
   const WOODS = [
@@ -1129,7 +1206,7 @@
   const zoneTip = document.createElement("div");
   zoneTip.className = "farm-zone-tip"; zoneTip.setAttribute("aria-hidden", "true");
   const pct = (e) => { const r = world.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * 100, ((e.clientY - r.top) / r.height) * 100]; };
-  const busyTarget = (e) => e.target.closest(".actor, .tree, .bubble, .farm-sign");
+  const busyTarget = (e) => e.target.closest(".actor, .tree, .bubble, .farm-sign, .farm-kitchen-door");
   world.addEventListener("mousemove", (e) => {
     const z = busyTarget(e) ? null : zoneAt(...pct(e));
     viewport.classList.toggle("zone-hover", !!z);
