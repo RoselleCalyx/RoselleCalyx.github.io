@@ -65,7 +65,7 @@ body[data-page="farm"] .resident-label {
   text-shadow: 0 1px rgba(255, 245, 219, .35);
   box-shadow: none;
 }
-body[data-page="farm"] .resident-label { padding: 6px 13px; line-height: 1.25; }
+body[data-page="farm"] .resident-label { bottom: -23px; padding: 6px 13px; line-height: 1.25; }
 @media (max-width: 900px) {
   body[data-page="farm"] .bubble.mobile-sheet { padding: 20px 20px 18px; }
   body[data-page="farm"] .bubble.mobile-sheet h4 { padding-right: 36px; }
