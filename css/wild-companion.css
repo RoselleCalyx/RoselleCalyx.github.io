@@ -1,0 +1,86 @@
+/* A quiet place to offer the guardian company and a bite from the basket. */
+.guardian-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px 16px;
+  padding: 10px 22px 12px;
+  border-top: 1px solid rgba(224, 211, 177, .1);
+  background: rgba(17, 27, 26, .82);
+  color: #e5ddc7;
+}
+.guardian-intro { min-width: 0; margin: 0; line-height: 1.25; }
+.guardian-intro b { font-family: var(--serif); font-size: 1.12rem; font-weight: 500; overflow-wrap: anywhere; }
+.guardian-intro small { display: block; margin-top: 3px; color: #a9b49e; font: .68rem var(--ui); }
+.guardian-action-row { display: flex; flex: none; gap: 7px; }
+.guardian-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 6px 12px 6px 9px;
+  border: 1px solid rgba(224, 211, 177, .2);
+  border-radius: 999px;
+  background: rgba(240, 230, 200, .035);
+  color: #e6ddc3;
+  font: 1rem var(--serif);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.guardian-button svg { flex: none; width: 26px; height: 26px; }
+.guardian-button:hover { background: rgba(240, 230, 200, .1); border-color: rgba(224, 211, 177, .4); transform: translateY(-1px); }
+.guardian-button:active { transform: scale(.96); }
+.guardian-button:focus-visible, .guardian-close:focus-visible { outline: 2px solid #f4e2b4; outline-offset: 2px; }
+.guardian-button:disabled { opacity: .45; cursor: wait; transform: none; }
+.guardian-menu {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  gap: 2px;
+  transform: translate(-50%, -100%);
+}
+.guardian-menu .guardian-button { min-width: 44px; width: 44px; height: 44px; padding: 6px; border: 0; background: transparent; }
+.guardian-menu .guardian-button svg { width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(5, 10, 9, .7)); }
+.guardian-food {
+  position: absolute;
+  z-index: 8;
+  top: 76px;
+  left: 16px;
+  width: min(330px, calc(100% - 32px));
+  max-height: min(420px, 68vh);
+  padding: 16px 18px 18px;
+  border: 1px solid rgba(236, 223, 189, .7);
+  border-radius: 17px;
+  background: rgba(250, 244, 228, .84);
+  color: #3b4937;
+  box-shadow: 0 12px 36px rgba(5, 12, 12, .24);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.guardian-food h3 { padding-right: 35px; margin: 0; font: 500 1.28rem/1.2 var(--serif); }
+.guardian-food-note { margin: 4px 0 0; color: #66735a; font: .82rem/1.4 var(--ui); }
+.guardian-close { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #647057; font: 1.55rem var(--serif); cursor: pointer; }
+.guardian-close:hover { background: rgba(99, 113, 79, .1); }
+.guardian-food-tray { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin-top: 12px; }
+.guardian-food-tray .treat { min-width: 0; min-height: 44px; height: 48px; }
+.guardian-food-tray .treat:focus-visible { outline: 2px solid #6c8056; outline-offset: 1px; }
+.guardian-food-tray .treat:disabled { opacity: .45; cursor: wait; transform: none; }
+.guardian-food-tray .feed-empty { grid-column: 1 / -1; margin: 0; font: .96rem/1.5 var(--serif); }
+.guardian-feedback { grid-column: 1 / -1; max-width: 75ch; min-height: 1.45em; color: #b8c3ad; font: .8125rem/1.45 var(--ui); overflow-wrap: anywhere; }
+.guardian-menu[hidden], .guardian-food[hidden], .guardian-actions[hidden] { display: none !important; }
+@media (max-width: 760px) {
+  .guardian-actions { gap: 7px 10px; padding: 10px 13px; }
+  .guardian-intro b { font-size: 1.05rem; }
+  .guardian-intro small { max-width: 150px; font-size: .62rem; line-height: 1.4; }
+  .guardian-button { min-width: 69px; padding-right: 10px; font-size: .94rem; }
+  .guardian-food { position: relative; inset: auto; width: auto; max-height: 280px; margin: 12px 12px 0; padding: 14px 16px 16px; box-shadow: 0 5px 20px rgba(5, 12, 12, .15); }
+}
+@media (max-width: 380px) { .guardian-food-tray { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .guardian-button { transition: none; } }

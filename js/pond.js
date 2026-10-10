@@ -735,6 +735,12 @@
   /* ================= Matcha keeps you company on the dock ================= */
   const yuki = new Image(); yuki.src = Wild.keeper.image;
   const yukiBox = () => { const h = 108 * k, x = W * 0.745, y = H * 0.9; return { x: x - h / 2, y: y - h, w: h, h, cx: x, cy: y - h / 2 }; };
+  const companion = WildCompanion.create({stage, image: yuki, box: yukiBox, onInventory: () => {
+    const latest = Wd.store.get("wild-pond", {}) || {};
+    save.creel = latest.creel || {}; save.seen = latest.seen || {}; save.best = latest.best || {};
+    save.traps = Array.isArray(latest.traps) ? latest.traps : [null, null, null];
+    renderCreel();
+  }});
   const YUKI = ["Matcha watches the float without blinking.", "Matcha: “The big ones bite at dusk.”", "Matcha is hoping you share.", "Matcha: “Patience. Then — strike!”", "Matcha dips a paw in the water and regrets it."];
 
   /* ================= drawing ================= */
@@ -920,8 +926,7 @@
     // Matcha
     if (yuki.complete && yuki.naturalWidth) {
       const b = yukiBox();
-      ctx.save(); ctx.translate(b.cx, b.y + b.h); ctx.scale(-1, 1 + Math.sin(time * 1.6) * 0.012);
-      ctx.filter = "brightness(.78) saturate(.92)"; ctx.drawImage(yuki, -b.w / 2, -b.h, b.w, b.h); ctx.filter = "none"; ctx.restore();
+      companion.draw(ctx, b, {flip: -1, filter: "brightness(.78) saturate(.92)"});
       if (hover === "yuki") { ctx.globalCompositeOperation = "lighter"; glow(ctx, b.cx, b.cy, b.w * 0.6, "220,230,255", 0.18); ctx.globalCompositeOperation = "source-over"; }
     }
     drawReeds(dt);
@@ -1090,7 +1095,7 @@
     if (candidate.moved || Math.hypot(x - candidate.x, y - candidate.y) > 10 || busyCard || haul || tool !== candidate.tool
       || (rod.state !== candidate.rodState && !stillWaiting) || !w || w.kind !== candidate.target.kind
       || (w.kind === "trap" && w.i !== candidate.target.i)) return;
-    if (w.kind === "yuki") { const b = yukiBox(); Wd.float(stage, b.cx, b.y + 6, Wd.keeperLine(YUKI[(Math.random() * YUKI.length) | 0]), "say"); sparkle(b.cx, b.y + b.h * 0.3, 8, "220,230,255"); return; }
+    if (w.kind === "yuki") { companion.open(Wd.keeperLine(YUKI[(Math.random() * YUKI.length) | 0])); tip.classList.remove("on"); return; }
     if (w.kind === "trap") { const st = trapState(w.i); if (st === "free") setTrap(w.i); else if (st === "ready") haulTrap(w.i); else Wd.float(stage, x, y - 20, `Soaking… ${Math.ceil((save.traps[w.i].t0 + save.traps[w.i].dur - Date.now()) / 1000)}s`, "soft"); return; }
     if (tool === "rod" && rod.state === "idle") castTo(x, y);
     else if (tool === "rod" && (rod.state === "waiting" || rod.state === "approach")) { rod.state = "idle"; rod.bob = null; if (rod.fish) rod.fish.mode = "wander"; rod.fish = null; castTo(x, y); }
@@ -1100,7 +1105,7 @@
   const cancelPointer = e => { if (e.pointerId === holdPointer || (tap && e.pointerId === tap.pointerId)) cancelGesture(); };
   cv.addEventListener("pointercancel", cancelPointer); cv.addEventListener("lostpointercapture", cancelPointer);
   addEventListener("keydown", (e) => {
-    if (e.code !== "Space" || busyCard || haul || e.target.closest("input, textarea, button, a")) return;
+    if (e.code !== "Space" || busyCard || haul || companion.isOpen || e.target.closest("input, textarea, button, a, #guardianActions, #guardianMenu, #guardianFood")) return;
     e.preventDefault();
     if (rod.state === "reeling") rod.hold = true;
     else if (rod.state === "bite" || rod.state === "nibble") strike();

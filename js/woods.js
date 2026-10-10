@@ -718,6 +718,11 @@
   const yuki = new Image(); yuki.src = Wild.keeper.image;
   const YUKI = { u: 0.155, v: 0.95 };
   const yukiBox = () => { const h = 128 * k, [x, y] = P(YUKI.u, YUKI.v); return { x: x - h / 2, y: y - h, w: h, h, cx: x, cy: y - h / 2 }; };
+  const companion = WildCompanion.create({stage, image: yuki, box: yukiBox, onInventory: () => {
+    const latest = Wd.store.get("wild-woods", {}) || {};
+    save.basket = latest.basket || {}; save.seen = latest.seen || {};
+    renderBasket();
+  }});
   const YUKI_LINES = {
     spring: ["Matcha sniffs a morel and sneezes.", "Matcha: “After rain, the shoots come up overnight.”", "Matcha is watching a petal very seriously."],
     summer: ["Matcha: “The dark red ones are the sweet ones.”", "Matcha bats at a firefly and misses.", "Matcha will not go near the red mushroom. Wise cat."],
@@ -809,11 +814,8 @@
       { actor: 'lantern', v: LANTERN.v }, { actor: 'matcha', v: YUKI.v }].sort((a, b) => a.v - b.v);
     const drawMatcha = () => {
       if (!yuki.complete || !yuki.naturalWidth) return;
-      const b = yukiBox(), br = 1 + Math.sin(now * 1.6) * 0.012;
-      ctx.fillStyle = "rgba(10,14,10,.35)"; ctx.beginPath(); ctx.ellipse(b.cx, b.y + b.h * 0.95, b.w * 0.34, b.h * 0.05, 0, 0, TAU); ctx.fill();
-      ctx.save(); ctx.translate(b.cx, b.y + b.h); ctx.scale(1, br);
-      ctx.filter = season.name === "winter" ? "brightness(.82) saturate(.9)" : "brightness(.78) saturate(.92) sepia(.08)";
-      ctx.drawImage(yuki, -b.w / 2, -b.h, b.w, b.h); ctx.filter = "none"; ctx.restore();
+      const b = yukiBox();
+      companion.draw(ctx, b, {shadow: true, filter: season.name === "winter" ? "brightness(.82) saturate(.9)" : "brightness(.78) saturate(.92) sepia(.08)"});
       if (hover === "yuki") { ctx.globalCompositeOperation = "lighter"; glow(ctx, b.cx, b.cy, b.w * 0.6, "220,230,255", 0.18); ctx.globalCompositeOperation = "source-over"; }
     };
     list.forEach((it) => {
@@ -897,9 +899,8 @@
   }
   function pick(target) {
     if (target === "yuki") {
-      const lines = YUKI_LINES[season.name], b = yukiBox();
-      Wd.float(stage, b.cx, b.y + 10, Wd.keeperLine(lines[(Math.random() * lines.length) | 0]), "say");
-      sparkle(b.cx, b.y + b.h * 0.3, 8, "220,230,255");
+      const lines = YUKI_LINES[season.name];
+      companion.open(Wd.keeperLine(lines[(Math.random() * lines.length) | 0])); tip.classList.remove("on");
       return;
     }
     if (berries.includes(target)) {
