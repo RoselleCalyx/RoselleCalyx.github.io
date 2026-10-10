@@ -26,7 +26,7 @@ async function main() {
       if (url.hostname !== '127.0.0.1') return route.abort();
       if (url.pathname === '/js/farm.js') {
         const source = await fs.readFile(path.join(root, 'js/farm.js'), 'utf8'), end = source.lastIndexOf('})();');
-        return route.fulfill({ contentType: 'application/javascript', body: source.slice(0, end) + 'window.__seasonTest={animals,addAnimal,place,setPose,planWalk,stepAnimal,feed,openAnimal,closeBubble,inPond,inSwimArea,setSeason(name){season={...season,name};applySeason(false);}};\n' + source.slice(end) });
+        return route.fulfill({ contentType: 'application/javascript', body: source.slice(0, end) + 'window.__seasonTest={animals,addAnimal,place,setPose,planWalk,stepAnimal,feed,openAnimal,closeBubble,inWater(x,y){return ((x-WATER.cx)/WATER.rx)**2+((y-WATER.cy)/WATER.ry)**2<1;},inSwimArea,setSeason(name){season={...season,name};applySeason(false);}};\n' + source.slice(end) });
       }
       return route.continue();
     });
@@ -35,7 +35,7 @@ async function main() {
     await page.waitForFunction(() => window.__seasonTest && document.querySelector('.actor[data-species="crocodile"] .pose-sprite').dataset.ready === 'true' && document.querySelector('.winter-refuge img').complete);
     const initial = await page.evaluate(() => {
       const t = __seasonTest, a = t.animals.find(a => a.def.species === 'crocodile');
-      return { winter: a.winterRest, sleep: a.pose === 'sleep', ashore: !t.inPond(a.x, a.y), idle: a.state === 'idle', shelter: getComputedStyle(a.el.querySelector('.winter-refuge')).display, wake: getComputedStyle(a.el.querySelector('.swim-water')).display, mask: getComputedStyle(a.el.querySelector('.pose-sprite')).maskImage };
+      return { winter: a.winterRest, sleep: a.pose === 'sleep', ashore: !t.inWater(a.x, a.y), idle: a.state === 'idle', shelter: getComputedStyle(a.el.querySelector('.winter-refuge')).display, wake: getComputedStyle(a.el.querySelector('.swim-water')).display, mask: getComputedStyle(a.el.querySelector('.pose-sprite')).maskImage };
     });
     assert.deepEqual(initial, { winter: true, sleep: true, ashore: true, idle: true, shelter: 'block', wake: 'none', mask: 'none' });
     await page.locator('#world').screenshot({ path: path.join(out, 'winter.png') });
@@ -48,7 +48,7 @@ async function main() {
       for (let i = 0; i < 100; i++) t.stepAnimal(a, .1, now + 10000 + i * 100);
       const line = document.getElementById('farmFeedback'), food = { id: 'carp', name: 'Carp', from: 'pond', icon: '🐟' };
       const storage = JSON.stringify({ ...localStorage }); t.feed(a, food, line, null);
-      return { stationary: before.x === a.x && before.y === a.y && before.phase === a.phase, sleep: a.pose === 'sleep', foodUntouched: storage === JSON.stringify({ ...localStorage }), feedback: line.textContent.includes('spring'), separate: Math.hypot(second.x - a.x, second.y - a.y) > 5, bothAshore: !t.inPond(second.x, second.y) && !t.inPond(a.x, a.y) };
+      return { stationary: before.x === a.x && before.y === a.y && before.phase === a.phase, sleep: a.pose === 'sleep', foodUntouched: storage === JSON.stringify({ ...localStorage }), feedback: line.textContent.includes('spring'), separate: Math.hypot(second.x - a.x, second.y - a.y) > 5, bothAshore: !t.inWater(second.x, second.y) && !t.inWater(a.x, a.y) };
     });
     assert(Object.values(winter).every(Boolean));
     const returnedResident = await page.evaluate(() => {
@@ -89,7 +89,7 @@ async function main() {
       const t = __seasonTest;
       while (t.animals.filter(a => a.sp.habitat === 'water').length < 25) t.addAnimal({ species: 'crocodile', name: `Winter ${t.animals.length}` });
       const residents = t.animals.filter(a => a.sp.habitat === 'water');
-      return new Set(residents.map(a => `${a.x}:${a.y}`)).size === 25 && residents.every(a => !t.inPond(a.x, a.y));
+      return new Set(residents.map(a => `${a.x}:${a.y}`)).size === 25 && residents.every(a => !t.inWater(a.x, a.y));
     });
     assert(capacity, 'all supported residents can receive distinct shore positions');
     assert.deepEqual(errors, []); assert.deepEqual(broken, []);
