@@ -6,14 +6,15 @@
   <meta name="robots" content="noindex, nofollow" />
   <meta name="referrer" content="same-origin" />
   <meta name="theme-color" content="#08131d" />
-  <title>Letters at the Harbor · Private Inbox</title>
+  <title>Host Workspace · Letters at the Harbor</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f4e2b4' d='M12 1c.5 6.4 4.6 10.5 11 11-6.4.5-10.5 4.6-11 11-.5-6.4-4.6-10.5-11-11 6.4-.5 10.5-4.6 11-11z'/%3E%3C/svg%3E" />
   <link rel="preload" as="image" href="assets/inbox/harbor-night-v2.webp" />
   <link rel="preload" href="assets/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
-  <link rel="stylesheet" href="css/inbox.css?v=20261010-water1" />
+  <link rel="stylesheet" href="css/inbox.css?v=20261010-farm-review" />
+  <link rel="stylesheet" href="css/owner.css?v=20261010-owner1" />
 </head>
 <body data-page="inbox">
   <div class="inbox-harbor" id="inboxHarbor" aria-hidden="true">
@@ -25,7 +26,7 @@
     <canvas id="inboxSky"></canvas>
   </div>
   <nav class="inbox-nav" aria-label="Inbox navigation">
-    <a href="message.html" class="return-link"><span aria-hidden="true">←</span> Message in a Bottle</a>
+    <div class="harbor-return-links"><a href="index.html" class="return-link"><span aria-hidden="true">←</span> Home</a><a href="message.html" class="return-link">Message in a Bottle</a></div>
     <button id="harborCalm" type="button" class="harbor-motion" aria-pressed="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><path d="m5 18 11-11M5 11l6-6M13 19l6-6M17 3v4m-2-2h4" /></svg>
       <span class="harbor-motion-label">Calm sea</span>
@@ -34,9 +35,9 @@
   <main class="inbox-shell">
     <header class="inbox-heading">
       <div class="harbor-title">
-        <p class="eyebrow"><span aria-hidden="true"></span> A harbor for your words</p>
-        <h1>Letters at<br />the Harbor.</h1>
-        <p class="intro">The island light is on.<br />Words find their way.</p>
+        <p class="eyebrow"><span aria-hidden="true"></span> A harbor for your website</p>
+        <h1>Your corner <br />of the sky.</h1>
+        <p class="intro">A quiet place to look after your website,<br />your letters, and the lives on the farm.</p>
       </div>
       <p class="harbor-caption"><span aria-hidden="true"></span> Under the same sky, a ship finds its way home.</p>
     </header>
@@ -65,49 +66,93 @@
 
     <section class="login-panel" id="loginPanel" hidden aria-labelledby="loginTitle">
       <div class="login-panel-bar">
-        <p class="panel-kicker">Private inbox</p>
+        <p class="panel-kicker">Host workspace</p>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></svg>
       </div>
       <div class="login-panel-body">
         <div class="panel-heading">
           <h2 id="loginTitle">A light left on for you</h2>
-          <p class="panel-intro">Sign in as the host to read letters from the shore.</p>
+          <p class="panel-intro">One host account for your website, papers, letters, and shared farm.</p>
         </div>
         <form id="loginForm">
           <label for="hostEmail">Email</label>
           <input id="hostEmail" name="email" type="email" autocomplete="username" inputmode="email" spellcheck="false" placeholder="Host email address" required />
           <label for="hostPassword">Password</label>
           <input id="hostPassword" name="password" type="password" autocomplete="current-password" required />
-          <button id="loginButton" type="submit">Open the inbox <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M4 8.5 12 3l8 5.5V20H4Zm0 0 8 6 8-6M4 20l6-6m10 6-6-6"/></svg></button>
+          <button id="loginButton" type="submit">Open your workspace <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><path d="M4 8.5 12 3l8 5.5V20H4Zm0 0 8 6 8-6M4 20l6-6m10 6-6-6"/></svg></button>
         </form>
-        <p class="login-privacy">Private letters, visible only to the host.</p>
+        <p class="login-privacy">Your existing inbox account opens every host tool.</p>
       </div>
     </section>
 
     <section id="inboxPanel" hidden aria-label="Letters">
       <div class="inbox-toolbar">
-        <div class="inbox-identity"><p class="panel-kicker">LETTERS ASHORE</p><h2 class="letters-title">Letters from the shore</h2><span id="hostIdentity"></span><p id="messageCount" class="muted"></p></div>
+        <div class="inbox-identity"><p class="panel-kicker">HOST WORKSPACE</p><h2 class="letters-title">Look after your little universe</h2><span id="hostIdentity"></span><p id="messageCount" class="muted"></p></div>
         <div class="toolbar-actions">
           <button id="refreshButton" type="button">Refresh</button>
           <button id="notifyButton" type="button">Enable notifications</button>
           <button id="logoutButton" type="button" class="quiet-button">Sign out</button>
         </div>
       </div>
+      <nav class="owner-nav" aria-label="Host tools">
+        <button type="button" data-owner-tab="profile" aria-pressed="true">Site &amp; links</button>
+        <button type="button" data-owner-tab="home" aria-pressed="false">Home</button>
+        <button type="button" data-owner-tab="papers" aria-pressed="false">Papers</button>
+        <button type="button" data-owner-tab="gallery" aria-pressed="false">Gallery</button>
+        <button type="button" data-owner-tab="public" aria-pressed="false">More content</button>
+        <button type="button" data-owner-tab="letters" aria-pressed="false">Letters &amp; requests</button>
+      </nav>
+      <div id="ownerEditor" hidden>
+        <div class="owner-publish-bar">
+          <div><span class="owner-live-dot" aria-hidden="true"></span><strong id="ownerSaveState">Loading published content…</strong><p id="ownerRevision" class="muted"></p></div>
+          <div class="owner-actions"><button id="reloadContentButton" type="button">Reload published</button><button id="exportContentButton" type="button">Export backup</button><label class="owner-import">Import backup<input id="importContentFile" type="file" accept="application/json,.json" /></label></div>
+        </div>
+        <p id="ownerEditorStatus" role="status" aria-live="polite" class="owner-status"></p>
+        <form id="ownerContentForm" novalidate>
+          <section data-owner-panel="profile" aria-label="Site information"></section>
+          <section data-owner-panel="home" aria-label="Home content" hidden></section>
+          <section data-owner-panel="papers" aria-label="Paper editor" hidden></section>
+          <section data-owner-panel="gallery" aria-label="Gallery editor" hidden></section>
+          <section data-owner-panel="public" aria-label="Other public content" hidden></section>
+          <div class="owner-save-footer"><p>Save publishes your changes for every visitor. Empty links are hidden.</p><button id="saveContentButton" type="submit" disabled>Save &amp; publish</button><a id="ownerViewPage" href="index.html" target="_blank" rel="noopener">View website ↗</a></div>
+        </form>
+      </div>
+      <section id="lettersWorkspace" data-owner-panel="letters" hidden aria-label="Private letters and requests">
       <p class="polling-note" id="pollingNote">Checks for new letters every 20 seconds while open. Enable desktop notifications to receive alerts; they stop when this page closes.</p>
       <div class="filters" role="group" aria-label="Filter letters">
         <button type="button" data-filter="all" aria-pressed="true">All</button>
         <button type="button" data-filter="unread" aria-pressed="false">Unread</button>
+        <button type="button" data-filter="new" aria-pressed="false">To handle</button>
+        <button type="button" data-filter="done" aria-pressed="false">Handled</button>
+        <button type="button" data-filter="archived" aria-pressed="false">Archived</button>
       </div>
       <p id="emptyInbox" class="empty-inbox" hidden>The sea is quiet. No letters yet.</p>
       <ul id="messageList" class="message-list"></ul>
       <button id="loadMoreButton" type="button" hidden>Load earlier letters</button>
+      <section id="farmReviewPanel" class="farm-review" aria-labelledby="farmReviewTitle" hidden>
+        <div class="farm-review-heading"><h3 id="farmReviewTitle">Farm adoption requests</h3><button id="refreshAdoptionsButton" type="button">Refresh requests</button></div>
+        <p class="farm-review-note">Approved animals join the farm for everyone. There is room for 24 residents, plus Matcha.</p>
+        <label class="adoption-filter">Show <select id="adoptionFilter"><option value="pending">Waiting for review</option><option value="approved">Approved residents</option><option value="rejected">Declined / removed</option></select></label>
+        <p id="adoptionStatus" class="farm-review-status" role="status" aria-live="polite"></p>
+        <p id="emptyAdoptions" class="farm-review-empty" hidden>No adoption requests are waiting.</p>
+        <ul id="adoptionList" class="farm-review-list"></ul>
+      </section>
+      <section id="orchardReviewPanel" class="farm-review" aria-labelledby="orchardReviewTitle" hidden>
+        <div class="farm-review-heading"><h3 id="orchardReviewTitle">Shared orchard</h3><button id="refreshOrchardButton" type="button">Refresh orchard</button></div>
+        <p class="farm-review-note">The orchard has 8 spaces. Removing a tree frees its space for everyone.</p>
+        <p id="orchardStatus" class="farm-review-status" role="status" aria-live="polite"></p>
+        <p id="emptyOrchard" class="farm-review-empty" hidden>The orchard is empty.</p>
+        <ul id="orchardList" class="farm-review-list"></ul>
+      </section>
+      </section>
     </section>
     <p id="inboxStatus" class="inbox-status" role="status" aria-live="polite"></p>
-    <footer class="inbox-footer">Letters and contact details stay in this private inbox. Nothing is published here.</footer>
+    <footer class="inbox-footer">Published content is public. Letters, contact details, and handling notes stay private.</footer>
     </div>
   </main>
   <script src="js/config.js?v=20261010-cloudflare"></script>
-  <script src="js/inbox.js?v=20261010-english-ui"></script>
+  <script src="js/inbox.js?v=20261010-owner1"></script>
+  <script src="js/owner.js?v=20261010-owner1"></script>
   <script src="js/water-surface.js?v=20261010-water1"></script>
   <script src="js/inbox-scene.js?v=20261010-language"></script>
 </body>

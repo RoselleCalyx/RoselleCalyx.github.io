@@ -9,6 +9,8 @@ class D1Mock {
   constructor() {
     this.sqlite = new DatabaseSync(":memory:");
     this.sqlite.exec(readFileSync(new URL("../migrations/0001_message_inbox.sql", import.meta.url), "utf8"));
+    this.sqlite.exec(readFileSync(new URL("../migrations/0002_shared_farm.sql", import.meta.url), "utf8"));
+    this.sqlite.exec(readFileSync(new URL("../migrations/0003_owner_content.sql", import.meta.url), "utf8"));
     this.failMessageWrite = false;
     this.failOutboxWrite = false;
     this.queries = 0;

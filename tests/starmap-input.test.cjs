@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const productionTabs = require('./helpers/production-tabs.cjs');
 
 const source = fs.readFileSync(path.join(__dirname, '../js/starmap.js'), 'utf8');
 
@@ -41,6 +42,9 @@ function page(options = {}) {
     getBoundingClientRect() { return { left: 0, top: 0, width: 400, height: 400 }; }
     setPointerCapture() {}
     setAttribute(name, value) { this[name] = String(value); }
+    getAttribute(name) { return this[name] ?? null; }
+    focus() { context.document.activeElement = this; }
+    closest(selector) { return selector === 'button[role="tab"]' && this.role === 'tab' ? this : null; }
     querySelector(selector) {
       if (!this.children.has(selector)) this.children.set(selector, new Element());
       return this.children.get(selector);
@@ -73,8 +77,13 @@ function page(options = {}) {
     return elements.get(id);
   };
   const modes = ['const', 'planets', 'orrery', 'deep', 'fav'].map(mode => {
-    const element = new Element(); element.dataset.mode = mode; return element;
+    const element = new Element('mode-' + mode); element.dataset.mode = mode;
+    element.role = 'tab'; if (mode === 'const') element.classList.add('active');
+    return element;
   });
+  const modeList = get('modeTabs');
+  modeList.querySelectorAll = () => modes;
+  modes.forEach(element => { element.parentElement = modeList; });
   const wrap = get('chartWrap'); wrap.clientWidth = 400;
   get('chart').parentElement = wrap;
   get('planetStage').hidden = true;
@@ -102,6 +111,7 @@ function page(options = {}) {
     Site: { esc: value => String(value), ICON: {}, store: { get: (_, value) => value, set() {} } }
   };
   context.window = context;
+  context.Site.tabs = productionTabs(context);
   const instrumented = source.replace(/\}\)\(\);\s*$/, `
     globalThis.__starmapTest = {
       snapshot: () => ({ view: { ...view }, selected, mode, quiz: { ...quiz } }),
@@ -126,11 +136,69 @@ function page(options = {}) {
     ...properties
   });
   return {
-    get, modes, timers, pointer, snapshot, listClick, painted, wrap, wheel, scrolls,
+    get, modes, timers, pointer, snapshot, listClick, painted, wrap, wheel, scrolls, document: context.document,
     advanceTime: milliseconds => { clock += milliseconds; },
     api: context.__starmapTest
   };
 }
+
+test('mode tabs support wrapped keyboard selection and update the panel label', () => {
+  const p = page();
+  assert.equal(p.get('modeTabs').getAttribute('aria-orientation'), 'vertical');
+  p.modes[0].focus();
+  const event = p.modes[0].dispatch('keydown', { key: 'ArrowDown' });
+  assert.equal(event.defaultPrevented, true);
+  assert.equal(p.snapshot().mode, 'planets');
+  assert.equal(p.document.activeElement, p.modes[1]);
+  assert.equal(p.get('starmapPanel').getAttribute('aria-labelledby'), p.modes[1].id);
+  p.modes[1].dispatch('keydown', { key: 'End' });
+  assert.equal(p.snapshot().mode, 'fav');
+  p.modes[4].dispatch('keydown', { key: 'ArrowRight' });
+  assert.equal(p.snapshot().mode, 'const');
+  p.modes[0].dispatch('keydown', { key: 'ArrowLeft' });
+  assert.equal(p.snapshot().mode, 'fav');
+  p.modes[4].dispatch('keydown', { key: 'Home' });
+  assert.equal(p.snapshot().mode, 'const');
+  p.modes.forEach((tab, index) => {
+    assert.equal(tab.getAttribute('aria-selected'), String(index === 0));
+    assert.equal(tab.tabIndex, index === 0 ? 0 : -1);
+  });
+});
+
+test('mobile mode tabs use horizontal navigation and leave up/down keys native', () => {
+  const p = page({ mobile: true });
+  assert.equal(p.get('modeTabs').getAttribute('aria-orientation'), 'horizontal');
+  assert.equal(p.modes[0].dispatch('keydown', { key: 'ArrowDown' }).defaultPrevented, false);
+  assert.equal(p.snapshot().mode, 'const');
+  p.modes[0].dispatch('keydown', { key: 'ArrowRight' });
+  assert.equal(p.snapshot().mode, 'planets');
+});
+
+test('starting a game from another mode synchronizes the selected tab without stealing focus', () => {
+  const p = page(); p.modes[2].click();
+  p.get('playQuiz').focus(); p.get('playQuiz').click();
+  assert.equal(p.snapshot().mode, 'const');
+  assert.equal(p.document.activeElement, p.get('playQuiz'));
+  assert.equal(p.modes[0].getAttribute('aria-selected'), 'true');
+  assert.equal(p.modes[2].getAttribute('aria-selected'), 'false');
+  assert.equal(p.modes[0].tabIndex, 0);
+  assert.equal(p.modes[2].tabIndex, -1);
+  assert.equal(p.get('starmapPanel').getAttribute('aria-labelledby'), p.modes[0].id);
+});
+
+test('keyboard mode changes cancel game callbacks and reset partial wheel intent', () => {
+  const p = page(); p.get('playQuiz').click();
+  p.listClick(p.snapshot().quiz.order[0]);
+  const queued = [...p.timers.values()][0].callback;
+  p.wheel(90); p.modes[0].dispatch('keydown', { key: 'ArrowRight' });
+  assert.equal(p.snapshot().quiz.on, false);
+  assert.equal(p.snapshot().mode, 'planets');
+  assert.equal(p.timers.size, 0);
+  const after = p.snapshot(); queued();
+  assert.deepEqual(p.snapshot(), after);
+  p.advanceTime(30); p.wheel(40);
+  assert.deepEqual(p.scrolls, []);
+});
 
 for (const remaining of [1, 2]) {
   test(`pinch continues without a camera jump when finger ${remaining} remains`, () => {

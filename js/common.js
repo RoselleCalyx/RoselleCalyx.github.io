@@ -64,12 +64,108 @@
   };
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  let saveWarningShown = false;
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    set(k, v) {
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+      catch (e) {
+        if (/^(farm-|wild-)/.test(k) && !saveWarningShown) {
+          saveWarningShown = true;
+          toast("Progress could not be saved in this browser. Check browser storage and try again.", 5200);
+        }
+        return false;
+      }
+    }
   };
 
   /* ---------- header ---------- */
+  /* ---------- owner-edited public content ---------- */
+  const home = window.HOME_CONTENT || {};
+  const safeURL = (value) => window.SiteContent ? SiteContent.url(value, { email: true }) : value;
+  const node = (tag, text, className) => {
+    const el = document.createElement(tag); el.textContent = text || "";
+    if (className) el.className = className;
+    return el;
+  };
+  const multiline = (el, value, emphasis = false) => {
+    if (!el || typeof value !== "string") return;
+    const lines = value.split("\n"); el.replaceChildren();
+    lines.forEach((line, i) => {
+      if (i) el.append(document.createElement("br"));
+      el.append(emphasis && i ? node("em", line) : document.createTextNode(line));
+    });
+  };
+  const setCopy = (selector, key) => {
+    const el = document.querySelector(selector);
+    if (el && Object.prototype.hasOwnProperty.call(home, key)) multiline(el, home[key]);
+  };
+  if (document.body.dataset.page === "home") {
+    setCopy(".hero-title", "heroTitle"); setCopy(".hero-lede", "heroLede");
+    setCopy(".hero-foot em", "heroFoot");
+    if (Object.prototype.hasOwnProperty.call(home, "coda")) multiline(document.querySelector(".coda p"), home.coda, true);
+    setCopy(".bio-earth > p:last-child", "beyond");
+    const avatar = document.querySelector(".bio-portrait img");
+    if (avatar) {
+      if (Object.prototype.hasOwnProperty.call(home, "avatar")) {
+        if (home.avatar) avatar.src = safeURL(home.avatar); else avatar.removeAttribute("src");
+      }
+      avatar.alt = "Portrait of " + (S.name || "the host");
+    }
+    for (const [key, selector, tag, className] of [["bio", ".bio-copy", "p", ""], ["interests", ".bio-content .chips", "span", "chip"]]) {
+      const el = document.querySelector(selector);
+      if (el && Array.isArray(home[key])) el.replaceChildren(...home[key].map(text => node(tag, text, className)));
+    }
+    const timeline = document.querySelector("#education .timeline");
+    if (timeline && Array.isArray(home.education)) timeline.replaceChildren(...home.education.map(item => {
+      const li = document.createElement("li");
+      li.append(node("div", item.date, "t-date"), node("div", item.title, "t-title"));
+      if (item.detail) li.append(node("div", item.detail, "t-sub"));
+      return li;
+    }));
+    const news = document.querySelector("#news .news");
+    if (news && Array.isArray(home.news)) news.replaceChildren(...home.news.map(item => {
+      const li = document.createElement("li"), body = node("span", item.href ? "" : item.text);
+      if (safeURL(item.href)) {
+        const link = node("a", item.text); link.href = safeURL(item.href); link.rel = "noopener"; body.append(link);
+      }
+      li.append(node("time", item.date), body); return li;
+    }));
+    const explore = document.querySelector(".explore");
+    if (explore && Array.isArray(home.explore)) explore.replaceChildren(...home.explore.filter(item => safeURL(item.href)).map(item => {
+      const link = document.createElement("a"), icon = document.createElement("span");
+      link.className = "glass"; link.href = safeURL(item.href);
+      if (ICON[item.icon]) icon.dataset.icon = item.icon;
+      link.append(icon, node("b", item.title), node("span", item.text)); return link;
+    }));
+    document.title = [S.name, S.tagline].filter(Boolean).join(" · ");
+  }
+  const pageKey = document.body.dataset.wild || document.body.dataset.page;
+  const copy = (S.pages || {})[pageKey] || {};
+  document.querySelectorAll("[data-page-copy]").forEach(el => {
+    const key = el.dataset.pageCopy;
+    if (Object.prototype.hasOwnProperty.call(copy, key)) multiline(el, copy[key], el.dataset.pageEmphasis === "true");
+  });
+  if (copy.title) document.title = copy.title.replaceAll("\n", " ") + " · " + (S.name || "");
+
+  /* ---------- farm keeper card ---------- */
+  const keeperCard = document.getElementById("meetKeeper"), farmKeeper = window.FARM?.keeper;
+  if (keeperCard) {
+    keeperCard.hidden = !farmKeeper;
+    if (farmKeeper) {
+      const labels = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin" };
+      const name = farmKeeper.name || "The keeper", type = Object.hasOwn(labels, farmKeeper.species) ? farmKeeper.species : "snowcat";
+      const image = keeperCard.querySelector("img"), title = keeperCard.querySelector("small");
+      const heading = keeperCard.querySelector("b"), note = keeperCard.querySelector("span span");
+      if (image) image.src = "assets/farm/" + type + ".webp";
+      if (title) title.textContent = farmKeeper.title || "";
+      if (heading) heading.textContent = name + " is keeping watch.";
+      if (note) note.textContent = farmKeeper.note || "";
+      keeperCard.setAttribute("aria-label", "Meet " + name + ", " + (farmKeeper.title || "keeper of the farm") + ", " + labels[type]);
+    }
+  }
+
+  /* ---------- shared chrome ---------- */
   const page = document.body.dataset.page;
   const header = document.getElementById("site-header");
   if (header) {
@@ -89,12 +185,23 @@
       menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
       menuBtn.innerHTML = open ? ICON.close : ICON.menu;
     };
-    menuBtn.addEventListener("click", () => setMenuOpen(!nav.classList.contains("open")));
+    menuBtn.addEventListener("click", (e) => {
+      const open = !nav.classList.contains("open");
+      setMenuOpen(open);
+      if (open && e.detail === 0) focus(nav.querySelector('[aria-current="page"]') || nav.querySelector("a"));
+    });
     document.addEventListener("click", (e) => {
       if (nav.classList.contains("open") && !nav.contains(e.target) && !menuBtn.contains(e.target)) {
         setMenuOpen(false);
       }
     }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented || !nav.classList.contains("open")) return;
+      const restore = nav.contains(document.activeElement) || menuBtn.contains(document.activeElement);
+      e.preventDefault(); e.stopPropagation();
+      setMenuOpen(false);
+      if (restore) focus(menuBtn);
+    });
     const toggle = header.querySelector("#skyToggle"), tip = toggle.querySelector(".tip");
     const label = () => {
       if (!window.Sky) return;
@@ -132,18 +239,18 @@
   /* ---------- footer ---------- */
   const footer = document.getElementById("site-footer");
   if (footer) {
-    footer.innerHTML = `© ${new Date().getFullYear()} ${esc(S.name || "")}<span class="dot">✦</span>Same sky, different places.`;
+    footer.innerHTML = `© ${new Date().getFullYear()} ${esc(S.name || "")}<span class="dot">✦</span>${esc(S.footer === undefined ? "Same sky, different places." : S.footer)} <a href="inbox.html" class="host-login">Host login ↗</a>`;
   }
 
   /* ---------- links from config ---------- */
   document.querySelectorAll("[data-link]").forEach((a) => {
     const key = a.dataset.link;
-    const href = key === "email" ? (S.email ? "mailto:" + S.email : "") : (S.links || {})[key];
+    const href = safeURL(key === "email" ? (S.email ? "mailto:" + S.email : "") : (S.links || {})[key]);
     if (href) a.href = href; else a.remove();
   });
   document.querySelectorAll("[data-site]").forEach((el) => {
     const v = S[el.dataset.site];
-    if (v) el.textContent = v;
+    if (typeof v === "string") el.textContent = v;
   });
   document.querySelectorAll("[data-icon]").forEach((el) => {
     if (ICON[el.dataset.icon]) el.insertAdjacentHTML("afterbegin", ICON[el.dataset.icon]);
@@ -159,6 +266,53 @@
     root.querySelectorAll(".reveal:not(.in)").forEach((el) => (io ? io.observe(el) : el.classList.add("in")));
   }
   reveal();
+
+  /* ---------- keyboard tabs ---------- */
+  function tabs(root, { onSelect, orientation = "horizontal" } = {}) {
+    const buttons = Array.from(root.querySelectorAll('button[role="tab"]'));
+    const enabled = (button) => !button.disabled && !button.hidden;
+    const direction = () => typeof orientation === "function" ? orientation() : orientation;
+    const setOrientation = () => root.setAttribute("aria-orientation", direction());
+    function select(button, { moveFocus = false, notify = true } = {}) {
+      if (!buttons.includes(button) || !enabled(button)) return;
+      buttons.forEach((tab) => {
+        const active = tab === button;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", active);
+        tab.tabIndex = active ? 0 : -1;
+      });
+      if (notify && onSelect) onSelect(button);
+      if (moveFocus) {
+        focus(button);
+        if (root.scrollWidth > root.clientWidth || root.scrollHeight > root.clientHeight) {
+          button.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+        }
+      }
+    }
+    root.addEventListener("click", (e) => {
+      const button = e.target.closest('button[role="tab"]');
+      if (buttons.includes(button)) select(button);
+    });
+    root.addEventListener("keydown", (e) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const button = e.target.closest('button[role="tab"]'), available = buttons.filter(enabled);
+      const current = available.indexOf(button);
+      if (current < 0) return;
+      let index;
+      if (e.key === "Home") index = 0;
+      else if (e.key === "End") index = available.length - 1;
+      else if (e.key === "ArrowRight" || (direction() === "vertical" && e.key === "ArrowDown")) index = (current + 1) % available.length;
+      else if (e.key === "ArrowLeft" || (direction() === "vertical" && e.key === "ArrowUp")) index = (current - 1 + available.length) % available.length;
+      else return;
+      e.preventDefault(); e.stopPropagation();
+      select(available[index], { moveFocus: true });
+    });
+    setOrientation();
+    const initial = buttons.find((button) => enabled(button) && button.getAttribute("aria-selected") === "true") ||
+      buttons.find((button) => enabled(button) && button.classList.contains("active")) || buttons.find(enabled);
+    select(initial, { notify: false });
+    return { select, setOrientation };
+  }
 
   /* ---------- toast ---------- */
   let toastEl;
@@ -354,5 +508,5 @@
     return { ok: true, via: "mail" };
   }
 
-  window.Site = { ICON, esc, store, toast, modal, lightbox, send, reveal };
+  window.Site = { ICON, esc, store, toast, modal, lightbox, send, reveal, tabs };
 })();

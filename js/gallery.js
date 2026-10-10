@@ -2,7 +2,7 @@
 (function () {
   const { esc, ICON } = window.Site;
   const albums = (window.GALLERY || []).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  const TAGS = ["All", "Travel", "Nature", "Life", "Food", "People", "Favorite"];
+  const TAGS = ["All", ...new Set(["Travel", "Nature", "Life", "Food", "People", ...albums.flatMap(album => album.tags || [])].filter(tag => tag !== "All" && tag !== "Favorite")), "Favorite"];
   const state = { tag: "All", album: null, view: "wall" };
 
   const $ = (id) => document.getElementById(id);
@@ -226,7 +226,7 @@
   }
 
   /* ================= tag chips ================= */
-  chips.innerHTML = TAGS.map((t) => `<button type="button" class="chip${t === "All" ? " active" : ""}" data-tag="${t}">${t}</button>`).join("");
+  chips.innerHTML = TAGS.map((t) => `<button type="button" class="chip${t === "All" ? " active" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("");
   chips.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     state.tag = b.dataset.tag;
@@ -270,7 +270,7 @@
   });
 
   /* ================= map ================= */
-  let map = null;
+  let map = null, mapLoading = null;
   function loadLeaflet() {
     if (window.L) return Promise.resolve();
     return new Promise((res, rej) => {
@@ -285,7 +285,8 @@
   }
   function initMap() {
     if (map) { map.invalidateSize(); return; }
-    loadLeaflet().then(() => {
+    if (mapLoading) return;
+    mapLoading = loadLeaflet().then(() => {
       $("mapFallback").remove();
       map = L.map("map", { zoomControl: true, worldCopyJump: true, attributionControl: true }).setView([30, 10], 2);
       L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
@@ -309,7 +310,11 @@
         L.polyline(albums.slice().reverse().filter((a) => a.coords).map((a) => a.coords), { color: "#e2c07c", weight: 1, opacity: 0.45, dashArray: "4 6" }).addTo(map);
         map.fitBounds(pts, { padding: [40, 40] });
       }
-    }).catch(() => { $("mapFallback").textContent = "The map could not load — perhaps the network is asleep."; });
+    }).catch(() => {
+      mapLoading = null;
+      const fallback = $("mapFallback");
+      if (fallback) fallback.textContent = "The map could not load — perhaps the network is asleep.";
+    });
   }
   document.getElementById("map").addEventListener("click", (e) => {
     const b = e.target.closest("[data-open]");
@@ -319,13 +324,15 @@
   /* ================= view switch ================= */
   const sw = $("viewSwitch");
   function setView(v) {
+    const previousPanel = $(state.view + "View");
+    const moveFocus = v !== state.view && previousPanel.contains(document.activeElement);
     state.view = v;
-    sw.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
+    viewTabs.select(sw.querySelector(`[data-view="${v}"]`), { notify: false, moveFocus });
     $("wallView").hidden = v !== "wall";
     $("mapView").hidden = v !== "map";
     if (v === "map") initMap();
   }
-  sw.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
+  const viewTabs = Site.tabs(sw, { onSelect: (button) => setView(button.dataset.view) });
 
   renderWall();
 })();

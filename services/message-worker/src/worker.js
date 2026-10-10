@@ -1,12 +1,13 @@
+import { farmRoute } from './farm.js';
+import { HTTPError } from "./errors.js";
+import { readSiteContent, saveSiteContent } from "./site-content.js";
+
 const ACCESS_SECONDS = 3600;
 const REFRESH_SECONDS = 7 * 24 * 3600;
 const encoder = new TextEncoder();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const TOKEN = /^[0-9a-f]{64}$/;
-const PUBLIC_COLUMNS = "id, created_at, name, contact, text, read_at";
-class HTTPError extends Error {
-  constructor(status, code, message, headers = {}) { super(message); this.status = status; this.code = code; this.headers = headers; }
-}
+const PRIVATE_COLUMNS = "id, created_at, name, contact, text, read_at, status, host_note";
 const now = () => Math.floor(Date.now() / 1000);
 const hex = (bytes) => Array.from(new Uint8Array(bytes), (v) => v.toString(16).padStart(2, "0")).join("");
 const digest = async (value) => hex(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
@@ -33,9 +34,9 @@ function response(request, env, data, status = 200, extra = {}) {
   if (env.ALLOWED_ORIGIN && request.headers.get("Origin") === env.ALLOWED_ORIGIN) headers["Access-Control-Allow-Origin"] = env.ALLOWED_ORIGIN;
   return new Response(status === 204 ? null : JSON.stringify(data), { status, headers });
 }
-async function jsonBody(request, allowed) {
+async function jsonBody(request, allowed, maximum = 8192) {
   if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get("Content-Type") || "")) throw new HTTPError(415, "json_required", "Please submit JSON.");
-  if (Number(request.headers.get("Content-Length") || 0) > 8192) throw new HTTPError(413, "too_large", "The letter is too large.");
+  if (Number(request.headers.get("Content-Length") || 0) > maximum) throw new HTTPError(413, "too_large", "The request is too large.");
   // Limit the stream as it arrives, including chunked bodies without a length
   // header. Never buffer an unbounded request before checking its size.
   const chunks = [];
@@ -47,9 +48,9 @@ async function jsonBody(request, allowed) {
         const chunk = await reader.read();
         if (chunk.done) break;
         size += chunk.value.byteLength;
-        if (size > 8192) {
+        if (size > maximum) {
           await reader.cancel();
-          throw new HTTPError(413, "too_large", "The letter is too large.");
+          throw new HTTPError(413, "too_large", "The request is too large.");
         }
         chunks.push(chunk.value);
       }
@@ -184,20 +185,31 @@ async function hostRoute(request, env, path, url) {
     return { ok: true };
   }
   if (path === "/api/host/me" && request.method === "GET") return { id: "host", email: env.HOST_EMAIL };
+  if (path === "/api/host/site-content" && request.method === "GET") return readSiteContent(env);
+  if (path === "/api/host/site-content" && request.method === "PUT") return saveSiteContent(env, await jsonBody(request, ["revision", "content"], 1024 * 1024));
   if (path === "/api/host/messages" && request.method === "GET") {
     const limitRaw = url.searchParams.get("limit") || "100", offsetRaw = url.searchParams.get("offset") || "0";
     if (!/^\d+$/.test(limitRaw) || !/^\d+$/.test(offsetRaw) || !Number.isSafeInteger(Number(offsetRaw))) throw new HTTPError(400, "validation", "Invalid inbox page.");
     const limit = Math.max(1, Math.min(100, Number(limitRaw))), offset = Number(offsetRaw);
-    const rows = await env.DB.prepare("SELECT " + PUBLIC_COLUMNS + " FROM messages ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?").bind(limit, offset).all();
+    const rows = await env.DB.prepare("SELECT " + PRIVATE_COLUMNS + " FROM messages ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?").bind(limit, offset).all();
     if (rows.success === false) throw Error("inbox read failed");
     return rows.results;
   }
   const match = /^\/api\/host\/messages\/([1-9]\d{0,15})$/.exec(path);
   if (match && request.method === "PATCH") {
-    const body = await jsonBody(request, ["read_at"]);
-    const date = typeof body.read_at === "string" && /^\d{4}-\d{2}-\d{2}T/.test(body.read_at) ? new Date(body.read_at) : null;
-    if (!date || Number.isNaN(date.getTime())) throw new HTTPError(400, "validation", "Please provide a valid read timestamp.");
-    const row = await env.DB.prepare("UPDATE messages SET read_at = ? WHERE id = ? RETURNING " + PUBLIC_COLUMNS).bind(date.toISOString(), match[1]).first();
+    const body = await jsonBody(request, ["read_at", "status", "host_note"]);
+    if (!Object.keys(body).length) throw new HTTPError(400, "validation", "Please choose a request field to update.");
+    let readAt = null;
+    if (Object.hasOwn(body, "read_at") && body.read_at !== null) {
+      const date = typeof body.read_at === "string" && /^\d{4}-\d{2}-\d{2}T/.test(body.read_at) ? new Date(body.read_at) : null;
+      if (!date || Number.isNaN(date.getTime())) throw new HTTPError(400, "validation", "Please provide a valid read timestamp.");
+      readAt = date.toISOString();
+    }
+    if (Object.hasOwn(body, "status") && !["new", "done", "archived"].includes(body.status)) throw new HTTPError(400, "validation", "Please choose a valid request status.");
+    if (Object.hasOwn(body, "host_note") && typeof body.host_note !== "string") throw new HTTPError(400, "validation", "Please provide a text note.");
+    const note = Object.hasOwn(body, "host_note") ? textField(body.host_note, 2000) || "" : "";
+    const row = await env.DB.prepare("UPDATE messages SET read_at = CASE WHEN ? = 1 THEN ? ELSE read_at END, status = CASE WHEN ? = 1 THEN ? ELSE status END, host_note = CASE WHEN ? = 1 THEN ? ELSE host_note END WHERE id = ? RETURNING " + PRIVATE_COLUMNS)
+      .bind(Object.hasOwn(body, "read_at") ? 1 : 0, readAt, Object.hasOwn(body, "status") ? 1 : 0, body.status || "new", Object.hasOwn(body, "host_note") ? 1 : 0, note, match[1]).first();
     if (!row) throw new HTTPError(404, "not_found", "This letter was not found.");
     return [row];
   }
@@ -242,15 +254,21 @@ export default {
     try {
       configured(env);
       assertOrigin(request, env);
+      const url = new URL(request.url), path = url.pathname;
+      const farm = path === '/api/farm' || path.startsWith('/api/farm/') || path.startsWith('/api/host/farm/');
       if (request.method === "OPTIONS") {
         const method = request.headers.get("Access-Control-Request-Method") || "";
         const requested = (request.headers.get("Access-Control-Request-Headers") || "").toLowerCase().split(",").map((value) => value.trim()).filter(Boolean);
-        if (!["GET", "POST", "PATCH"].includes(method) || requested.some((header) => !["content-type", "authorization"].includes(header))) throw new HTTPError(403, "cors_denied", "This preflight is not allowed.");
-        return response(request, env, null, 204, { "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS", "Access-Control-Allow-Headers": "Content-Type, Authorization", "Access-Control-Max-Age": "600" });
+        const content = path === "/api/host/site-content";
+        const methods = farm ? ["GET", "POST", "PATCH", "DELETE"] : content ? ["GET", "PUT"] : ["GET", "POST", "PATCH"];
+        const headers = farm ? ["content-type", "authorization", "x-farm-token"] : ["content-type", "authorization"];
+        if (!methods.includes(method) || requested.some((header) => !headers.includes(header))) throw new HTTPError(403, "cors_denied", "This preflight is not allowed.");
+        return response(request, env, null, 204, { "Access-Control-Allow-Methods": methods.join(', ') + ', OPTIONS', "Access-Control-Allow-Headers": farm ? "Content-Type, Authorization, X-Farm-Token" : "Content-Type, Authorization", "Access-Control-Max-Age": "600" });
       }
-      const url = new URL(request.url), path = url.pathname;
       let data;
-      if (path === "/api/messages" && request.method === "POST") data = await submit(request, env, ctx);
+      if (farm) data = await farmRoute(request, env, path, url, { HTTPError, jsonBody, digest, rateLimit, authorize });
+      else if (path === "/api/messages" && request.method === "POST") data = await submit(request, env, ctx);
+      else if (path === "/api/site-content" && request.method === "GET") data = await readSiteContent(env);
       else if (path === "/api/host/login" && request.method === "POST") data = await login(request, env);
       else if (path === "/api/host/refresh" && request.method === "POST") data = await refresh(request, env);
       else if (path.startsWith("/api/host/")) data = await hostRoute(request, env, path, url);
@@ -258,7 +276,8 @@ export default {
       return response(request, env, data);
     } catch (error) {
       const known = error instanceof HTTPError;
-      return response(request, env, { ok: false, code: known ? error.code : "service_unavailable", message: known ? error.message : "The private inbox is temporarily unavailable. Please try again." }, known ? error.status : 503, known ? error.headers : {});
+      const farm = /^\/api\/(?:host\/)?farm(?:\/|$)/.test(new URL(request.url).pathname);
+      return response(request, env, { ok: false, code: known ? error.code : "service_unavailable", message: known ? error.message : farm ? "The shared farm is temporarily unavailable. Please try again." : "The private inbox is temporarily unavailable. Please try again." }, known ? error.status : 503, known ? error.headers : {});
     }
   },
   async scheduled(_event, env, ctx) {

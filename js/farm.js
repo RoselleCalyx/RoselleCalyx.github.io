@@ -4,9 +4,8 @@
      time (a year is 32 minutes), so all visitors share the same weather
    - each fruit ripens in its own season, as in a real orchard:
      cherries & peaches in summer, apples in autumn, oranges in winter
-   - residents come from data/farm.js (plus approved adoptions in the
-     optional shared database, plus this visitor's pending requests)
-   - the orchard itself lives in this visitor's browser
+   - the shared orchard and approved adoptions live in the farm service
+   - baskets, friendship hearts and personal harvests belong to each visitor
    Preview a season with farm.html?season=winter
    ===================================================================== */
 (function () {
@@ -14,6 +13,7 @@
   const { ART, SPECIES, TREES, PHENO, FRUIT, WALK, walkSrc, walkSprite, jumpSprite, poseSprite, treeSVG, treeInline, fruitIcon, defs } = window.FarmArt;
   const Motion = window.FarmMotion;
   const FARM = window.FARM || { residents: [] };
+  const Cloud = window.FarmCloud;
   // Renaming the keeper preserves the visitor's accumulated hearts.
   const keeperHearts = store.get('farm-hearts', {});
   if (keeperHearts['snowcat:Yuki'] !== undefined) {
@@ -21,7 +21,6 @@
     delete keeperHearts['snowcat:Yuki']; store.set('farm-hearts', keeperHearts);
   }
   const params = new URLSearchParams(location.search);
-  const keeperMode = params.has("keeper");
   const motionPreference = matchMedia("(prefers-reduced-motion: reduce)");
   let reduce = motionPreference.matches;
   motionPreference.addEventListener("change", (e) => { reduce = e.matches; setWeather(season.name); });
@@ -59,7 +58,7 @@
       '<img class="farm-bg farm-landscape" data-s="spring summer" src="assets/farm/meadow-spring.webp" alt="" width="1920" height="1080" draggable="false" fetchpriority="high">' +
       '<img class="farm-bg farm-landscape" data-s="autumn" src="assets/farm/meadow-autumn.webp" alt="" width="1920" height="1080" draggable="false">' +
       '<img class="farm-bg farm-landscape" data-s="winter" src="assets/farm/meadow-winter.webp" alt="" width="1920" height="1080" draggable="false">' +
-      '<div class="pond-shimmer"><i></i><i></i></div>' +
+      '<div class="pond-open-water"></div><div class="pond-shimmer"><i></i><i></i></div>' +
       '<svg class="meadow-breeze" viewBox="0 0 1600 900">' + grass + '</svg>' +
       '<span class="scene-lantern lantern-cottage"></span><span class="scene-lantern lantern-pond"></span></div>';
   }
@@ -641,21 +640,20 @@
 
   /* ================= orchard ================= */
   const LOOKS = { bare: "resting through winter", bloom: "in blossom", green: "in full leaf", autumn: "turning gold" };
-  let trees = store.get("farm-trees", null);
-  if (!trees) {
-    trees = [
-      { type: "cherry", slot: 1, seed: 11 }, { type: "apple", slot: 2, seed: 23 },
-      { type: "peach", slot: 0, seed: 37 }, { type: "orange", slot: 3, seed: 41 }
-    ];
+  const MAX_TREES = 8;
+  let trees = [], sharedReady = false, sharedSync = null;
+  const personalPicked = store.get("farm-picked", {});
+  function renderOrchardCount() {
+    const count = document.getElementById("orchardCount");
+    if (count) count.textContent = sharedReady ? `${trees.length} of ${MAX_TREES} shared spaces used` : "Connecting to the shared orchard…";
   }
-  trees.forEach((t, i) => {
-    t.id = t.id || "t" + i + Date.now();
-    t.variant = FarmArt.treeVariant(t);
-    if (t.plantedAbs == null) { t.plantedAbs = season.abs - 1; t.water = 3; }   // older saves: already grown
-    if (!t.picked || Array.isArray(t.picked)) t.picked = { abs: -1, list: [] };
-    delete t.stage; delete t.since; delete t.cycle; delete t.fruitN;
-  });
-  const saveTrees = () => store.set("farm-trees", trees.map(({ el, art, url, sim, ...t }) => t));
+  // Only this visitor's harvest is local. Tree positions and growth come from
+  // the server, so an older browser can never overwrite another visitor's tree.
+  const saveTrees = () => {
+    trees.forEach(t => { personalPicked[t.id] = t.picked; });
+    renderOrchardCount();
+    return store.set("farm-picked", personalPicked);
+  };
   const isSapling = (t) => season.abs <= t.plantedAbs && (t.water || 0) < 3;
   const pickedNow = (t) => (t.picked.abs === season.abs ? t.picked.list : []);
   function renderTree(t) {
@@ -705,17 +703,27 @@
       <p>${line}</p>
       <div class="bubble-actions">
         ${sap ? `<button class="btn sm" type="button" data-water>${ICON.drop} Water</button>` : ""}
-        <button class="btn sm" type="button" data-dig>Dig up</button>
-      </div>`, t.el, null);
+        ${t.canRemove ? `<button class="btn sm" type="button" data-dig>Dig up</button>` : ""}
+      </div>
+      ${t.canRemove ? "" : `<p class="muted">A shared tree. Its planter or the keeper can make room for a new one.</p>`}`, t.el, null);
     const w = el.querySelector("[data-water]");
-    if (w) w.onclick = () => {
-      t.water = (t.water || 0) + 1; water(t); saveTrees(); closeBubble();
-      if (!isSapling(t)) { renderTree(t); toast(`The ${T.label.toLowerCase()} tree has grown up!`); } else toast(`Watered (${t.water}/3).`);
+    if (w) w.onclick = async () => {
+      w.disabled = true;
+      try {
+        await Cloud.water(t.id); water(t); closeBubble();
+        try { await refreshShared(true); toast("Watered. Everyone can see this tree grow."); }
+        catch (_) { toast("Watering is saved. Refresh the farm to see the latest orchard.", 5000); }
+      } catch (error) { toast(error.message); w.disabled = false; }
     };
-    el.querySelector("[data-dig]").onclick = () => {
-      if (window.OrchardSim) OrchardSim.detach(t);
-      t.el.remove(); trees = trees.filter((x) => x !== t); saveTrees(); closeBubble();
-      toast("The tree returns to the soil. Its place is free again.");
+    const dig = el.querySelector("[data-dig]");
+    if (dig) dig.onclick = async () => {
+      dig.disabled = true;
+      try {
+        await Cloud.remove(t.id); closeBubble();
+        try { await refreshShared(true); toast("The tree returns to the soil. Its shared space is free again."); }
+        catch (_) { toast("The tree was removed. Refresh the farm to see the latest orchard.", 5000); }
+      }
+      catch (error) { toast(error.message); dig.disabled = false; }
     };
   }
   function worldPoint(el) {
@@ -804,6 +812,55 @@
     }).catch(() => {});
   }
 
+  /* ---------- one shared orchard, with approved residents ---------- */
+  function sharedMessage(message, failed = false) {
+    const el = document.getElementById("farmSharedStatus");
+    el.textContent = message; el.classList.toggle("unavailable", failed);
+  }
+  function applySharedFarm(snapshot) {
+    const present = new Set(snapshot.trees.map(t => t.id));
+    trees.filter(t => !present.has(t.id)).forEach(t => {
+      if (bubble?.anchor === t.el) closeBubble();
+      if (window.OrchardSim) OrchardSim.detach(t);
+      t.el?.remove(); delete personalPicked[t.id];
+    });
+    const previous = new Map(trees.map(t => [t.id, t]));
+    trees = snapshot.trees.map(record => {
+      let t = previous.get(record.id);
+      const changed = !t || ["type", "slot", "seed", "variant", "plantedAbs", "water"].some(key => t[key] !== record[key]);
+      if (!t) {
+        const picked = personalPicked[record.id];
+        t = { picked: picked && Number.isInteger(picked.abs) && Array.isArray(picked.list) ? picked : { abs: -1, list: [] } };
+      }
+      Object.assign(t, record);
+      if (changed) { if (bubble?.anchor === t.el) closeBubble(); renderTree(t); }
+      return t;
+    });
+    const residentIds = new Set(snapshot.residents.map(r => r.id));
+    animals.filter(a => a.sharedId && !residentIds.has(a.sharedId)).forEach(a => {
+      if (bubble?.anchor === a.el) closeBubble();
+      a.el.remove(); animals.splice(animals.indexOf(a), 1);
+    });
+    snapshot.residents.forEach(def => {
+      if (animals.some(a => a.sharedId === def.id)) return;
+      const a = addAnimal(def); if (a) a.sharedId = def.id;
+    });
+    document.getElementById("residentCount").textContent = animals.length + " little lives";
+    sharedReady = true; renderOrchardCount();
+    sharedMessage("A shared orchard · changes appear for everyone. Animal requests join after the keeper approves them.");
+  }
+  function refreshShared(afterMutation = false) {
+    if (!(Cloud && Cloud.enabled)) return Promise.reject(new Error("The shared farm is not connected."));
+    if (sharedSync) return afterMutation
+      ? sharedSync.catch(() => {}).then(() => refreshShared(true))
+      : sharedSync;
+    sharedSync = Cloud.load().then(applySharedFarm).catch(error => {
+      sharedMessage(sharedReady ? "The farm could not refresh. Your saved trees are still on the server. Try again shortly." : error.message, true);
+      throw error;
+    }).finally(() => { sharedSync = null; });
+    return sharedSync;
+  }
+
   /* ---------- the season chip ---------- */
   const chip = document.getElementById("seasonChip");
   function renderChip() {
@@ -830,23 +887,23 @@
 
   function adoptModal() {
     modal(`
-      <h2>${keeperMode ? "Add an animal" : "Adopt an Animal"}</h2>
-      <p class="muted">${keeperMode ? "Keeper mode: this creates a line for data/farm.js." : "Choose a friend for the farm. The keeper reads every request; once approved, it lives here for everyone to see."}</p>
+      <h2>Adopt an Animal</h2>
+      <p class="muted">Choose a friend for our shared farm. The keeper reads every request; once approved, it lives here for everyone to see.</p>
       <form id="adoptForm" novalidate>
-        <div class="species-grid" role="radiogroup" aria-label="Species">${speciesGrid(keeperMode ? null : "snowcat")}</div>
+        <div class="species-grid" role="radiogroup" aria-label="Species">${speciesGrid("snowcat")}</div>
         <label class="label" for="aName">Its name</label>
         <input class="input" id="aName" maxlength="24" placeholder="e.g. Comet" required>
-        <label class="label" for="aBy">${keeperMode ? "Adopted by" : "Your name"}</label>
-        <input class="input" id="aBy" maxlength="40" placeholder="${keeperMode ? "Chen" : "optional"}">
+        <label class="label" for="aBy">Your name</label>
+        <input class="input" id="aBy" maxlength="40" placeholder="optional">
         <label class="label" for="aNote">A few words about it</label>
         <input class="input" id="aNote" maxlength="140" placeholder="What does it love?">
-        ${keeperMode ? `<label class="label" for="aOut">Paste into data/farm.js → residents</label><textarea class="snippet" id="aOut" readonly></textarea>` : ""}
-        <div class="modal-actions"><button class="btn primary" type="submit">${keeperMode ? "Create line" : "Send request"}</button></div>
+        <div class="modal-actions"><button class="btn primary" type="submit">Send request</button></div>
         <p class="muted" id="aStatus" role="status"></p>
       </form>`, {
       onOpen(m) {
         const form = m.card.querySelector("form");
-        if (window.Backend && !keeperMode) Backend.guard(form);
+        if (window.Backend) Backend.guard(form);
+        let submitting = false;
         let sp = m.card.querySelector(".species-grid button").dataset.sp;
         m.card.querySelector(".species-grid").addEventListener("click", (e) => {
           const b = e.target.closest("button"); if (!b) return;
@@ -855,57 +912,60 @@
         });
         form.addEventListener("submit", async (e) => {
           e.preventDefault();
+          if (submitting) return;
           const name = form.querySelector("#aName").value.trim(), by = form.querySelector("#aBy").value.trim(), note = form.querySelector("#aNote").value.trim();
           const status = form.querySelector("#aStatus");
           if (!name) { status.textContent = "Every friend needs a name."; return; }
-          const def = { species: sp, name, adoptedBy: by || (keeperMode ? "Chen" : "a visitor"), note, since: new Date().toISOString().slice(0, 7) };
-          if (keeperMode) {
-            form.querySelector("#aOut").value = `    { species: "${sp}", name: ${JSON.stringify(name)}, adoptedBy: ${JSON.stringify(def.adoptedBy)}, note: ${JSON.stringify(note)}, since: "${def.since}" },`;
-            form.querySelector("#aOut").select();
-            const local = store.get("farm-keeper-local", []); local.push(def); store.set("farm-keeper-local", local);
-            addAnimal(def);
-            status.textContent = "Added here for you. Paste the line into data/farm.js to make it permanent.";
-            return;
-          }
           const problem = window.Backend ? Backend.check(form, "adopt", 30) : "";
           if (problem) { status.textContent = problem; return; }
+          if (!(Cloud && Cloud.enabled)) { status.textContent = "The shared farm is not connected. Please try again later."; return; }
+          submitting = true;
+          const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
           status.textContent = "Sending…";
-          const res = await Site.send("Farm adoption", { name: by, animal: `${name} (${SPECIES[sp].label})`, note },
-            { table: "adoptions", row: { species: sp, animal_name: name, adopter: by || null, note: note || null } });
-          if (!res.ok) { status.textContent = "The road is muddy — please try again later."; return; }
-          if (window.Backend) Backend.stamp("adopt");
-          const pend = store.get("farm-pending", []); pend.push(def); store.set("farm-pending", pend);
-          addAnimal(def, { pending: true });
-          m.close();
-          toast(res.via === "mail" ? `Your mail app has your request — send it, and ${name} will wait by the gate.` : `${name} is waiting by the gate for the keeper's approval.`, 4200);
+          try {
+            await Cloud.adopt({ species: sp, name, adoptedBy: by || "a visitor", note, website: form.querySelector('[name="website"]')?.value || "" });
+            if (window.Backend) Backend.stamp("adopt");
+            m.close(); toast(`${name}'s request is saved. The keeper will review it before it joins the shared farm.`, 5000);
+          } catch (error) { status.textContent = error.message; submitting = false; submit.disabled = false; }
         });
       }
     });
   }
 
   function plantModal() {
-    const free = SLOTS.map((_, i) => i).filter((i) => !trees.some((t) => t.slot === i));
-    if (!free.length) { toast("The orchard is full. Dig up a tree to make room."); return; }
+    if (!sharedReady) { toast("The shared orchard is still connecting. Please refresh the farm and try again."); return; }
+    if (trees.length >= MAX_TREES) { toast(`The shared orchard holds ${MAX_TREES} trees or vines. Remove one you planted, or ask the keeper to make room.`); return; }
+    let planting = false;
     const preview = (k) => treeInline({ type: k, seed: 5, stage: "mature", season: TREES[k].ripe, picked: [] });
     modal(`
       <h2>Plant a Tree</h2>
+      <p class="muted">${trees.length} of ${MAX_TREES} shared spaces used. Your tree will be visible to every visitor.</p>
       <p class="muted">Choose a fruit tree or climbing vine. Each planting grows into one of three unique shapes. Summer brings cherries, peaches, mangoes and durians; autumn brings apples, kiwis and grapes; oranges ripen in winter. Saplings grow after a season or three waterings.</p>
       <div class="species-grid tree-grid">${Object.entries(TREES).map(([k, T]) => `<button type="button" data-tree="${k}">${preview(k)}<span>${T.label}<br><small>${T.vine?'Climbing vine · ':''}ripe in ${T.ripe}</small></span></button>`).join("")}</div>`, {
       onOpen(m) {
-        m.card.querySelector(".tree-grid").addEventListener("click", (e) => {
+        const feedback = document.createElement("p"); feedback.className = "muted"; feedback.setAttribute("role", "status"); m.card.appendChild(feedback);
+        m.card.querySelector(".tree-grid").addEventListener("click", async (e) => {
           const b = e.target.closest("button"); if (!b) return;
-          const t = { id: "t" + Date.now(), type: b.dataset.tree, slot: free[0], seed: (Math.random() * 1000) | 0, variant:Math.floor(Math.random()*3), plantedAbs: season.abs, water: 0, picked: { abs: -1, list: [] } };
-          trees.push(t); saveTrees(); renderTree(t); m.close();
-          water(t);
-          toast(`A little ${TREES[t.type].label.toLowerCase()} tree. Water it to help it grow.`);
+          if (planting || !Object.hasOwn(TREES, b.dataset.tree)) return;
+          planting = true; feedback.textContent = "Planting in the shared orchard…";
+          m.card.querySelectorAll("[data-tree]").forEach(button => { button.disabled = true; });
+          try {
+            await Cloud.plant(b.dataset.tree); m.close();
+            try { await refreshShared(true); toast("Your tree is saved in the shared orchard. Every visitor can see it.", 4000); }
+            catch (_) { toast("Your tree is saved. Refresh the farm to see the latest orchard.", 5000); }
+          } catch (error) {
+            feedback.textContent = error.message; planting = false;
+            m.card.querySelectorAll("[data-tree]").forEach(button => { button.disabled = false; });
+            refreshShared().catch(() => {});
+          }
         });
       }
     });
   }
 
   function rosterModal() {
-    const list = animals.map((a, i) => `<li><button type="button" data-i="${i}">${ART[a.def.species]()}<span><b>${esc(a.def.name)}</b><small>${esc(a.sp.label)}${a.keeper ? " · keeper" : a.def.adoptedBy ? " · adopted by " + esc(a.def.adoptedBy) : ""}</small></span>${a.pending ? `<span class="st">pending</span>` : ""}</button></li>`).join("");
-    modal(`<h2>My Animals</h2><p class="muted">${animals.length} lovely lives on the farm.</p><ul class="roster">${list}</ul>`, {
+    const list = animals.map((a, i) => `<li><button type="button" data-i="${i}">${ART[a.def.species]()}<span><b>${esc(a.def.name)}</b><small>${esc(a.sp.label)}${a.keeper ? " · keeper" : a.def.adoptedBy ? " · adopted by " + esc(a.def.adoptedBy) : ""}</small>${a.keeper && a.def.title ? `<small>${esc(a.def.title)}</small>` : ""}${a.def.note ? `<small class="resident-note">${esc(a.def.note)}</small>` : ""}</span>${a.pending ? `<span class="st">pending</span>` : ""}</button></li>`).join("");
+    modal(`<h2>Farm Residents</h2><p class="muted">${animals.length} lovely lives on our shared farm.</p><ul class="roster">${list}</ul>`, {
       onOpen(m) {
         m.card.querySelector(".roster").addEventListener("click", (e) => {
           const b = e.target.closest("button"); if (!b) return;
@@ -1080,21 +1140,6 @@
   preloadWalks();
   if (FARM.keeper) addAnimal(FARM.keeper, { keeper: true });
   (FARM.residents || []).forEach((d) => addAnimal(d));
-  store.get("farm-keeper-local", []).forEach((d) => addAnimal(d));
-  store.get("farm-pending", []).forEach((d) => addAnimal(d, { pending: true }));
-  if (window.Backend && Backend.enabled) {
-    Backend.select("adoptions", "select=species,animal_name,adopter,note,created_at&approved=eq.true&order=created_at.asc")
-      .then((rows) => {
-        const pend = store.get("farm-pending", []);
-        rows.forEach((r) => {
-          // an approved request replaces this visitor's pending copy
-          const i = animals.findIndex((a) => a.pending && a.def.name === r.animal_name && a.def.species === r.species);
-          if (i >= 0) { animals[i].el.remove(); animals.splice(i, 1); store.set("farm-pending", pend.filter((p) => !(p.name === r.animal_name && p.species === r.species))); }
-          addAnimal({ species: r.species, name: r.animal_name, adoptedBy: r.adopter || "a visitor", note: r.note, since: (r.created_at || "").slice(0, 7) });
-        });
-      }).catch(() => {});
-    loadShared();
-  }
   document.getElementById("residentCount").textContent = animals.length + " little lives";
   document.getElementById("meetKeeper").onclick = () => {
     const keeper = animals.find(a => a.keeper); if (!keeper) return;
@@ -1105,6 +1150,15 @@
   applySeason(false);
   saveTrees();
   renderBasket();
+  renderOrchardCount();
+  document.getElementById("btnFarmRefresh").onclick = async (event) => {
+    const button = event.currentTarget; button.disabled = true;
+    try { await refreshShared(); } catch (_) {} finally { button.disabled = false; }
+  };
+  if (Cloud?.enabled) {
+    Cloud.watch(applySharedFarm, error => sharedMessage(error.message, true));
+    addEventListener("pageshow", event => { if (event.persisted) refreshShared().catch(() => {}); });
+  } else sharedMessage("The shared farm is not connected yet.", true);
 
   const act = (id, fn) => { document.getElementById(id).onclick = () => { closeBubble(); fn(); }; };
   act("btnAdopt", adoptModal);
@@ -1113,7 +1167,6 @@
   act("btnAnimals", rosterModal);
   act("btnWoods", () => goWild("woods", ...WAYS.woods.at));
   act("btnPond", () => goWild("pond", ...WAYS.pond.at));
-  if (keeperMode) toast("Keeper mode: “Adopt an Animal” now creates lines for data/farm.js.", 4200);
   addEventListener("skycalm", () => setWeather(season.name));
 
   // start the view where the keeper and the orchard are

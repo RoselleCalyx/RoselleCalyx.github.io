@@ -14,8 +14,8 @@
   const shortPlace=s=>s.scene.label;
   const num=i=>String(i+1).padStart(2,'0');
 
-  $('vTimeline').innerHTML=stops.map((s,i)=>`<button type="button" class="v-stop" data-stop="${s.id}" aria-label="${num(i)}, ${date(s)}, ${s.place}"><i aria-hidden="true"></i><time${s.date?` datetime="${s.date}"`:''}>${s.date?s.date.slice(0,4):'∞'}</time><span>${esc(shortPlace(s))}</span></button>`).join('');
-  $('vAtlas').insertAdjacentHTML('beforeend',stops.map((s,i)=>`<button type="button" class="v-map-node" data-stop="${s.id}" style="left:${s.map[0]}%;top:${s.map[1]}%" aria-label="${num(i)}, ${s.place}, ${date(s)}"><span>${num(i)} ${esc(shortPlace(s))}</span></button>`).join(''));
+  $('vTimeline').innerHTML=stops.map((s,i)=>`<button type="button" class="v-stop" data-stop="${esc(s.id)}" aria-label="${num(i)}, ${esc(date(s))}, ${esc(s.place)}"><i aria-hidden="true"></i><time${s.date?` datetime="${esc(s.date)}"`:''}>${s.date?esc(s.date.slice(0,4)):'∞'}</time><span>${esc(shortPlace(s))}</span></button>`).join('');
+  $('vAtlas').insertAdjacentHTML('beforeend',stops.map((s,i)=>`<button type="button" class="v-map-node" data-stop="${esc(s.id)}" style="left:${s.map[0]}%;top:${s.map[1]}%" aria-label="${num(i)}, ${esc(s.place)}, ${esc(date(s))}"><span>${num(i)} ${esc(shortPlace(s))}</span></button>`).join(''));
   $('vChapters').innerHTML=chapters.map((name,c)=>`<div class="v-chapter"><p><small>0${c+1}</small>${name}</p>${stops.map((s,i)=>s.chapter===c?`<button type="button" data-stop="${s.id}"><span>${num(i)}</span>${esc(s.place)}</button>`:'').join('')}</div>`).join('');
   const route=nodes=>nodes.map((s,i)=>`${i?'L':'M'}${s.map[0]*10} ${s.map[1]*4}`).join(' ');
   $('vMapPath').setAttribute('d',route(stops));

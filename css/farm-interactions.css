@@ -52,3 +52,10 @@ body[data-page="farm"] .bubble.animal-food.below::after { border-bottom-color: r
   border: 0;
 }
 @media (prefers-reduced-motion: reduce) { .animal-action { transition: none; } }
+
+.farm-shared-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; color: #94a58f; font-size: .85rem; }
+.farm-shared-tools p { margin: 0; line-height: 1.6; }
+.farm-shared-tools button { flex: none; }
+.farm-shared-tools .unavailable { color: #dfbda3; }
+.roster .resident-note { white-space: pre-line; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .farm-shared-tools { align-items: flex-start; gap: 12px; } }

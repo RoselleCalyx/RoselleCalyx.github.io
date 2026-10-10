@@ -18,26 +18,26 @@
 
   <main class="page">
     <div class="page-head">
-      <h1 class="page-title">Starmap</h1>
-      <p class="page-sub">Choose a star. Meet its story.</p>
+      <h1 class="page-title" data-page-copy="title">Starmap</h1>
+      <p class="page-sub" data-page-copy="subtitle">Choose a star. Meet its story.</p>
     </div>
 
     <div class="starmap-layout">
       <aside class="sm-side glass">
         <button class="btn sm-game cassini-btn" type="button" id="cassiniBtn"><span data-icon="star4"></span>Cassini’s journey</button>
-        <div class="sm-modes" role="tablist" aria-label="What to show">
-          <button type="button" class="active" data-mode="const"><span data-icon="constel"></span>Constellations</button>
-          <button type="button" data-mode="planets"><span data-icon="planet"></span>Planets</button>
-          <button type="button" data-mode="orrery"><span data-icon="target"></span>Solar System</button>
-          <button type="button" data-mode="deep"><span data-icon="galaxy"></span>Deep Sky</button>
-          <button type="button" data-mode="fav"><span data-icon="starO"></span>My Favorites</button>
+        <div class="sm-modes" id="modeTabs" role="tablist" aria-label="What to show" aria-orientation="vertical">
+          <button type="button" class="active" id="modeConst" role="tab" aria-selected="true" aria-controls="starmapPanel" tabindex="0" data-mode="const"><span data-icon="constel"></span>Constellations</button>
+          <button type="button" id="modePlanets" role="tab" aria-selected="false" aria-controls="starmapPanel" tabindex="-1" data-mode="planets"><span data-icon="planet"></span>Planets</button>
+          <button type="button" id="modeOrrery" role="tab" aria-selected="false" aria-controls="starmapPanel" tabindex="-1" data-mode="orrery"><span data-icon="target"></span>Solar System</button>
+          <button type="button" id="modeDeep" role="tab" aria-selected="false" aria-controls="starmapPanel" tabindex="-1" data-mode="deep"><span data-icon="galaxy"></span>Deep Sky</button>
+          <button type="button" id="modeFav" role="tab" aria-selected="false" aria-controls="starmapPanel" tabindex="-1" data-mode="fav"><span data-icon="starO"></span>My Favorites</button>
         </div>
         <ul class="sm-list" id="smList"></ul>
         <button class="btn sm-game" type="button" id="playQuiz"></button>
         <a class="btn sm-game" href="voyager.html"><span data-icon="planet"></span>A Lonely Voyager ↗</a>
       </aside>
 
-      <div class="chart-wrap">
+      <div class="chart-wrap" id="starmapPanel" role="tabpanel" aria-labelledby="modeConst" tabindex="0">
         <canvas id="chart" aria-label="Interactive star map. Drag to pan. Pinch, use the zoom buttons, or hold Ctrl or Command while scrolling to zoom. Scroll firmly to move the page. Use the constellation list to choose objects or answer the game with a keyboard."></canvas>
         <div class="quiz-bar glass" id="quizBar" aria-live="polite"></div>
         <div class="chart-ctrl">
@@ -81,11 +81,12 @@
 
   <script>window.SKY_OPTIONS = { moon: false, milkyWay: false, meteors: 0.6 };</script>
   <script src="js/config.js"></script>
-  <script src="js/sky.js"></script>
-  <script src="js/common.js?v=20261010-menu"></script>
   <script src="data/sky.js"></script>
-  <script src="js/planet-globe.js?v=20261009-maps"></script>
-  <script src="js/orrery.js?v=20261009-orrery"></script>
-  <script src="js/starmap.js?v=20261010-wheel-intent"></script>
+  <script type="text/plain" data-site-src="js/sky.js"></script>
+  <script type="text/plain" data-site-src="js/common.js?v=20261010-owner"></script>
+  <script type="text/plain" data-site-src="js/planet-globe.js?v=20261009-maps"></script>
+  <script type="text/plain" data-site-src="js/orrery.js?v=20261009-orrery"></script>
+  <script type="text/plain" data-site-src="js/starmap.js?v=20261010-keyboard"></script>
+  <script src="js/site-content.js?v=20261010-owner"></script>
 </body>
 </html>

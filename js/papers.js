@@ -43,24 +43,34 @@
 
   function bibtex(p) {
     if (p.bibtex) return p.bibtex;
-    const first = (p.authors[0] || "anon").split(" ").pop().toLowerCase();
+    const first = ((p.authors || [])[0] || "anon").split(" ").pop().toLowerCase();
     const word = (p.title.match(/[A-Za-z]{4,}/) || ["paper"])[0].toLowerCase();
     const isConf = p.type === "publication";
     return `@${isConf ? "inproceedings" : "misc"}{${first}${p.year || ""}${word},
   title     = {${p.title}},
-  author    = {${p.authors.join(" and ")}},
+  author    = {${(p.authors || []).join(" and ")}},
   ${isConf ? "booktitle" : "note     "} = {${p.venue}},
   year      = {${p.year || ""}}
 }`;
   }
 
+  function figures(p) {
+    const items = (p.figures || []).filter(f => f && f.src).map(f => ({ src: f.src, title: f.caption || p.title, meta: p.venue, text: f.caption || p.abstract }));
+    if (p.image) {
+      const index = items.findIndex(f => f.src === p.image);
+      items.unshift(index < 0 ? { src: p.image, title: p.title, meta: p.venue, text: p.abstract } : items.splice(index, 1)[0]);
+    }
+    return items;
+  }
+
   function card(p, i) {
-    const authors = p.authors.map((a) => (a === me ? `<strong>${esc(a)}</strong>` : esc(a))).join(", ");
+    const authors = (p.authors || []).map((a) => (a === me ? `<strong>${esc(a)}</strong>` : esc(a))).join(", ");
     const links = LINKS.filter(([k]) => p.links && p.links[k])
       .map(([k, label, icon]) => `<a class="btn sm" href="${esc(p.links[k])}" target="_blank" rel="noopener">${ICON[icon]}${label}</a>`).join("");
     const typeLabel = { publication: "Publication", preprint: "Preprint", project: "Project" }[p.type] || "";
+    const images = figures(p), cover = p.image || images[0]?.src;
     return `<article class="paper glass reveal" data-i="${i}">
-      <div class="paper-thumb" role="button" tabindex="0" aria-label="Enlarge figure">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ""}</div>
+      <div class="paper-thumb"${cover ? ' role="button" tabindex="0" aria-label="Enlarge paper figures"' : ""}>${cover ? `<img src="${esc(cover)}" alt="${esc(images[0]?.title || p.title)}" loading="lazy">` : ""}</div>
       <div class="paper-body">
         <div class="paper-top"><h3>${esc(p.title)}</h3>${p.selected ? `<span class="selected" title="Selected">${ICON.starF}</span>` : ""}</div>
         <div class="paper-authors">${authors}</div>
@@ -68,6 +78,7 @@
         <p class="paper-abs">${esc(p.abstract || "")}</p>
         <div class="paper-actions">
           ${links}
+          ${images.length > 1 ? `<button class="btn sm" type="button" data-act="figures">${ICON.image}Figures (${images.length})</button>` : ""}
           <button class="btn sm" type="button" data-act="bib">${ICON.quote}BibTeX</button>
           ${p.abstract ? `<button class="more" type="button" data-act="more">Read more ↓</button>` : ""}
         </div>
@@ -96,13 +107,15 @@
   list.addEventListener("click", async (e) => {
     const art = e.target.closest(".paper"); if (!art) return;
     const p = shown[+art.dataset.i];
-    if (e.target.closest(".paper-thumb") && p.image) {
-      Site.lightbox([{ src: p.image, title: p.title, meta: p.venue, text: p.abstract }]);
+    if (e.target.closest(".paper-thumb") && figures(p).length) {
+      Site.lightbox(figures(p));
       return;
     }
     const act = e.target.closest("[data-act]");
     if (!act) return;
-    if (act.dataset.act === "more") {
+    if (act.dataset.act === "figures") {
+      Site.lightbox(figures(p));
+    } else if (act.dataset.act === "more") {
       const open = art.classList.toggle("open");
       act.textContent = open ? "Less ↑" : "Read more ↓";
     } else if (act.dataset.act === "bib") {

@@ -157,6 +157,23 @@ code { font-size: 12px; color: #ccdbe4; overflow-wrap: anywhere; }
 .inbox-status { min-height: 1.75em; margin: 14px 6px 0; color: #b7c5cb; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .inbox-status.is-error { color: #ecc0ad; }
 .inbox-footer { margin: 14px 6px 0; color: #9cafbc; font-size: 10px; line-height: 1.9; }
+.farm-review { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); min-width: 0; }
+.farm-review-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.farm-review-heading h3 { margin: 0; font: 400 15px/1.6 var(--display, sans-serif); letter-spacing: .025em; }
+.farm-review-heading button { padding: 6px 10px; font-size: 10px; }
+.farm-review-note, .farm-review-empty { margin: 10px 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.farm-review-status { min-height: 1.75em; margin: 8px 0; color: #b7c5cb; font-size: 11px; overflow-wrap: anywhere; }
+.farm-review-status.is-error { color: #ecc0ad; }
+.farm-review-list { display: grid; gap: 10px; margin: 10px 0 0; padding: 0; list-style: none; }
+.farm-review-card { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(9, 21, 32, .3); overflow-wrap: anywhere; }
+.farm-review-card h4 { margin: 0; font-size: 12px; font-weight: 500; }
+.farm-review-meta { margin: 4px 0; color: var(--muted); font-size: 10px; line-height: 1.8; }
+.farm-review-text { margin: 8px 0; white-space: pre-wrap; font-size: 12px; line-height: 1.8; }
+.farm-review-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.farm-review-actions button { min-height: 36px; padding: 6px 12px; font-size: 10px; }
+.farm-review-actions .approve-button { border-color: #c7b38a66; color: #e4d3b5; }
+.farm-review-warning { margin: 8px 0 0; color: #ecc0ad; font-size: 10px; }
+@media (max-width: 900px) { .farm-review-actions button, .farm-review-heading button { min-height: 44px; } }
 @media (min-width: 1700px) { .inbox-shell { padding-top: 13vh; } }
 @media (min-width: 901px) and (max-width: 1100px) {
   .inbox-nav { padding-left: 5vw; padding-right: 5vw; }

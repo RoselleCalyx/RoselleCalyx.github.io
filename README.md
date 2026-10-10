@@ -26,12 +26,14 @@ python -m http.server 8000
 
 ## 修改内容（只需改数据文件）
 
+现在也可以从首页 **Host login** 进入统一[主人工作台](docs/owner-workspace.md)，沿用收信账号管理公开资料、链接、主页、论文、相册、漂流瓶、农场和 Voyager 内容，并处理来信与领养申请。保存到云端后，访客打开或刷新页面即可看到更新。工作台在原有 `inbox.html`，后端需应用最新迁移并部署。
+
 - `js/config.js`：名字、邮箱、Scholar / LinkedIn / GitHub 链接、留言投递方式、星图观测地点
 - `data/papers.js`：论文。链接留空 `""` 就不显示对应按钮；`selected: true` 显示星标
 - `data/gallery.js`：足迹。**目前是示例数据，请换成你自己的。** 照片放进 `assets/gallery/`，填 `src`；`src` 为空时会自动画一幅油画风占位图
 - `data/bottles.js`：公开展示的漂流瓶（公开访客来信前请先征得对方同意）
 - 农场四季：所有访客共享同一个季节时钟，每季 8 分钟（一年 32 分钟）；樱桃和桃子夏天熟，苹果秋天熟，橙子冬天熟。`farm.html?season=winter` 可直接预览某个季节。果树是“活的”（`js/orchard-sim.js`）：花苞逐朵开放、花瓣飘落、青果慢慢长大变色、秋叶飘落堆积、枝头积雪渐厚又融化；加 `&speed=60` 可快进观看一整年，加 `&p=0.5` 可定格在季节的某个进度。场景动画在 `js/farm-fx.js`：星星闪烁、流星、冬夜极光、雁群、炊烟、窗灯与灯笼、远湖波光、瀑布、池塘涟漪与跃出水面的锦鲤、阵风、雨后彩虹、雪地脚印，以及点击时的小特效；加 `?fx=demo` 可在几秒内看到所有事件
-- `data/farm.js`：农场居民。也可以打开 `farm.html?keeper`，用“Adopt an Animal”直接生成一行代码，粘贴到 `residents` 里
+- `data/farm.js`：农场的默认居民，也可以在主人工作台管理。果树改用 Cloudflare D1 共享存档，全站共用 8 个种植位置；访客认养的动物由主人审核后公开。旧的本地果树和待审动物存档不再读取，果篮、好感和个人采摘记录仍保存在各自浏览器。
 
 ## 农场之外：林间与池塘
 
@@ -65,13 +67,13 @@ python -m http.server 8000
 
 `assets/planets/` 里的贴图来自 [Solar System Scope](https://www.solarsystemscope.com/textures/)（基于 NASA 数据），按 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 使用；地球的海洋高光图和法线图取自 [three.js](https://github.com/mrdoob/three.js/tree/dev/examples/textures/planets) 示例仓库。改动：缩放、转成 WebP，部分转为灰度。星球面板右下角有署名，请保留。
 
-## 漂流瓶和领养申请怎么送到我这里
+## 私密来信与共享农场
 
 **新版 Message 私密收件箱：** 首选 [Cloudflare D1 + Telegram 配置说明](docs/message-cloudflare-setup.md)，后端在 `services/message-worker/`。Message 页面明确区分「漂流瓶留言」和「写邮件」；留言未确认保存时保留草稿，不自动切换成邮件。主人通过 `inbox.html` 登录读信，匿名访客不需要邮箱。填入 `js/config.js` 的 `messageApi` 后优先使用 Cloudflare；未部署前不要填写虚构地址。
 
-如果使用项目原先预留的 Supabase，可以按 [Supabase 收件箱配置](docs/message-inbox-setup.md) 与 [迁移 SQL](docs/message-inbox.sql) 启用。该私密迁移替代下文旧版 bottles 的公开读取策略，启用后不要再运行旧 bottles 策略。下文的自动投递优先级仍适用于农场领养申请。
+如果使用项目原先预留的 Supabase，可以按 [Supabase 收件箱配置](docs/message-inbox-setup.md) 与 [迁移 SQL](docs/message-inbox.sql) 启用。该私密迁移替代下文旧版 bottles 的公开读取策略，启用后不要再运行旧 bottles 策略。农场种植和领养统一使用 Cloudflare 共享接口；不使用下文旧投递回退。
 
-按优先级自动选择：
+以下是保留的旧版投递方案说明；当前网站使用上面的 Cloudflare 私密收件箱与共享农场：
 
 1. **什么都不配**：访客的邮件客户端会打开一封写好的邮件（发往 `config.js` 里的 email）
 2. **Formspree**（推荐，5 分钟）：在 <https://formspree.io> 建一个表单，把地址填进 `formEndpoint`，来信会直接进你的邮箱

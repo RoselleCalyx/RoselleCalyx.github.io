@@ -1,6 +1,6 @@
 # Quiet Shore message backend
 
-Plain JavaScript Cloudflare Worker + private D1 inbox + Telegram notification outbox. No application npm dependencies are needed. The parent site's `docs/message-cloudflare-setup.md` contains the Chinese setup guide.
+Plain JavaScript Cloudflare Worker + private D1 inbox + shared farm + owner content management + Telegram notification outbox. No application npm dependencies are needed. The parent site's `docs/message-cloudflare-setup.md` contains the Chinese setup guide.
 
 ## Deploy after creating a Cloudflare account
 
@@ -43,14 +43,14 @@ Set the deployed `https://quiet-shore-messages.…workers.dev` base URL in the s
 ## Local tests
 
 ```sh
-node --test tests/worker.test.js
+node --test tests/*.test.js
 ```
 
 Node 22.13 or newer is required for the built-in `node:sqlite` test adapter. Tests execute the real migration and SQL in memory through a D1-compatible wrapper. All Telegram and Turnstile requests are mocked; the tests send no real notifications. Wrangler, a Cloudflare account, and network access are not required for these tests.
 
 ## API
 
-All requests, including host requests and command-line checks, must supply the exact configured `Origin`. JSON bodies are capped at 8 KB while streaming. Responses never permit wildcard origins or cookie credentials.
+All requests, including host requests and command-line checks, must supply the exact configured `Origin`. JSON bodies are capped at 8 KB while streaming, except the owner content save endpoint, which allows one MiB. Responses never permit wildcard origins or cookie credentials.
 
 | Method | Path | Body / response |
 | --- | --- | --- |
@@ -60,11 +60,38 @@ All requests, including host requests and command-line checks, must supply the e
 | POST | `/api/host/logout` | Bearer access token → `{ok:true}` and both tokens revoked |
 | GET | `/api/host/me` | Bearer access token → `{id:"host",email}` |
 | GET | `/api/host/messages?limit=100&offset=0` | Bearer access token → private letter rows |
-| PATCH | `/api/host/messages/{id}` | Bearer access token + `{read_at:ISO timestamp}` → `[updatedRow]` |
+| PATCH | `/api/host/messages/{id}` | Bearer access token + any nonempty subset of `{read_at:ISO timestamp|null,status:"new"|"done"|"archived",host_note:string}` → `[updatedRow]` |
+| GET | `/api/site-content` | Public presentation overlay → `{ok:true,revision,updatedAt,content}` |
+| GET | `/api/host/site-content` | Bearer access token → the same content envelope |
+| PUT | `/api/host/site-content` | Bearer access token + `{revision,content}` → the committed content envelope |
+| GET | `/api/host/farm/adoptions?status=approved` | Bearer access token → approved visitor residents, with UUID `id` values |
+| DELETE | `/api/host/farm/residents/{UUID}` | Bearer access token → `{ok:true,deleted:true}` after retiring an approved visitor resident |
 
-Private rows expose only `id,created_at,name,contact,text,read_at`. Unsupported body fields, public reads, deletes, and message edits are rejected. Empty nickname/contact become `null`. Names allow 60 Unicode code points, contact 120, and trimmed text 2–500.
+Private message rows expose `id,created_at,name,contact,text,read_at,status,host_note`. Owner notes allow 2,000 Unicode code points and remain private. Unsupported body fields, public message reads, deletes, and edits to a visitor's submitted text are rejected. Empty nickname/contact become `null`. Names allow 60 Unicode code points, contact 120, and trimmed text 2–500.
 
 Keep the same UUID `submissionId` when retrying the same draft after an uncertain connection. A matching normalized payload returns the original ID; reusing that ID for different content returns HTTP 409. The submission ID cannot be used to retrieve a letter's content.
+
+## Owner content management
+
+Apply `0001_message_inbox.sql`, `0002_shared_farm.sql`, and `0003_owner_content.sql` in order before deploying this version. `0003_owner_content.sql` creates the public overlay and adds the private request status/note columns; it preserves existing letters and sessions. The original inbox deployment does not provide the new content endpoints until the migration and updated Worker have both been deployed.
+
+The empty database returns revision `0`, `updatedAt: null`, and `content: {}`. The website uses its checked-in defaults for sections absent from this overlay. An authenticated save replaces the complete overlay with one atomic D1 update, increments the revision, and publishes the returned content immediately. Send the revision from the most recent read. HTTP 409 `content_conflict` means another session saved first; reload and reconcile the latest content before retrying. A failed database write never reports success or changes the published content. A network interruption after commit can leave the caller uncertain; reread the latest revision before deciding to retry.
+
+The supported public sections are:
+
+- `site`: identity/contact text, the four `links` keys `scholar`, `linkedin`, `github`, `cv`, observer place/latitude/longitude, footer, and page title/subtitle pairs.
+- `home`: hero title/lede, biography paragraphs, interests, beyond-the-lab text, portrait URL, education, news, explore cards, coda, and hero footer.
+- `papers`: full publications/projects including authors, venue/year/type/topics, selected flag, cover image, abstract, PDF/code/project/data links, BibTeX, and `figures: [{src,caption}]`.
+- `gallery`: albums, coordinates/tags, story, favorite flag, photo URLs/captions and supported painted placeholders.
+- `bottles`: explicitly curated public letters and replies. Private inbox letters never enter this section automatically.
+- `farm`: keeper and baseline residents, with at most 24 residents including approved visitor additions. CMS edits that exceed the combined capacity return HTTP 409 `farm_capacity` without changing the published revision.
+- `voyager`: at least one stop, supported celestial bodies, chapters 0–3, exactly two title lines, mission text, dates (or `null` for the epilogue), image/scene metadata, source links, and scene flags.
+
+`src/site-content.js` defines the exact field allowlists and size/shape limits. Unknown fields, credentials, infrastructure settings (`messageApi`, `formEndpoint`, `supabase`, Turnstile keys), unsafe schemes such as `javascript:`/`data:`, protocol-relative URLs, and URL credentials are rejected. Image fields accept relative paths or HTTP/HTTPS URLs; binary uploads are not stored by this endpoint. Total request bytes, traversal depth, array sizes, text lengths, coordinates, IDs, and enum values are bounded server-side.
+
+Content and private request handling share the existing owner session. The public content endpoint exposes only the saved presentation overlay; it never queries messages, owner notes, sessions, farm pending requests, visitor credentials, or notification records. PUT CORS is permitted for the owner content path while unsupported routes still reject writes.
+
+Approved visitor residents are managed separately from CMS baseline residents. Listing `status=approved` returns the same adoption UUIDs used for reviews. The authenticated resident removal endpoint preserves the adoption request record, changes its status to `rejected`, records the removal time in `reviewed_at`, frees its place, and immediately excludes it from public farm snapshots. Pending/rejected/unknown IDs return HTTP 404 `resident_not_found`; removed requests cannot be approved again. A repeated removal returns 404, so refresh the approved list after an uncertain connection. No visitor credential can authorize owner moderation.
 
 ## Security and notification behavior
 

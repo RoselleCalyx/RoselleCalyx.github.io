@@ -12,7 +12,7 @@
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
-  <link rel="stylesheet" href="css/farm-interactions.css?v=20261010-4" />
+  <link rel="stylesheet" href="css/farm-interactions.css?v=20261010-owner-shared" />
 </head>
 <body data-page="farm">
   <header id="site-header"></header>
@@ -22,8 +22,8 @@
     <div class="farm-head">
       <div class="farm-title-group">
         <p class="kicker">A pocket of peace</p>
-        <h1 class="page-title">My Little Farm<span class="farm-title-star" aria-hidden="true">✧</span></h1>
-        <p class="page-sub">A small place for lovely lives.</p>
+        <h1 class="page-title"><span data-page-copy="title">My Little Farm</span><span class="farm-title-star" aria-hidden="true">✧</span></h1>
+        <p class="page-sub" data-page-copy="subtitle">A small place for lovely lives.</p>
       </div>
       <p class="farm-welcome">Stay a little. Watch the seasons turn.</p>
     </div>
@@ -50,11 +50,16 @@
 
     <div class="farm-actions with-ways" aria-label="Farm actions">
       <button type="button" id="btnAdopt"><span class="farm-action-icon" data-icon="paw"></span><span><b>Adopt an animal</b><small>A little friend, a new beginning</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
-      <button type="button" id="btnPlant"><span class="farm-action-icon" data-icon="sprout"></span><span><b>Plant a tree</b><small>Grow something lovely</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+      <button type="button" id="btnPlant"><span class="farm-action-icon" data-icon="sprout"></span><span><b>Plant a tree</b><small id="orchardCount" aria-live="polite">Up to 8 shared trees or vines</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
       <button type="button" id="btnHarvest"><span class="farm-action-icon" data-icon="basket"></span><span><b>Harvest</b><small>Gather the season’s little gifts</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
       <button type="button" id="btnAnimals"><span class="farm-action-icon" data-icon="heart"></span><span><b>Meet the residents</b><small>Every little life has a story</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
       <button type="button" id="btnWoods" class="way"><span class="farm-action-icon" data-icon="sprout"></span><span><b>Into the woods</b><small>Wild bayberries, mushrooms, shoots</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
       <button type="button" id="btnPond" class="way pondway"><span class="farm-action-icon" data-icon="drop"></span><span><b>Down to the pond</b><small>Wooden rod, bamboo fish cover and traps</small></span><span class="farm-action-arrow" aria-hidden="true">↗</span></button>
+    </div>
+
+    <div class="farm-shared-tools">
+      <p id="farmSharedStatus" role="status" aria-live="polite">Connecting to the shared farm…</p>
+      <button class="btn sm" type="button" id="btnFarmRefresh">Refresh farm</button>
     </div>
 
     <div class="farm-keeper-note">
@@ -68,16 +73,18 @@
 
   <script>window.SKY_OPTIONS = { moon: false, milkyWay: false, meteors: 0.12 };</script>
   <script src="js/config.js"></script>
-  <script src="js/sky.js"></script>
-  <script src="js/common.js?v=20261010-menu"></script>
-  <script src="js/backend.js"></script>
-  <script src="data/farm.js?v=20261009-orchard-shapes9"></script>
-  <script src="js/farm-motion.js?v=20261009-orchard-shapes9"></script>
-  <script src="js/farm-art.js?v=20261010-english-ui"></script>
-  <script src="js/orchard-sim.js?v=20261009-orchard-shapes9"></script>
-  <script src="js/farm-fx.js?v=20261009-feed"></script>
-  <script src="js/meadow-props.js?v=20261009-orchard-shapes9"></script>
-  <script src="js/animal-reactions.js?v=20261009-interactions10"></script>
-  <script src="js/farm.js?v=20261010-english-ui"></script>
+  <script src="data/farm.js?v=20261010-owner-shared"></script>
+  <script type="text/plain" data-site-src="js/sky.js"></script>
+  <script type="text/plain" data-site-src="js/common.js?v=20261010-owner"></script>
+  <script type="text/plain" data-site-src="js/farm-cloud.js?v=20261010-owner-shared"></script>
+  <script type="text/plain" data-site-src="js/backend.js"></script>
+  <script type="text/plain" data-site-src="js/farm-motion.js?v=20261010-owner-shared"></script>
+  <script type="text/plain" data-site-src="js/farm-art.js?v=20261010-owner-shared"></script>
+  <script type="text/plain" data-site-src="js/orchard-sim.js?v=20261009-orchard-shapes9"></script>
+  <script type="text/plain" data-site-src="js/farm-fx.js?v=20261009-feed"></script>
+  <script type="text/plain" data-site-src="js/meadow-props.js?v=20261009-orchard-shapes9"></script>
+  <script type="text/plain" data-site-src="js/animal-reactions.js?v=20261009-interactions10"></script>
+  <script type="text/plain" data-site-src="js/farm.js?v=20261010-owner-shared"></script>
+  <script src="js/site-content.js?v=20261010-owner-shared"></script>
 </body>
 </html>

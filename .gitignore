@@ -1,3 +1,6 @@
 # Raw image-generation outputs; the site uses the exported WebP sheets
 assets/farm/walk/source/
 assets/farm/poses/source/
+assets/farm/new-animals/source/
+assets/farm/source/*-atlas.png
+.wrangler/

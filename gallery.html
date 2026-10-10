@@ -30,24 +30,24 @@
   <main class="page">
     <div class="gallery-head">
       <div class="page-head" style="margin:0">
-        <h1 class="page-title">Gallery</h1>
-        <p class="page-sub">Footprints on Earth,<br />under the same sky.</p>
+        <h1 class="page-title" data-page-copy="title">Gallery</h1>
+        <p class="page-sub" data-page-copy="subtitle">Footprints on Earth,<br />under the same sky.</p>
       </div>
       <div class="view-switch" id="viewSwitch" role="tablist" aria-label="View">
-        <button type="button" class="active" data-view="wall">Photo wall</button>
-        <button type="button" data-view="map">World map</button>
+        <button type="button" class="active" id="wallTab" role="tab" aria-selected="true" aria-controls="wallView" tabindex="0" data-view="wall">Photo wall</button>
+        <button type="button" id="mapTab" role="tab" aria-selected="false" aria-controls="mapView" tabindex="-1" data-view="map">World map</button>
       </div>
     </div>
 
     <div class="gallery-layout">
       <ol class="trail" id="trail" aria-label="Timeline"></ol>
       <div>
-        <section id="wallView">
+        <section id="wallView" role="tabpanel" aria-labelledby="wallTab" tabindex="0">
           <div class="chips" id="tags" style="margin-bottom:18px" aria-label="Categories"></div>
           <div class="album-story glass" id="albumStory"></div>
           <div class="wall" id="wall"></div>
         </section>
-        <section id="mapView" hidden>
+        <section id="mapView" role="tabpanel" aria-labelledby="mapTab" tabindex="0" hidden>
           <div class="map-wrap">
             <div id="map"></div>
             <div class="map-fallback" id="mapFallback">Unfolding the map…</div>
@@ -61,9 +61,10 @@
 
   <script>window.SKY_OPTIONS = { moon: [0.3, 0.08], moonSize: 12 };</script>
   <script src="js/config.js"></script>
-  <script src="js/sky.js"></script>
-  <script src="js/common.js?v=20261010-menu"></script>
   <script src="data/gallery.js"></script>
-  <script src="js/gallery.js?v=20261009-mobile4"></script>
+  <script type="text/plain" data-site-src="js/sky.js"></script>
+  <script type="text/plain" data-site-src="js/common.js?v=20261010-owner"></script>
+  <script type="text/plain" data-site-src="js/gallery.js?v=20261010-owner"></script>
+  <script src="js/site-content.js?v=20261010-owner"></script>
 </body>
 </html>

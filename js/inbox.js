@@ -83,6 +83,15 @@
         if (response.status === 401) throw new InboxError("auth_expired", "Your session has expired. Please sign in again.", 401);
         if (response.status === 403) throw new InboxError("forbidden", "This account cannot access the inbox. Please use the host account.", 403);
         if (response.status === 429) throw new InboxError("rate_limit", "Too many requests. Please try again shortly.", 429);
+        if (data && data.code === "farm_full") throw new InboxError("farm_full", "The farm already has 24 residents. Make room before approving another animal.", response.status);
+        if (data && data.code === "adoption_reviewed") throw new InboxError("adoption_reviewed", "This request has already been reviewed. Refresh the requests to see the latest state.", response.status);
+        if (data && data.code === "tree_not_found") throw new InboxError("tree_not_found", "This tree has already been removed. Refresh the orchard to see the latest state.", response.status);
+        if (data && data.code === "content_conflict") throw new InboxError("content_conflict", "The website was updated elsewhere. Your draft is preserved. Reload the published version before saving again.", response.status);
+        if (data && data.code === "farm_capacity") throw new InboxError("farm_capacity", "The farm can hold 24 residents in total. Remove a resident before adding more. Your draft is preserved.", response.status);
+        if (data && data.code === "resident_not_found") throw new InboxError("resident_not_found", "This resident has already left the farm. Refresh the resident list.", response.status);
+        if (response.status === 413) throw new InboxError("too_large", "This content is too large to publish. Reduce the text or number of items, then try again.", 413);
+        if (data && data.code === "validation") throw new InboxError("validation", data.message || "Please check the content fields.", response.status);
+        if (response.status === 404) throw new InboxError("not_available", "This feature is not available on the connected service yet. Deploy the latest owner-workspace service.", 404);
         throw new InboxError("http_error", "The inbox service is unavailable. Check the configuration or try again shortly.", response.status);
       }
       return data;
@@ -243,8 +252,80 @@
     return rows[0];
   }
 
+  const farmSpecies = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin" };
+  const orchardTypes = { apple: "Apple", peach: "Peach", orange: "Orange", cherry: "Cherry", kiwi: "Kiwi vine", grape: "Grape vine", durian: "Durian", mango: "Mango" };
+  function requireFarmService() {
+    if (mode !== "cloudflare") throw new InboxError("not_configured", "Shared farm management requires the Cloudflare farm service.");
+  }
+  async function farmRequest(path, options) {
+    requireFarmService();
+    const version = sessionVersion;
+    await requireHost();
+    assertSession(version);
+    const data = await authedRequest(path, options);
+    assertSession(version);
+    return data;
+  }
+  function adoptionRow(row) {
+    return row && /^(?:[1-9]\d*|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(String(row.id)) && Object.hasOwn(farmSpecies, row.species)
+      && typeof row.name === "string" && ["pending", "approved", "rejected"].includes(row.status);
+  }
+  async function listAdoptions({ status = "pending" } = {}) {
+    if (!["pending", "approved", "rejected"].includes(status)) throw new InboxError("validation", "Invalid adoption filter.");
+    const rows = await farmRequest("/api/host/farm/adoptions?status=" + status);
+    if (!Array.isArray(rows) || rows.some(row => !adoptionRow(row) || row.status !== status)) throw new InboxError("invalid_response", "Adoption requests could not be loaded. Please try again.");
+    return rows;
+  }
+  async function reviewAdoption(id, decision) {
+    if (!/^(?:[1-9]\d*|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(String(id)) || !["approved", "rejected"].includes(decision)) throw new InboxError("validation", "Invalid adoption review.");
+    const row = await farmRequest("/api/host/farm/adoptions/" + encodeURIComponent(id), { method: "PATCH", body: JSON.stringify({ status: decision }) });
+    if (!adoptionRow(row) || String(row.id) !== String(id) || row.status !== decision) throw new InboxError("invalid_response", "The review could not be confirmed. Refresh the requests before trying again.");
+    return row;
+  }
+  async function listOrchard() {
+    const data = await farmRequest("/api/farm");
+    if (!data || data.ok !== true || data.maxTrees !== 8 || !Array.isArray(data.trees) || data.trees.length > 8
+      || data.trees.some(tree => !tree || !/^[a-zA-Z0-9_-]{1,80}$/.test(String(tree.id)) || !Object.hasOwn(orchardTypes, tree.type)
+        || !Number.isInteger(tree.slot) || tree.slot < 0 || tree.slot >= 8)) throw new InboxError("invalid_response", "The shared orchard could not be loaded. Please try again.");
+    return data;
+  }
+  async function removeTree(id) {
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(String(id))) throw new InboxError("validation", "Invalid tree ID.");
+    const result = await farmRequest("/api/farm/trees/" + encodeURIComponent(id), { method: "DELETE", body: "{}" });
+    if (!result || result.ok !== true || result.deleted !== true) throw new InboxError("invalid_response", "The removal could not be confirmed. Refresh the orchard before trying again.");
+    return result;
+  }
+
+  async function getContent() {
+    requireFarmService();
+    const data = await authedRequest("/api/host/site-content");
+    if (!data || data.ok !== true || !Number.isSafeInteger(data.revision) || data.revision < 0 || !data.content || Array.isArray(data.content) || typeof data.content !== "object") throw new InboxError("invalid_response", "Website content could not be loaded.");
+    return data;
+  }
+  async function saveContent(revision, content) {
+    requireFarmService();
+    const data = await authedRequest("/api/host/site-content", { method: "PUT", body: JSON.stringify({ revision, content }) });
+    if (!data || data.ok !== true || data.revision !== revision + 1 || !data.content || Array.isArray(data.content) || typeof data.content !== "object" || typeof data.updatedAt !== "string" || Number.isNaN(new Date(data.updatedAt).getTime())) throw new InboxError("invalid_response", "Publication could not be confirmed. Reload to check the published version before retrying.");
+    return data;
+  }
+  async function updateMessage(id, changes) {
+    requireFarmService();
+    if (!/^[1-9]\d*$/.test(String(id))) throw new InboxError("validation", "Invalid letter ID.");
+    const data = await authedRequest("/api/host/messages/" + encodeURIComponent(id), { method: "PATCH", body: JSON.stringify(changes) });
+    if (!Array.isArray(data) || data.length !== 1) throw new InboxError("invalid_response", "This letter could not be updated.");
+    return data[0];
+  }
+  async function removeResident(id) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id))) throw new InboxError("validation", "Invalid resident ID.");
+    const data = await farmRequest("/api/host/farm/residents/" + encodeURIComponent(id), { method: "DELETE", body: "{}" });
+    if (!data || data.ok !== true || data.deleted !== true) throw new InboxError("invalid_response", "Resident removal could not be confirmed. Refresh to check the farm.");
+    return data;
+  }
+
   const api = window.HostInbox = Object.freeze({
     configured: Boolean(base), mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
+    farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
+    getContent, saveContent, updateMessage, removeResident,
     get identity() { return session && session.user; },
     get signedIn() { return Boolean(session); }
   });
@@ -252,6 +333,8 @@
   if (!window.document || !document.getElementById("loginForm")) return;
   const $ = (id) => document.getElementById(id);
   const rows = new Map();
+  const letterDrafts = new Map();
+  const savingLetters = new Set();
   let filter = "all";
   let polling = null;
   let loading = false;
@@ -260,36 +343,59 @@
   let firstLoad = true;
   let offset = 0;
   let viewVersion = 0;
+  const adoptions = new Map(), orchard = new Map();
+  const reviewing = new Set(), removing = new Set();
+  let adoptionLoading = null, orchardLoading = null;
+  let adoptionMutationVersion = 0, orchardMutationVersion = 0;
+  let adoptionState = "pending";
 
   function status(message, error = false) { $("inboxStatus").textContent = message; $("inboxStatus").classList.toggle("is-error", error); }
-  function signedOutView() {
+  function signedOutView(explicit = false) {
     viewVersion += 1;
     clearInterval(polling);
     polling = null;
     rows.clear();
+    letterDrafts.clear();
+    savingLetters.clear();
+    adoptions.clear(); orchard.clear(); reviewing.clear(); removing.clear();
+    adoptionLoading = null; orchardLoading = null;
     knownIds.clear();
     firstLoad = true;
     offset = 0;
     $("messageList").replaceChildren();
+    $("adoptionList").replaceChildren(); $("orchardList").replaceChildren();
+    $("adoptionStatus").textContent = ""; $("orchardStatus").textContent = "";
+    adoptionState = "pending"; if ($("adoptionFilter")) $("adoptionFilter").value = "pending";
+    $("refreshAdoptionsButton").disabled = false; $("refreshOrchardButton").disabled = false;
+    $("farmReviewPanel").hidden = true; $("orchardReviewPanel").hidden = true;
     $("hostIdentity").textContent = "";
     $("inboxPanel").hidden = true;
     $("loginPanel").hidden = !api.configured;
     notifications = false;
     $("notifyButton").textContent = "Enable notifications";
+    document.body.classList.remove("owner-signed-in");
+    window.dispatchEvent(new CustomEvent("host-session-change", { detail: { signedIn: false, explicit } }));
   }
 
   function signedInView() {
     viewVersion += 1;
     $("loginPanel").hidden = true;
     $("inboxPanel").hidden = false;
+    $("farmReviewPanel").hidden = !api.farmAvailable; $("orchardReviewPanel").hidden = !api.farmAvailable;
     $("hostIdentity").textContent = api.identity && api.identity.email || "Harbor keeper";
     clearInterval(polling);
-    polling = setInterval(() => load(false), 20000);
+    polling = setInterval(() => refreshAll(false), 20000);
+    document.body.classList.add("owner-signed-in");
+    window.dispatchEvent(new CustomEvent("host-session-change", { detail: { signedIn: true } }));
   }
 
   function render() {
+    const active = document.activeElement;
+    const editing = active && active.dataset && active.dataset.letterId;
+    const editingField = editing && active.dataset.handlingField;
+    const selection = editing && typeof active.selectionStart === "number" ? [active.selectionStart, active.selectionEnd] : null;
     const all = Array.from(rows.values()).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)) || String(b.id).localeCompare(String(a.id), undefined, { numeric: true }));
-    const visible = filter === "unread" ? all.filter((row) => !row.read_at) : all;
+    const visible = filter === "unread" ? all.filter((row) => !row.read_at) : filter === "all" ? all : all.filter(row => (row.status || "new") === filter);
     $("messageCount").textContent = all.length + " loaded · " + all.filter((row) => !row.read_at).length + " unread";
     $("emptyInbox").hidden = visible.length !== 0;
     $("emptyInbox").textContent = filter === "unread" ? "All loaded letters have been read." : "The sea is quiet. No letters yet.";
@@ -306,6 +412,31 @@
       const text = document.createElement("p"); text.className = "message-text"; text.textContent = row.text || "";
       const contact = document.createElement("p"); contact.className = "message-contact"; contact.textContent = "Reply to: " + (row.contact || "No contact details shared");
       item.append(meta, text, contact);
+      if (api.mode === "cloudflare") {
+        const management = document.createElement("div"); management.className = "letter-management";
+        const label = document.createElement("label"); label.textContent = "Status";
+        const select = document.createElement("select"); select.setAttribute("aria-label", "Status for letter from " + (row.name || "a stranger"));
+        for (const [value, caption] of [["new", "To handle"], ["done", "Handled"], ["archived", "Archived"]]) { const option = document.createElement("option"); option.value = value; option.textContent = caption; select.append(option); }
+        const handlingDraft = letterDrafts.get(String(row.id));
+        select.value = handlingDraft ? handlingDraft.status : row.status || "new"; label.append(select);
+        const noteLabel = document.createElement("label"); noteLabel.textContent = "Private note";
+        const note = document.createElement("textarea"); note.rows = 2; note.maxLength = 2000; note.value = handlingDraft ? handlingDraft.host_note : row.host_note || ""; note.setAttribute("aria-label", "Private note for letter from " + (row.name || "a stranger")); noteLabel.append(note);
+        select.dataset.letterId = String(row.id); select.dataset.handlingField = "status";
+        note.dataset.letterId = String(row.id); note.dataset.handlingField = "host_note";
+        const retainDraft = () => letterDrafts.set(String(row.id), { status: select.value, host_note: note.value });
+        select.addEventListener("change", retainDraft); note.addEventListener("input", retainDraft);
+        const save = document.createElement("button"); save.type = "button"; save.textContent = "Save handling";
+        select.disabled = note.disabled = save.disabled = savingLetters.has(String(row.id));
+        save.addEventListener("click", async () => {
+          if (savingLetters.has(String(row.id))) return;
+          savingLetters.add(String(row.id)); select.disabled = note.disabled = save.disabled = true;
+          const version = viewVersion, submitted = { status: select.value, host_note: note.value };
+          try { const updated = await api.updateMessage(row.id, submitted); if (version !== viewVersion) return; letterDrafts.delete(String(row.id)); rows.set(String(row.id), updated); status("Letter handling saved. Your note stays private."); }
+          catch (error) { if (version === viewVersion) handleError(error); }
+          finally { if (version === viewVersion) { savingLetters.delete(String(row.id)); render(); } }
+        });
+        management.append(label, noteLabel, save); item.append(management);
+      }
       if (!row.read_at) {
         const read = document.createElement("button"); read.type = "button"; read.className = "read-button"; read.textContent = "Mark as read";
         read.addEventListener("click", async () => {
@@ -319,12 +450,137 @@
       fragment.append(item);
     }
     $("messageList").replaceChildren(fragment);
+    if (editing) {
+      const restored = Array.from($("messageList").querySelectorAll("[data-letter-id]")).find(el => el.dataset.letterId === editing && el.dataset.handlingField === editingField);
+      if (restored) { restored.focus({ preventScroll: true }); if (selection && restored.setSelectionRange) restored.setSelectionRange(...selection); }
+    }
   }
 
   function handleError(error) {
     if (error.code === "auth_expired" || error.code === "forbidden") { api.signOut(); signedOutView(); }
     status(error.message || "Letters could not be loaded. Please try again.", true);
   }
+
+  function farmStatus(id, message, error = false) {
+    $(id).textContent = message; $(id).classList.toggle("is-error", error);
+  }
+  function farmError(error, id) {
+    if (error.code === "auth_expired" || error.code === "forbidden") { handleError(error); return; }
+    farmStatus(id, error.message || "The farm could not be loaded. Please try again.", true);
+  }
+  function farmElement(tag, className, text) {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  }
+  function renderAdoptions() {
+    const fragment = document.createDocumentFragment();
+    $("emptyAdoptions").hidden = adoptions.size !== 0;
+    $("emptyAdoptions").textContent = adoptionState === "pending" ? "No adoption requests are waiting." : adoptionState === "approved" ? "No approved visitor animals yet." : "No declined or removed requests.";
+    for (const row of adoptions.values()) {
+      const id = String(row.id), item = farmElement("li", "farm-review-card");
+      item.append(farmElement("h4", "", row.name + " · " + farmSpecies[row.species]));
+      const date = new Date(row.created_at);
+      const when = Number.isNaN(date.getTime()) ? "" : " · " + date.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+      item.append(farmElement("p", "farm-review-meta", "Requested by " + (row.adoptedBy || "a visitor") + when));
+      if (row.note) item.append(farmElement("p", "farm-review-text", row.note));
+      const actions = farmElement("div", "farm-review-actions");
+      for (const [decision, label] of row.status === "pending" ? [["approved", "Approve"], ["rejected", "Decline"]] : row.status === "approved" ? [["remove", "Remove resident"]] : []) {
+        const button = farmElement("button", decision === "approved" ? "approve-button" : "", label);
+        button.type = "button"; button.disabled = reviewing.has(id);
+        button.setAttribute("aria-label", label + " " + row.name);
+        button.addEventListener("click", async () => {
+          if (reviewing.has(id) || !adoptions.has(id) || !api.signedIn) return;
+          if (decision === "remove" && !window.confirm("Remove " + row.name + " from the shared farm for every visitor?")) return;
+          reviewing.add(id); adoptionMutationVersion += 1;
+          const version = viewVersion;
+          actions.querySelectorAll("button").forEach(action => { action.disabled = true; });
+          farmStatus("adoptionStatus", decision === "approved" ? "Approving the adoption…" : decision === "remove" ? "Removing the resident…" : "Declining the request…");
+          try {
+            if (decision === "remove") await api.removeResident(row.id); else await api.reviewAdoption(row.id, decision);
+            if (version !== viewVersion) return;
+            adoptions.delete(id); renderAdoptions();
+            farmStatus("adoptionStatus", decision === "approved" ? row.name + " has joined the shared farm." : decision === "remove" ? row.name + " has left the shared farm." : "The adoption request was declined.");
+            $("refreshAdoptionsButton").focus({ preventScroll: true });
+          } catch (error) {
+            if (version !== viewVersion) return;
+            farmError(error, "adoptionStatus");
+            if (error.code === "adoption_reviewed" || error.code === "resident_not_found") { reviewing.delete(id); await loadAdoptions(); }
+          } finally {
+            if (version === viewVersion) { reviewing.delete(id); actions.querySelectorAll("button").forEach(action => { action.disabled = false; }); }
+          }
+        });
+        actions.append(button);
+      }
+      item.append(actions); fragment.append(item);
+    }
+    $("adoptionList").replaceChildren(fragment);
+  }
+  async function loadAdoptions(manual = false) {
+    if (!api.farmAvailable || !api.signedIn || adoptionLoading || reviewing.size) return;
+    const operation = { version: viewVersion, mutation: adoptionMutationVersion };
+    adoptionLoading = operation; $("refreshAdoptionsButton").disabled = true;
+    if (manual || !adoptions.size) farmStatus("adoptionStatus", "Checking adoption requests…");
+    try {
+      const pending = await api.listAdoptions({ status: adoptionState });
+      if (operation.version !== viewVersion || operation.mutation !== adoptionMutationVersion) return;
+      adoptions.clear(); pending.forEach(row => adoptions.set(String(row.id), row)); renderAdoptions();
+      farmStatus("adoptionStatus", pending.length + (adoptionState === "pending" ? " waiting for review." : adoptionState === "approved" ? " approved visitor residents." : " declined or removed requests."));
+    } catch (error) { if (operation.version === viewVersion && operation.mutation === adoptionMutationVersion) farmError(error, "adoptionStatus"); }
+    finally { if (adoptionLoading === operation) { adoptionLoading = null; $("refreshAdoptionsButton").disabled = false; } }
+  }
+  function renderOrchard() {
+    const fragment = document.createDocumentFragment();
+    $("emptyOrchard").hidden = orchard.size !== 0;
+    const trees = Array.from(orchard.values()).sort((a, b) => a.slot - b.slot);
+    for (const tree of trees) {
+      const id = String(tree.id), item = farmElement("li", "farm-review-card");
+      const name = orchardTypes[tree.type] + (["kiwi", "grape"].includes(tree.type) ? "" : " tree");
+      item.append(farmElement("h4", "", name));
+      item.append(farmElement("p", "farm-review-meta", "Orchard space " + (tree.slot + 1)));
+      const warning = farmElement("p", "farm-review-warning", "This removes the tree for all visitors."); warning.hidden = true;
+      const actions = farmElement("div", "farm-review-actions");
+      const remove = farmElement("button", "", "Remove tree"), cancel = farmElement("button", "", "Cancel");
+      remove.type = cancel.type = "button"; remove.disabled = removing.has(id); cancel.hidden = true;
+      remove.setAttribute("aria-label", "Remove " + name + " in space " + (tree.slot + 1));
+      let confirmed = false;
+      cancel.addEventListener("click", () => { confirmed = false; remove.textContent = "Remove tree"; cancel.hidden = true; warning.hidden = true; remove.focus({ preventScroll: true }); });
+      remove.addEventListener("click", async () => {
+        if (removing.has(id) || !orchard.has(id) || !api.signedIn) return;
+        if (!confirmed) { confirmed = true; remove.textContent = "Confirm removal"; cancel.hidden = false; warning.hidden = false; return; }
+        removing.add(id); orchardMutationVersion += 1;
+        const version = viewVersion; remove.disabled = cancel.disabled = true;
+        farmStatus("orchardStatus", "Removing the tree…");
+        try {
+          await api.removeTree(tree.id);
+          if (version !== viewVersion) return;
+          orchard.delete(id); renderOrchard(); farmStatus("orchardStatus", "Tree removed. " + orchard.size + " of 8 orchard spaces used.");
+          $("refreshOrchardButton").focus({ preventScroll: true });
+        } catch (error) {
+          if (version !== viewVersion) return;
+          farmError(error, "orchardStatus");
+          if (error.code === "tree_not_found") { removing.delete(id); await loadOrchard(); }
+        } finally { if (version === viewVersion) { removing.delete(id); remove.disabled = cancel.disabled = false; } }
+      });
+      actions.append(remove, cancel); item.append(warning, actions); fragment.append(item);
+    }
+    $("orchardList").replaceChildren(fragment);
+  }
+  async function loadOrchard(manual = false) {
+    if (!api.farmAvailable || !api.signedIn || orchardLoading || removing.size) return;
+    const operation = { version: viewVersion, mutation: orchardMutationVersion };
+    orchardLoading = operation; $("refreshOrchardButton").disabled = true;
+    if (manual || !orchard.size) farmStatus("orchardStatus", "Checking the shared orchard…");
+    try {
+      const data = await api.listOrchard();
+      if (operation.version !== viewVersion || operation.mutation !== orchardMutationVersion) return;
+      orchard.clear(); data.trees.forEach(tree => orchard.set(String(tree.id), tree)); renderOrchard();
+      farmStatus("orchardStatus", data.trees.length + " of " + data.maxTrees + " orchard spaces used.");
+    } catch (error) { if (operation.version === viewVersion && operation.mutation === orchardMutationVersion) farmError(error, "orchardStatus"); }
+    finally { if (orchardLoading === operation) { orchardLoading = null; $("refreshOrchardButton").disabled = false; } }
+  }
+  function refreshAll(manual = false) { return Promise.allSettled([load(manual), loadAdoptions(manual), loadOrchard(manual)]); }
 
   async function load(manual = false, more = false) {
     if (loading || !api.signedIn) return;
@@ -360,17 +616,19 @@
       await api.signIn($("hostEmail").value, $("hostPassword").value);
       $("hostPassword").value = "";
       signedInView();
-      await load(true);
+      await refreshAll(true);
     } catch (error) { status(error.message, true); }
     finally { $("loginButton").disabled = false; }
   });
   $("logoutButton").addEventListener("click", async () => {
-    signedOutView();
+    signedOutView(true);
     status("Signing out…");
     const result = await api.signOut();
     status(result.remoteRevoked ? "Signed out." : "Signed out on this page. The remote session could not be revoked because the connection was interrupted.", !result.remoteRevoked);
   });
-  $("refreshButton").addEventListener("click", () => load(true));
+  $("refreshButton").addEventListener("click", () => refreshAll(true));
+  $("refreshAdoptionsButton").addEventListener("click", () => loadAdoptions(true));
+  $("refreshOrchardButton").addEventListener("click", () => loadOrchard(true));
   $("loadMoreButton").addEventListener("click", () => load(true, true));
   document.querySelectorAll("[data-filter]").forEach((button) => button.addEventListener("click", () => {
     filter = button.dataset.filter;
@@ -387,7 +645,13 @@
       status(notifications ? "Notifications are on while this page is open. They stop when the page closes." : "Notifications were not allowed. You can still read new letters here.", !notifications);
     } catch (_) { status("Notifications could not be enabled. Check your browser settings.", true); }
   });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && api.signedIn) load(); });
+  if ($("adoptionFilter")) $("adoptionFilter").addEventListener("change", () => {
+    adoptionState = $("adoptionFilter").value; adoptionMutationVersion += 1; adoptionLoading = null;
+    adoptions.clear(); renderAdoptions(); loadAdoptions(true);
+  });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && api.signedIn) refreshAll(); });
+  if (window.addEventListener) window.addEventListener("beforeunload", event => { if (letterDrafts.size && api.signedIn) { event.preventDefault(); event.returnValue = ""; } });
+  if (window.addEventListener) window.addEventListener("host-auth-expired", () => handleError(new InboxError("auth_expired", "Your session expired. Sign in again to continue. Your unpublished website draft is kept on this page.")));
 
   (async () => {
     if (!api.configured) {
@@ -399,7 +663,7 @@
     }
     if (api.mode === "cloudflare") $("pollingNote").textContent = "Checks for new letters every 20 seconds while open. Desktop alerts require permission; configured Telegram alerts continue when this page closes.";
     $("loginPanel").hidden = false;
-    try { if (await api.restore()) { signedInView(); await load(true); } }
+    try { if (await api.restore()) { signedInView(); await refreshAll(true); } }
     catch (error) { handleError(error); }
   })();
 })();

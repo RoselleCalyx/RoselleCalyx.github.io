@@ -465,17 +465,24 @@
 
   /* ---------- side list & modes ---------- */
   const listEl = $("smList");
-  document.querySelectorAll(".sm-modes button").forEach((b) => b.addEventListener("click", () => {
+  const modeList = $("modeTabs");
+  const modeButtons = Array.from(modeList.querySelectorAll('button[role="tab"]'));
+  const modeTabs = Site.tabs(modeList, {
+    orientation: () => mobileMap.matches ? "horizontal" : "vertical",
+    onSelect: (button) => setMode(button.dataset.mode)
+  });
+  if (mobileMap.addEventListener) mobileMap.addEventListener("change", modeTabs.setOrientation);
+  function setMode(next) {
     resetWheel();
     if (quiz.on) stopQuiz();
-    mode = b.dataset.mode;
-    document.querySelectorAll(".sm-modes button").forEach((x) => x.classList.toggle("active", x === b));
+    mode = next;
+    $("starmapPanel").setAttribute("aria-labelledby", modeButtons.find((button) => button.dataset.mode === mode).id);
     closeStage();
     showOrrery(mode === "orrery");
     if (mode === "planets" || mode === "orrery") select({ type: "planet", id: "saturn" }, false, false);
     else if (mode === "deep") select({ type: "dso", id: "m42" }, false);
     resetView(); renderList();
-  }));
+  }
   function listItems() {
     if (mode === "planets") return PLANETS.map((p) => ({ key: { type: "planet", id: p.id }, name: p.name, zh: p.zh }));
     if (mode === "orrery") return ["sun", "mercury", "venus", "earth", "moon", "mars", "jupiter", "saturn", "uranus", "neptune"].map((k) => ({ key: { type: "planet", id: k }, name: WORLDS[k].name, zh: WORLDS[k].zh }));
@@ -615,7 +622,9 @@
     resetWheel();
     cancelNextRound();
     mode = "const";
-    document.querySelectorAll(".sm-modes button").forEach((x) => x.classList.toggle("active", x.dataset.mode === "const"));
+    const constellationTab = modeButtons.find((button) => button.dataset.mode === "const");
+    modeTabs.select(constellationTab, { notify: false });
+    $("starmapPanel").setAttribute("aria-labelledby", constellationTab.id);
     quiz.on = true; quiz.round = 0; quiz.score = 0; quiz.lock = false;
     quiz.order = CONS.map((c) => c.id).sort(() => Math.random() - 0.5).slice(0, 8);
     selected = null; closeStage(); showOrrery(false); resetView(); renderList();
