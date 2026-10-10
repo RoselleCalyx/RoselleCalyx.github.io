@@ -230,3 +230,23 @@ body[data-page="farm"] .farm-actions small { font-size: .72rem; line-height: 1.5
   body[data-page="farm"] .farm-actions button { padding: 14px 12px; gap: 10px; }
   body[data-page="farm"] .farm-action-icon { width: 32px; height: 32px; }
 }
+
+/* A calmer adoption form, following the kitchen's paper and foliage palette. */
+.adoption-kicker { margin: 0 44px 9px 0; font: .62rem var(--ui); letter-spacing: .13em; text-transform: uppercase; color: #8c7652; }
+.adoption-intro { font-size: .85rem; line-height: 1.65; margin: 13px 0 22px; }
+.adoption-section { font: .7rem var(--ui); color: #788369; margin: 0 0 10px; }
+.adoption-details { margin-top: 22px; padding-top: 18px; border-top: 1px solid #dedbc9; }
+body[data-page="farm"] .adoption-card .modal-close { border-radius: 50%; background: #e8e4d7; }
+body[data-page="farm"] .adoption-card h2 { padding-right: 34px; }
+body[data-page="farm"] .adoption-card .species-grid { margin-top: 0; }
+body[data-page="farm"] .adoption-card .species-grid button { transition: background .16s, border-color .16s; }
+body[data-page="farm"] .adoption-card .species-grid button.active { border-color: #8a9d75; background: #e4ead9; box-shadow: inset 0 0 0 1px #8a9d75; }
+body[data-page="farm"] .adoption-card .modal-actions .btn { width: 100%; border-radius: 12px; min-height: 46px; }
+@media (max-width: 600px) {
+  body[data-page="farm"] .adoption-card h2 { font-size: 1.65rem; line-height: 1.25; }
+  body[data-page="farm"] .adoption-card .species-grid { gap: 8px; }
+  body[data-page="farm"] .adoption-card .species-grid button { padding: 8px 4px 10px; min-height: 103px; font-size: .68rem; }
+  body[data-page="farm"] .adoption-card .species-grid .animal-sprite { width: 66px; height: 66px; }
+  body[data-page="farm"] .adoption-card .label { margin-top: 14px; font-size: .63rem; letter-spacing: .08em; }
+  body[data-page="farm"] .adoption-card .input { border-radius: 11px; padding: 12px 14px; }
+}

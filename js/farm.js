@@ -1061,10 +1061,12 @@
 
   function adoptModal() {
     modal(`
-      <h2>Adopt an Animal</h2>
-      <p class="muted">Choose a friend for our shared farm. The keeper reads every request; once approved, it lives here for everyone to see.</p>
+      <p class="adoption-kicker">A new little friend</p><h2>Adopt an animal</h2>
+      <p class="muted adoption-intro">Choose a friend and give it a name. The keeper reviews each request before it joins the farm.</p>
       <form id="adoptForm" novalidate>
+        <p class="adoption-section">Choose your friend</p>
         <div class="species-grid" role="radiogroup" aria-label="Species">${speciesGrid("snowcat")}</div>
+        <p class="adoption-section adoption-details">A little about your friend</p>
         <label class="label" for="aName">Its name</label>
         <input class="input" id="aName" maxlength="24" placeholder="e.g. Comet" required>
         <label class="label" for="aBy">Your name</label>
@@ -1074,6 +1076,7 @@
         <div class="modal-actions"><button class="btn primary" type="submit">Send request</button></div>
         <p class="muted" id="aStatus" role="status"></p>
       </form>`, {
+      className: "adoption-card",
       onOpen(m) {
         const form = m.card.querySelector("form");
         if (window.Backend) Backend.guard(form);
