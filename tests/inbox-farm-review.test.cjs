@@ -26,12 +26,18 @@ function fakeDocument() {
     append(...children) { for (const child of children) this.children.push(...(child.fragment ? child.children : [child])); }
     replaceChildren(...children) { this.children = []; this.text = ''; this.append(...children); }
     setAttribute(name, value) { this.attributes[name] = String(value); }
+    getAttribute(name) { return this.attributes[name] ?? null; }
     addEventListener(type, listener) { if (!this.listeners.has(type)) this.listeners.set(type, []); this.listeners.get(type).push(listener); }
     querySelectorAll(selector) { return this.children.flatMap(child => [...(selector === 'button' && child.tagName === 'BUTTON' ? [child] : []), ...child.querySelectorAll(selector)]); }
     focus() { doc.activeElement = this; }
     async emit(type, properties = {}) { await Promise.all((this.listeners.get(type) || []).map(listener => listener({ preventDefault() {}, target: this, ...properties }))); }
   }
-  for (const [, id] of html.matchAll(/id="([^"]+)"/g)) elements.set(id, new Element());
+  for (const [, tag, attributes, id] of html.matchAll(/<([a-z][\w-]*)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)) {
+    const element = new Element(tag);
+    element.hidden = /(?:^|\s)hidden(?:\s|=|$)/.test(attributes);
+    for (const [, name, value] of attributes.matchAll(/([\w-]+)="([^"]*)"/g)) element.setAttribute(name, value);
+    elements.set(id, element);
+  }
   doc.body = new Element('body');
   const filters = ['all', 'unread'].map(filter => { const button = new Element('button'); button.dataset.filter = filter; return button; });
   doc.getElementById = id => elements.get(id) || null;
@@ -42,15 +48,17 @@ function fakeDocument() {
   return { doc, elements };
 }
 
-function browser(handler = () => reply(200, []), { ui = false, site = { messageApi: base } } = {}) {
-  const calls = [], saved = new Map(), dom = ui ? fakeDocument() : null;
+function browser(handler = () => reply(200, []), { ui = false, site = { messageApi: base }, location, storedSession } = {}) {
+  const calls = [], storageReads = [], saved = new Map(), dom = ui ? fakeDocument() : null;
+  if (storedSession) saved.set('message-host-session-v1', JSON.stringify(storedSession));
   const window = { SITE: site, dispatchEvent() {} };
+  if (location) window.location = new URL(location);
   if (dom) window.document = dom.doc;
   const context = {
     window, document: dom?.doc, URL, atob, AbortController, setTimeout, clearTimeout,
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } },
     setInterval: () => 1, clearInterval() {},
-    sessionStorage: { getItem: key => saved.get(key) || null, setItem: (key, value) => saved.set(key, value), removeItem: key => saved.delete(key) },
+    sessionStorage: { getItem: key => { storageReads.push(key); return saved.get(key) || null; }, setItem: (key, value) => saved.set(key, value), removeItem: key => saved.delete(key) },
     fetch: async (url, options = {}) => {
       calls.push({ url, options });
       if (url.endsWith('/login')) return reply(200, token());
@@ -62,7 +70,7 @@ function browser(handler = () => reply(200, []), { ui = false, site = { messageA
   };
   vm.runInNewContext(source, context, { filename: 'inbox.js' });
   return {
-    api: window.HostInbox, calls, saved, ...dom,
+    api: window.HostInbox, calls, saved, storageReads, ...dom,
     async signIn() {
       if (!ui) return window.HostInbox.signIn(owner.email, 'fake-password');
       dom.elements.get('hostEmail').value = owner.email;
@@ -300,3 +308,60 @@ test('a pending review completing after logout cannot restore signed-in farm dat
   assert.equal(f.elements.get('orchardList').children.length, 0);
   assert.equal(f.elements.get('adoptionStatus').textContent, '');
 });
+
+
+test('file previews show the live workspace link and never inspect or restore a stored host session', async () => {
+  const f = browser(() => { throw Error('A file preview must not make requests'); }, {
+    ui: true, location: 'file:///private/tmp/local-preview/inbox.html',
+    storedSession: { base, backend: 'cloudflare', session: token() }
+  });
+  await new Promise(done => setImmediate(done));
+  assert.equal(f.api.localPreview, true); assert.equal(f.api.configured, false); assert.equal(f.api.signedIn, false);
+  assert.equal(f.elements.get('localWorkspacePanel').hidden, false);
+  assert.equal(f.elements.get('localWorkspacePanel').getAttribute('class'), 'setup-panel');
+  for (const id of ['loginPanel', 'setupPanel', 'inboxPanel']) assert.equal(f.elements.get(id).hidden, true, id + ' remains hidden');
+  for (const id of ['loginButton', 'hostEmail', 'hostPassword']) assert.equal(f.elements.get(id).disabled, true, id + ' cannot accept a local sign-in');
+  assert.equal(f.elements.get('liveWorkspaceLink').getAttribute('href'), 'https://rosellecalyx.github.io/inbox.html');
+  assert.deepEqual(f.storageReads, []); assert.deepEqual(f.calls, []);
+  assert.equal(await f.api.restore(), false); assert.deepEqual(f.storageReads, []); assert.deepEqual(f.calls, []);
+});
+
+test('calling signIn directly from a file preview cannot send credentials to either configured backend', async () => {
+  for (const site of [{ messageApi: base }, { supabase: { url: 'https://database.example', anonKey: 'sb_publishable_test' } }]) {
+    const f = browser(() => { throw Error('Credentials must not leave a file preview'); }, { site, location: 'file:///private/tmp/local-preview/inbox.html' });
+    await assert.rejects(f.api.signIn(owner.email, 'synthetic-secret-do-not-send'), error => error.code === 'local_preview' && error.message === 'This local preview cannot connect to the host service. Open the live host workspace to sign in.');
+    assert.equal(f.api.signedIn, false); assert.equal(f.api.configured, false); assert.deepEqual(f.calls, []); assert.deepEqual(f.storageReads, []);
+  }
+});
+
+test('the HTTPS owner workspace still signs in and opens private management normally', async () => {
+  const f = browser(farmReply, { ui: true, location: 'https://rosellecalyx.github.io/inbox.html' });
+  assert.equal(f.api.localPreview, false); assert.equal(f.api.configured, true);
+  assert.equal(f.elements.get('localWorkspacePanel').hidden, true);
+  await f.signIn();
+  assert.equal(f.api.signedIn, true); assert.equal(f.elements.get('inboxPanel').hidden, false);
+  const login = f.calls.find(call => call.url.endsWith('/login'));
+  assert.ok(login); assert.equal(login.options.method, 'POST');
+  assert.deepEqual(JSON.parse(login.options.body), { email: owner.email, password: 'fake-password' });
+  assert.equal(f.elements.get('hostPassword').value, '', 'the password is cleared after authentication');
+});
+
+test('an HTTP localhost preview retains support for an explicitly configured local API', async () => {
+  const localBase = 'http://127.0.0.1:8787';
+  const f = browser(undefined, { site: { messageApi: localBase }, location: 'http://localhost:4182/inbox.html' });
+  assert.equal(f.api.localPreview, false); assert.equal(f.api.configured, true);
+  await f.signIn(); assert.equal(f.api.signedIn, true);
+  assert.deepEqual(f.calls.map(call => call.url), [localBase + '/api/host/login', localBase + '/api/host/me']);
+});
+
+for (const [name, createError, code, message] of [
+  ['network/CORS failure', () => new TypeError('Failed to fetch'), 'network_error', 'The host service could not be reached. Check your connection and try again.'],
+  ['request timeout', () => Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }), 'timeout', 'The host service took too long to respond. Please try again.']
+]) {
+  test(name + ' reports its own actionable cause without discarding the host session', async () => {
+    const f = browser(() => { throw createError(); }, { location: 'https://rosellecalyx.github.io/inbox.html' });
+    await f.signIn();
+    await assert.rejects(f.api.listAdoptions(), error => error.code === code && error.message === message);
+    assert.equal(f.api.signedIn, true); assert.equal(f.saved.size, 1);
+  });
+}

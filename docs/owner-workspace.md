@@ -4,6 +4,8 @@
 
 ## 使用
 
+请从[正式主人页](https://rosellecalyx.github.io/inbox.html)登录。直接打开本地 `inbox.html`（`file://` 地址）只能预览，无法登录或连接线上主人服务；本地页面会显示正式入口。线上服务只接受正式网站来源的请求。
+
 登录后可切换以下功能：
 
 - **Site & links**：姓名、角色、单位、地点、公开联系邮箱、Scholar / LinkedIn / GitHub / CV、各页标题和介绍、页脚、星图观测位置。

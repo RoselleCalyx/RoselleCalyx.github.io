@@ -9,6 +9,8 @@
   const setupKind = messageApi || !(cfg.url || key) ? "cloudflare" : "supabase";
   const storageKey = "message-host-session-v1";
   const timeoutMs = 12000;
+  const localPreview = window.location?.protocol === "file:";
+  const localPreviewMessage = "This local preview cannot connect to the host service. Open the live host workspace to sign in.";
   let base = "";
   let mode = "none";
   let session = null;
@@ -71,6 +73,9 @@
   }
 
   async function request(path, options = {}) {
+    // Files opened directly have an opaque origin that the host API rejects.
+    // Catch this before sending credentials or attempting session restoration.
+    if (localPreview) throw new InboxError("local_preview", localPreviewMessage);
     if (!base) throw new InboxError("not_configured", configurationError);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -98,7 +103,10 @@
       return data;
     } catch (error) {
       if (error instanceof InboxError) throw error;
-      throw new InboxError(error && error.name === "AbortError" ? "timeout" : "network_error", "The inbox connection timed out or was interrupted. Please try again.");
+      const timedOut = error && error.name === "AbortError";
+      throw new InboxError(timedOut ? "timeout" : "network_error", timedOut
+        ? "The host service took too long to respond. Please try again."
+        : "The host service could not be reached. Check your connection and try again.");
     } finally { clearTimeout(timer); }
   }
 
@@ -207,7 +215,7 @@
   }
 
   async function restore() {
-    if (!base) return false;
+    if (!base || localPreview) return false;
     const version = sessionVersion;
     try {
       const stored = JSON.parse(sessionStorage.getItem(storageKey) || "null");
@@ -333,7 +341,7 @@
   }
 
   const api = window.HostInbox = Object.freeze({
-    configured: Boolean(base), mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
+    configured: Boolean(base) && !localPreview, localPreview, mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
     farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
     getContent, saveContent, uploadImage, updateMessage, removeResident,
     get identity() { return session && session.user; },
@@ -664,6 +672,15 @@
   if (window.addEventListener) window.addEventListener("host-auth-expired", () => handleError(new InboxError("auth_expired", "Your session expired. Sign in again to continue. Your unpublished website draft is kept on this page.")));
 
   (async () => {
+    if (api.localPreview) {
+      $("loginPanel").hidden = true;
+      $("setupPanel").hidden = true;
+      $("loginButton").disabled = true;
+      $("hostEmail").disabled = $("hostPassword").disabled = true;
+      if ($("localWorkspacePanel")) $("localWorkspacePanel").hidden = false;
+      else status(localPreviewMessage, true);
+      return;
+    }
     if (!api.configured) {
       $("setupPanel").hidden = false;
       $("setupReason").textContent = api.configurationError;
