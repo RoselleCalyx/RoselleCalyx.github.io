@@ -94,3 +94,43 @@ body[data-page="farm"] .bubble.animal-food.below::after { border-bottom-color: r
 @keyframes crocodile-swish { 0%,100% { transform: rotate(0); } 30% { transform: rotate(2deg); } 65% { transform: rotate(-2deg); } }
 .farm-calm :is(.swim-wake, .swim-glints), .farm-reduced-motion :is(.swim-wake, .swim-glints) { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .swim-wake, .swim-glints { animation: none !important; } }
+
+/* A supplied warm rock shelter keeps a cold-sensitive crocodile off the ice. */
+.winter-refuge { display: none; position: absolute; left: -19%; bottom: -3%; width: 138%; pointer-events: none; }
+.actor.winter-resting .winter-refuge { display: block; }
+.winter-refuge img { display: block; width: 100%; height: auto; user-select: none; }
+.actor.winter-resting .flip { position: relative; }
+.actor.winter-resting .swim-water { display: none; }
+.actor.winter-resting::before { background: rgba(66, 49, 25, .2); }
+.actor.winter-resting .bob { animation: sleep-breath 8s ease-in-out infinite; }
+
+/* Complete-silhouette pose transitions. Only these two isolated groups fade;
+   complementary plus-lighter weights avoid both doubled light and dim fur. */
+.actor .pose-live, .actor .pose-transition-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  pointer-events: none;
+}
+.actor .pose-live > :is(.animal-sprite, .walk-sprite, .jump-sprite, .pose-sprite, .reaction-art) { transition: none !important; }
+.actor.pose-changing .pose-live, .actor .pose-transition-layer { mix-blend-mode: plus-lighter; }
+.actor .pose-transition-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  transition: none;
+  animation: none;
+}
+.actor.pose-changing .bob { animation: none !important; }
+.farm-calm .pose-transition-old, .farm-reduced-motion .pose-transition-old { display: none; }
+.farm-calm .pose-live, .farm-reduced-motion .pose-live { opacity: 1 !important; }
+@media (prefers-reduced-motion: reduce) {
+  .actor .pose-transition-old { display: none; }
+  .actor .pose-live { opacity: 1 !important; }
+}

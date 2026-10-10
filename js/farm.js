@@ -151,7 +151,16 @@
   const HOMES = { rabbit: {x: 37,y: 72.5}, panda: {x: 47,y: 92}, fox: {x: 56,y: 65.5}, shiba: {x: 30,y: 92}, duckling: {x: 76,y: 94}, redpanda: {x: 42,y: 67}, raccoon: {x: 88,y: 92}, wolf: {x: 22,y: 68}, crocodile: {x: 66,y: 81}, fennec: {x: 87,y: 67} };
   const inPond = (x, y) => ((x - POND.cx) / POND.rx) ** 2 + ((y - POND.cy) / POND.ry) ** 2 < 1;
   const inSwimArea = (x, y) => ((x - SWIM.cx) / SWIM.rx) ** 2 + ((y - SWIM.cy) / SWIM.ry) ** 2 <= 1;
-  const aquatic = a => a.sp.habitat === 'water';
+  const winterResting = a => a.sp.habitat === 'water' && season.name === 'winter';
+  const aquatic = a => a.sp.habitat === 'water' && !winterResting(a);
+  function winterSpot(a) {
+    const residents = animals.filter(friend => friend !== a && friend.sp.habitat === 'water');
+    const places = Array.from({ length: 27 }, (_, index) => ({
+      x: [69, 54, 86][index % 3] + (Math.floor(index / 3) % 2) * .8,
+      y: 88 + Math.floor(index / 3) * .8
+    }));
+    return places.find(spot => !residents.some(friend => Math.hypot(spot.x - friend.x, spot.y - friend.y) < .4)) || places[0];
+  }
   const depth = (y) => 0.72 + ((y - 66) / 30) * 0.5;
   const crowded = (x,y,self) => animals.some(a => a !== self && Math.hypot((x-a.x)/8, (y-a.y)/11) < 1);
   const behindFrontTree = (x,y) => trees && trees.some(t => {
@@ -164,9 +173,10 @@
       const y = SWIM.cy + (Math.random() - .5) * SWIM.ry * 2;
       if (inSwimArea(x, y) && (!self || Math.abs(x - self.x) > 3) && !crowded(x, y, self)) return { x, y };
     }
-    return self ? { x: self.x, y: self.y } : { x: SWIM.cx, y: SWIM.cy };
+    return self && inSwimArea(self.x, self.y) ? { x: self.x, y: self.y } : { x: SWIM.cx, y: SWIM.cy };
   }
   function randomSpot(nearX, self) {
+    if (self && winterResting(self)) return winterSpot(self);
     if (self && aquatic(self)) return waterSpot(nearX, self);
     for (let i = 0; i < 70; i++) {
       const x = Math.max(GROUND.x0, Math.min(GROUND.x1, nearX == null ? GROUND.x0 + Math.random() * (GROUND.x1 - GROUND.x0) : nearX + (Math.random() - 0.5) * 34));
@@ -212,23 +222,25 @@
     if (!sp) return null;
     const home = HOMES[def.species];
     const first = !animals.some(a => a.def.species === def.species);
-    const pos = sp.habitat === 'water' ? home && first ? {...home} : waterSpot() : opts.keeper ? { x: ROCK.x, y: ROCK.y } : home && first ? {...home} : randomSpot();
+    const winterRest = sp.habitat === 'water' && season.name === 'winter';
+    const pos = winterRest ? winterSpot() : sp.habitat === 'water' ? home && first ? {...home} : waterSpot() : opts.keeper ? { x: ROCK.x, y: ROCK.y } : home && first ? {...home} : randomSpot();
     const el = document.createElement("div");
     el.className = "actor" + (opts.pending ? " pending" : "") + (opts.keeper ? " keeper sitting" : "");
     el.dataset.species = def.species;
-    if (sp.habitat === 'water') el.classList.add('aquatic');
+    if (sp.habitat === 'water') el.classList.add(winterRest ? 'winter-resting' : 'aquatic');
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
     el.setAttribute("aria-label", `${def.name}, ${sp.label}`);
     const swimming = sp.habitat === 'water';
     const waterBack = swimming ? '<span class="swim-water swim-water-back" aria-hidden="true"><svg viewBox="0 0 360 100" preserveAspectRatio="none"><path d="M30 50 C30 17 330 17 330 50 M7 48 C28 8 332 8 353 48"/></svg></span>' : '';
     const waterFront = swimming ? '<span class="swim-water swim-water-front" aria-hidden="true"><svg viewBox="0 0 360 100" preserveAspectRatio="none"><path class="swim-contact" d="M30 50 C45 78 315 78 330 50"/><g class="swim-wake"><path d="M7 56 C34 92 326 92 353 56 M1 49 Q40 72 101 65 M1 72 Q42 91 93 80"/></g><path class="swim-glints" d="M71 63 Q90 68 117 66 M177 72 Q205 74 230 69 M264 64 Q286 62 301 56"/></svg></span>' : '';
+    const shelter = swimming ? '<span class="winter-refuge" aria-hidden="true"><img src="assets/farm/scenery/winter-refuge-v1.webp" alt="" width="720" height="315" draggable="false" decoding="async"></span>' : '';
     const art = `<div class="flip">${waterBack}<div class="bob">${ART[def.species]()}${walkSprite(def.species)}${jumpSprite(def.species)}${poseSprite(def.species)}<canvas class="reaction-art" width="320" height="320" aria-hidden="true"></canvas></div>${waterFront}</div>`;
-    el.innerHTML = art
+    el.innerHTML = shelter + art
       + `<span class="resident-label">${esc(def.name)}</span>`
       + (opts.pending ? `<span class="tag">waiting for approval</span>` : "");
     actorsEl.appendChild(el);
-    const a = { def, sp, el, sprite: el.querySelector('.walk-sprite'), nextSprite: el.querySelector('.walk-sprite-next'), lift: 0, x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", pose: opts.keeper ? 'sleep' : 'sit', phase: 0, speed: 0, until: performance.now() + 2500 + Math.random() * 5000, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
+    const a = { def, sp, el, sprite: el.querySelector('.walk-sprite'), nextSprite: el.querySelector('.walk-sprite-next'), lift: 0, x: pos.x, y: pos.y, tx: pos.x, ty: pos.y, state: "idle", pose: winterRest || opts.keeper ? 'sleep' : 'sit', phase: 0, speed: 0, until: winterRest ? Infinity : performance.now() + 2500 + Math.random() * 5000, winterRest, dir: 1, keeper: !!opts.keeper, pending: !!opts.pending, held: false };
     el.querySelectorAll('.pose-sprite').forEach(img => {
       const ready = async () => {
         if (img.dataset.loading) return;
@@ -252,13 +264,17 @@
   function setPose(a, pose) {
     a.pose = pose;
     const img = a.el.querySelector(`.pose-sprite[data-pose="${pose}"]`);
-    a.el.dataset.pose = pose === 'walk' || (img && img.dataset.ready) ? pose : 'sit';
+    const displayPose = pose === 'walk' || (img && img.dataset.ready) ? pose : 'sit';
+    if (window.FarmPoseTransitions) FarmPoseTransitions.before(a, displayPose);
+    a.el.dataset.pose = displayPose;
   }
   function rest(a, now, duration, pose = 'sit') {
+    if (winterResting(a)) { pose = 'sleep'; duration = Infinity; }
     a.state = 'idle'; a.speed = 0; a.until = now + duration;
     setPose(a, pose);
   }
   function planWalk(a, target, now) {
+    if (winterResting(a)) { rest(a, now, Infinity, 'sleep'); return; }
     if (aquatic(a) && !inSwimArea(target.x, target.y)) target = waterSpot(a.x, a);
     if(!walkReady.has(a.def.species)){rest(a,now,1200,'sit');return;}
     if (Math.hypot(target.x - a.x, target.y - a.y) < .3) { rest(a, now, 3000); return; }
@@ -315,7 +331,7 @@
   }
   const climbable = a => ['snowcat','rabbit','fox','shiba'].includes(a.def.species);
   function startHop(a, target, now, rock = null) {
-    if (aquatic(a)) return false;
+    if (a.sp.habitat === 'water') return false;
     if(!jumpReady.has(a.def.species)){rest(a,now,1200,'sit');return false;}
     a.hop = {x:a.x,y:a.y,lift:a.lift||0,tx:target.x,ty:target.y,endLift:rock?rock.lift:0,rock,start:now,duration:1000};
     a.jumpPhase=0;
@@ -336,6 +352,7 @@
     rest(a,now,3000);return false;
   }
   function think(a, now) {
+    if (winterResting(a)) { rest(a, now, Infinity, 'sleep'); return; }
     if (aquatic(a)) {
       if (Math.random() < .35) rest(a, now, 3500 + Math.random() * 6500, Math.random() < .45 ? 'sleep' : 'sit');
       else planWalk(a, waterSpot(a.x, a), now);
@@ -368,6 +385,7 @@
     planWalk(a, t, now);
   }
   function stepAnimal(a, dt, now) {
+    if (winterResting(a)) return;
     if (a.petUntil && now > a.petUntil) { a.petUntil = 0; a.reaction=null;a.el.classList.remove('petting','reaction-ready'); setPose(a, 'sit'); place(a); }
     if (a.held) return;
     if (a.state==='hop') {
@@ -569,6 +587,7 @@
     setTimeout(() => d.remove(), 700);
   }
   function feed(a, f, line, fromEl) {
+    if (winterResting(a)) { line.textContent = `${a.def.name} is resting in the heated pond-side shelter. Snacks can wait until spring.`; return; }
     if(a.feeding){line.textContent=`${a.def.name} is still enjoying that bite…`;return;}
     const d = DIET[a.def.species] || { love: [], like: [], act: "munch", does: "" };
     const key = a.def.species + ":" + a.def.name, now = Date.now(), name = a.def.name, food = f.name.toLowerCase();
@@ -612,6 +631,7 @@
     },delivery);
   }
   function openTray(a) {
+    if (winterResting(a)) { const message = `${a.def.name} is resting in the heated pond-side shelter. Snacks can wait until spring.`; document.getElementById('farmFeedback').textContent = message; toast(message, 3200); return; }
     const el = showBubble(`<h4>Choose a snack</h4><p class="by">For ${esc(a.def.name)}</p><div class="feed-tray"></div>`, a.el, a, 'animal-food');
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-label', `Choose food for ${a.def.name}`);
@@ -652,6 +672,7 @@
     </svg>`
   };
   function openAnimal(a, focus = false) {
+    if (winterResting(a)) toast(`${a.def.name} is spending winter on warm stones in the pond-side shelter.`, 3200);
     const d = a.def, hearts = store.get("farm-hearts", {}), key = d.species + ":" + d.name;
     const liked = !!store.get('farm-liked', {})[key];
     const line = document.getElementById('farmFeedback');
@@ -677,6 +698,7 @@
       fxAt(a.el, "heart");
     };
     el.querySelector("[data-pet]").onclick = () => {
+      if (winterResting(a)) { line.textContent = `${d.name} rests quietly on the warm stones. Let them save their energy until spring.`; emote(a, '♥'); return; }
       if(a.feeding){line.textContent=`Let ${a.def.name} finish that bite first…`;return;}
       const choices=petActions[d.species],act=choices[(a.petAction||0)%choices.length];
       a.petAction=(a.petAction||0)+1;
@@ -925,6 +947,22 @@
   }
 
   /* ---------- the season chip ---------- */
+  function syncWinterHabitat(a) {
+    if (a.sp.habitat !== 'water' || a.winterRest === winterResting(a)) return;
+    window.FarmPoseTransitions?.cancel(a);
+    if (bubble && bubble.a === a) closeBubble();
+    clearTimeout(a.feedT); clearTimeout(a.reactT);
+    a.feeding = false; a.held = false; a.reaction = null; a.petUntil = 0; a.reactUntil = 0;
+    a.el.querySelectorAll('.bite-treat').forEach(treat => treat.remove());
+    [...a.el.classList].filter(name => name === 'petting' || name === 'reaction-ready' || name === 'react' || name.startsWith('react-')).forEach(name => a.el.classList.remove(name));
+    a.winterRest = winterResting(a);
+    a.el.classList.toggle('winter-resting', a.winterRest);
+    a.el.classList.toggle('aquatic', !a.winterRest);
+    const position = a.winterRest ? winterSpot(a) : waterSpot(null, a);
+    a.x = a.tx = position.x; a.y = a.ty = position.y; a.phase = 0;
+    rest(a, performance.now(), a.winterRest ? Infinity : 3000, a.winterRest ? 'sleep' : 'sit');
+    place(a);
+  }
   const chip = document.getElementById("seasonChip");
   function renderChip() {
     const next = SEASONS[(SEASONS.indexOf(season.name) + 1) % 4];
@@ -935,6 +973,7 @@
     world.dataset.season = season.name;
     if(window.MeadowProps)MeadowProps.mount(actorsEl,season.name);
     document.body.dataset.farmSeason = season.name;
+    animals.forEach(syncWinterHabitat);
     setWeather(season.name);
     trees.forEach(renderTree);
     renderChip();
