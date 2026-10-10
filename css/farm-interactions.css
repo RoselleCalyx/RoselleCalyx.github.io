@@ -34,11 +34,90 @@ body[data-page="farm"] .bubble.animal-actions[hidden] { display: none; }
 .animal-action:hover { transform: translateY(-3px) scale(1.08); }
 .animal-action:active { transform: scale(.94); }
 .animal-action:focus-visible { outline: 2px solid #fff1ce; outline-offset: -3px; }
-body[data-page="farm"] .bubble.animal-food { background: rgba(250, 244, 228, .76); }
-.bubble.animal-food::after { border-top-color: rgba(250, 244, 228, .76); }
-body[data-page="farm"] .bubble.animal-food.below::after { border-bottom-color: rgba(250, 244, 228, .76); }
-.bubble.animal-food h4 { padding-right: 20px; font-size: 1.15rem; }
 .bubble.animal-food .feed-tray { max-height: 220px; overflow-y: auto; overscroll-behavior: contain; }
+
+/* Little paper notes share the meadow's warm whites and soft leaf greens. */
+body[data-page="farm"] { --farm-note-font: Georgia, "Songti SC", "Noto Serif SC", serif; }
+body[data-page="farm"] .bubble:not(.animal-actions) {
+  padding: 18px 18px 16px;
+  background: radial-gradient(ellipse at 0 0, rgba(218, 228, 205, .3), transparent 65%), #f8f3e8;
+  color: #505746;
+  border: 1px solid rgba(129, 141, 108, .25);
+  border-radius: 19px 22px 20px 17px;
+  box-shadow: 0 8px 24px rgba(46, 58, 36, .13), inset 0 1px 0 rgba(255, 255, 255, .8);
+  font-family: var(--farm-note-font);
+  font-size: .9rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+body[data-page="farm"] .bubble:not(.animal-actions)::after { border-top-color: #f8f3e8; }
+body[data-page="farm"] .bubble:not(.animal-actions).below::after { border-top: 0; border-bottom-color: #f8f3e8; }
+body[data-page="farm"] .bubble h4 {
+  margin: 3px 0 8px;
+  padding-right: 22px;
+  color: #3f503a;
+  font-family: var(--farm-note-font);
+  font-size: 1.24rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -.015em;
+}
+body[data-page="farm"] .bubble p { margin-top: 8px; }
+body[data-page="farm"] .bubble .sp {
+  color: #7b896a;
+  font-size: .62rem;
+  font-weight: 500;
+  letter-spacing: .11em;
+}
+body[data-page="farm"] .bubble .by { margin-top: -2px; color: #7a806a; font-size: .85rem; }
+body[data-page="farm"] .bubble .muted { color: #7a806c; font-size: .8rem; line-height: 1.6; }
+body[data-page="farm"] .bubble .x {
+  display: grid;
+  place-items: center;
+  top: 7px;
+  right: 7px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  color: #89917b;
+  font-family: var(--ui);
+  font-size: 19px;
+}
+body[data-page="farm"] .bubble .x:hover { background: rgba(128, 145, 107, .1); color: #4d6143; }
+body[data-page="farm"] .bubble :is(.x, .btn, .treat):focus-visible { outline: 2px solid #748962; outline-offset: 2px; }
+body[data-page="farm"] .bubble .btn {
+  padding: 7px 12px;
+  border-color: rgba(112, 136, 92, .26);
+  border-radius: 12px;
+  background: #e9eddf;
+  color: #4c6342;
+  font-family: var(--farm-note-font);
+  font-size: .87rem;
+  letter-spacing: 0;
+}
+body[data-page="farm"] .bubble .btn:hover { background: #dfe7d2; color: #3d5533; }
+body[data-page="farm"] .bubble .feed-tray { gap: 7px; margin-top: 14px; }
+body[data-page="farm"] .bubble .treat { border-color: #e1dfce; border-radius: 12px; background: #fdfbf4; }
+body[data-page="farm"] .bubble .treat:hover { background: #fffdf7; box-shadow: 0 3px 8px rgba(77, 94, 60, .12); }
+body[data-page="farm"] .bubble .treat.love { border-color: #dfc4b5; background: #faf0e7; }
+body[data-page="farm"] .bubble .feed-empty { font-size: .9rem; }
+body[data-page="farm"] :is(.toast, .resident-label, .farm-zone-tip) {
+  background: #f8f3e8;
+  color: #526047;
+  border: 1px solid rgba(129, 141, 108, .24);
+  font-family: var(--farm-note-font);
+  letter-spacing: .01em;
+  box-shadow: 0 4px 16px rgba(46, 58, 36, .12);
+}
+body[data-page="farm"] .toast { padding: 11px 20px; font-size: .92rem; line-height: 1.5; backdrop-filter: none; }
+body[data-page="farm"] .resident-label { padding: 4px 10px; line-height: 1.25; }
+body[data-page="farm"] .farm-zone-tip { padding: 7px 14px; font-size: .94rem; }
+@media (max-width: 900px) {
+  body[data-page="farm"] .bubble.mobile-sheet { padding: 22px 22px 20px; }
+  body[data-page="farm"] .bubble.mobile-sheet h4 { padding-right: 36px; }
+  body[data-page="farm"] .bubble.mobile-sheet .x { top: 8px; right: 8px; width: 44px; height: 44px; }
+}
 .farm-feedback, .farm-feedback:empty {
   display: block;
   position: absolute;
