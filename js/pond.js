@@ -33,7 +33,7 @@
     { id: "shrimp", name: "River shrimp · 河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Bamboo cover or trap." },
     { id: "crayfish", name: "Crayfish · 小龙虾", rarity: 1, len: [8, 14], fight: 0.1, kind: "crust", text: "Red-armoured and indignant, especially in summer.", hint: "In the trap, warm months." },
     { id: "crab", name: "Mitten crab · 中华绒螯蟹", rarity: 2, len: [6, 10], fight: 0.1, kind: "crust", text: "“When the autumn wind rises, the crabs’ legs itch.” Hairy claws, golden roe.", hint: "In the trap; best in autumn." },
-    { id: "eel", name: "Rice-field eel · 黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "黄鳝只在地笼里捕获，春夏秋可得，夏季最多。Set a trap at a bank stake; wait about a minute." },
+    { id: "eel", name: "Rice-field eel · 黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "黄鳝春夏秋可得，夏季最多。寻找岸边细长蛇形鱼影，可用鱼罩或鱼竿；也可放地笼。" },
     { id: "lotus", name: "Lotus seed pod · 莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; found beside the bamboo cover among the fish.", hint: "Summer, with the bamboo cover." },
     { id: "boot", name: "Old boot · 旧靴子", rarity: 1, len: [0, 0], kind: "junk", text: "Someone’s, once. It goes back on the bank to dry.", hint: "Everyone catches one eventually." },
     { id: "bottle", name: "Message in a bottle · 漂流瓶", rarity: 4, len: [0, 0], kind: "junk", text: "There is a note inside: “Whoever finds this — write back.”", hint: "Drifts in now and then." }
@@ -452,11 +452,17 @@
 
   /* ================= living water ================= */
   let shadows = [], ripples = [], parts = [], reeds = [], pads = [], weather = [], flies = [], bubbles = [];
-  function makeShadow(anywhere, id = pickFrom(rodTable().filter(([i]) => BY[i].kind === "fish"))) {
+  const shadowTable = () => {
+    const fish = rodTable().filter(([id]) => BY[id].kind === 'fish');
+    const eel = TRAP[season.name]?.find(([id]) => id === 'eel');
+    return eel ? [...fish, ['eel', eel[1] * .18]] : fish;
+  };
+  function makeShadow(anywhere, id = pickFrom(shadowTable())) {
     const specimen = sizeOf(id);
     let x, y;
     for (let i = 0; i < 30; i++) { x = W * (0.05 + Math.random() * 0.9); y = H * (HZ + 0.1 + Math.random() * 0.48); if (inWater(x, y)) break; }
-    return { id, x, y, h: Math.random() * TAU, sp: 0, specimen, size: specimen ? Math.max(12, specimen.cm * 1.1) : 24, wig: Math.random() * TAU, tx: x, ty: y, mode: "wander", until: 0, koi: id === "koi" || id === "goldkoi", alpha: anywhere ? 1 : 0 };
+    if(id === 'eel') {x=W*(.045+Math.random()*.12);y=H*(.8+Math.random()*.13);}
+    return { id, x, y, leaveAt: time + 65 + Math.random() * 65, h: Math.random() * TAU, sp: 0, specimen, size: specimen ? Math.max(12, specimen.cm * 1.1) : 24, wig: Math.random() * TAU, tx: x, ty: y, mode: "wander", until: 0, koi: id === "koi" || id === "goldkoi", alpha: anywhere ? 1 : 0 };
   }
   function setupLife() {
     const r = rng(3131);
@@ -855,13 +861,16 @@
   }
   function drawShadows(dt) {
     const calm = Wd.reduce || (window.Sky && Sky.calm);
-    shadows.forEach((s) => {
+    shadows.forEach((s, index) => {
       if (s.hidden) return;
-      s.alpha = Math.min(1, s.alpha + dt * 0.5);
+      if(s.mode === 'wander' && time > s.leaveAt) {
+        s.alpha = Math.max(0, s.alpha - dt * .65);
+        if(!s.alpha) {shadows[index]=makeShadow(false);return;}
+      } else s.alpha = Math.min(1, s.alpha + dt * 0.5);
       if (!calm && s.mode !== "trapped") {
         if (s.mode === "wander" || s.mode === "flee") {
           if (time > s.until || Math.hypot(s.tx - s.x, s.ty - s.y) < 10) {
-            for (let i = 0; i < 12; i++) { const tx = W * (0.05 + Math.random() * 0.9), ty = H * (HZ + 0.1 + Math.random() * 0.48); if (inWater(tx, ty)) { s.tx = tx; s.ty = ty; break; } }
+            for (let i = 0; i < 12; i++) { const tx = W * (s.id === "eel" ? .045 + Math.random() * .12 : .05 + Math.random() * .9), ty = H * (s.id === "eel" ? .8 + Math.random() * .13 : HZ + .1 + Math.random() * .48); if (inWater(tx, ty)) { s.tx = tx; s.ty = ty; break; } }
             if (time < bait.until && bait.x != null) { s.tx = bait.x + (Math.random() - 0.5) * 60 * k; s.ty = bait.y + (Math.random() - 0.5) * 20 * k; }
             s.until = time + 3 + Math.random() * 5; if (s.mode === "flee" && time > s.until - 3) s.mode = "wander";
           }
@@ -1097,7 +1106,7 @@
   }
   function openLog() {
     document.getElementById("btnLog").classList.remove("glint");
-    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼影大小对应个体长度；锦鲤有红白斑块，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝只从岸边地笼捕获。Released fish still count." });
+    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼影大小对应个体长度；锦鲤有红白斑块，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝在岸边有细长蛇形鱼影，也能用地笼捕获。Released fish still count." });
   }
   function scatterBait() {
     if (frozen()) { toast("The fish are slow under the ice. Bait won’t carry.", 2600); return; }
@@ -1195,7 +1204,7 @@
     <p>浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
     <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。越稀有越少出现、游得越快，提竿窗口也越短。它挣扎很强，保持张力在安全区；同种鱼里，个体越大越难收线。</p>
     <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。锦鲤带红白斑块；鳜鱼身宽、有斑纹和棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
-    <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝用岸边地笼捕获，春夏秋都有，夏季较多；放下后约一分钟回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
+    <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝春夏秋在岸边有细长蛇形鱼影，可罩捕或下竿，也可放地笼约一分钟后回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
 
   function restoreSavedState() {
     const latest = Wd.store.get("wild-pond", { creel: {}, seen: {}, best: {}, traps: [null, null, null] }) || {};
