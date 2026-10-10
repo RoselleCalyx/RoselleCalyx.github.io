@@ -846,6 +846,9 @@ body[data-page="farm"] .bubble .by { color: #7c826c; }
 .tree-inner.living .base-a { transition: opacity 1.2s linear; }
 .tree-sim { position: absolute; left: -25%; top: -8%; width: 150%; height: 116%; pointer-events: none; }
 .tree-inner.living .fruit-layer { position: absolute; inset: 0; }
+.tree, .tree-img, .tree .fruit-layer, .tree .fruit-layer svg { pointer-events: none; }
+.tree-hit { position: absolute; inset: 0; pointer-events: auto; clip-path: polygon(40% 74%,60% 74%,61% 88%,57% 96%,43% 96%,39% 88%); }
+.tree .fruit { pointer-events: auto; }
 
 /* ---------- Farm: ambient and event effects (js/farm-fx.js) ---------- */
 .farm-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }

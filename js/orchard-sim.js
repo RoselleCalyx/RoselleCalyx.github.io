@@ -31,7 +31,7 @@
     if(!window.FarmArt.TREES[type]?.asset)return prepare();
     const key=`${type}:${variant}`;
     if(speciesArt.has(key))return speciesArt.get(key);
-    const promise=Promise.all(['summer','autumn','winter'].map(s=>load(FarmArt.treeSrc(type,s,variant)).then(img=>[s,img]))).then(pairs=>{
+    const promise=Promise.all(['spring','summer','autumn','winter'].map(s=>load(FarmArt.treeSrc(type,s,variant)).then(img=>[s,img]))).then(pairs=>{
       const img=Object.fromEntries(pairs),a={ground:302,tops:{summer:[],winter:[]},blossoms:[],leaves:{summer:[],autumn:[]},leafEdges:[]},branches=[];
       for(const s of ['summer','winter'])scan(img[s],(x,y,r,g,b,top,fy,i,j,alpha)=>{
         if(top&&fy<.85&&alpha(i,j+2)>100){
@@ -58,6 +58,8 @@
         const point=nearest.slice(0,2);used.push(point);return point;
       });
       FarmArt.registerFruitSlots(type,variant,slots);
+      a.bark=buildBark(type,variant,img);
+      a.hits=buildHitAreas(type,variant,img);
       return a;
     });speciesArt.set(key,promise);return promise;
   }
@@ -130,6 +132,130 @@
     const a = list.slice();
     for (let i = a.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; }
     return a.slice(0, n);
+  }
+
+  /* ---------- species-specific wood, confined to the painted branches ---------- */
+  const BARK = {
+    apple:  { tone:[1.15,1.08,.98], grain:.024, furrow:.035, lenticels:.16, scale:.026 },
+    peach:  { tone:[1.16,1.08,1.00],grain:.026, furrow:.030, lenticels:.33, scale:.028 },
+    cherry: { tone:[1.37,.97,.81],  grain:.020, furrow:.016, lenticels:.60, scale:.010 },
+    orange: { tone:[1.17,1.09,.98], grain:.018, furrow:.014, lenticels:.10, scale:.010 },
+    kiwi:   { tone:[1.21,1.10,.93], grain:.029, furrow:.038, lenticels:.22, scale:.016 },
+    grape:  { tone:[1.31,1.04,.81], grain:.036, furrow:.070, lenticels:0,   scale:.023, peeling:true },
+    durian: { tone:[1.18,1.07,.92], grain:.038, furrow:.070, lenticels:.05, scale:.052, peeling:true },
+    mango:  { tone:[1.17,1.10,.98], grain:.029, furrow:.052, lenticels:.08, scale:.030 }
+  };
+  function buildBark(type,variant,images) {
+    const N=lowPower?256:320, count=N*N, profile=BARK[type], vine=FarmArt.TREES[type].vine;
+    const pixels={};
+    for(const [season,img] of Object.entries(images)){
+      const c=document.createElement('canvas');c.width=c.height=N;
+      const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0,N,N);
+      pixels[season]=g.getImageData(0,0,N,N).data;
+    }
+    const wood=(d,k)=>{
+      const r=d[k],green=d[k+1],b=d[k+2];
+      return d[k+3]>160&&r>green*1.035&&green>b*.94&&green<b*2&&b<r*1.06&&r+green+b<650;
+    };
+    // Winter is a location guide, never an extra branch painting. Follow only
+    // wood connected to the roots; warm autumn leaves cannot create new branches.
+    const prior=new Uint8Array(count),connected=new Uint8Array(count),queue=new Int32Array(count);
+    for(let i=0;i<count;i++)prior[i]=wood(pixels.winter,i*4)?1:0;
+    let end=0;
+    for(let y=Math.floor(N*.86);y<N;y++)for(let x=0;x<N;x++){
+      const i=y*N+x;if(prior[i]){connected[i]=1;queue[end++]=i;}
+    }
+    for(let q=0;q<end;q++){
+      const i=queue[q],x=i%N,y=Math.floor(i/N);
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        if(x+dx<0||x+dx>=N||y+dy<0||y+dy>=N)continue;
+        const j=i+dy*N+dx;if(prior[j]&&!connected[j]){connected[j]=1;queue[end++]=j;}
+      }
+    }
+    const direction=new Float32Array(count*2), phase=variant*2.17+Object.keys(BARK).indexOf(type)*1.63;
+    for(let i=0;i<count;i++)if(connected[i]){
+      const x=i%N,y=Math.floor(i/N);let xx=0,yy=0,xy=0;
+      // Principal direction of nearby wood: fine grain turns with the branch.
+      for(let dy=-6;dy<=6;dy+=2)for(let dx=-6;dx<=6;dx+=2){
+        if(x+dx<0||x+dx>=N||y+dy<0||y+dy>=N||!connected[i+dy*N+dx])continue;
+        xx+=dx*dx;yy+=dy*dy;xy+=dx*dy;
+      }
+      const anisotropy=Math.hypot(xx-yy,2*xy)/(xx+yy||1);
+      const a=anisotropy<.18?Math.PI/2:.5*Math.atan2(2*xy,xx-yy);
+      direction[i*2]=Math.cos(a);direction[i*2+1]=Math.sin(a);
+    }
+    const layers={};
+    for(const [season,d] of Object.entries(pixels)){
+      const c=document.createElement('canvas');c.width=c.height=N;
+      const g=c.getContext('2d'),out=g.createImageData(N,N),o=out.data;
+      for(let i=0;i<count;i++)if(connected[i]){
+        const k=i*4;if(!wood(d,k))continue;
+        const w=pixels.winter, sum=d[k]+d[k+1]+d[k+2],ws=w[k]+w[k+1]+w[k+2];
+        const hueDelta=Math.abs((d[k]-d[k+1])/sum-(w[k]-w[k+1])/ws)+Math.abs((d[k+1]-d[k+2])/sum-(w[k+1]-w[k+2])/ws);
+        if(hueDelta>.095)continue; // reject seasonal colour changes over the wood guide
+        const x=i%N,y=Math.floor(i/N),tx=direction[i*2],ty=direction[i*2+1];
+        const u=(-ty*x+tx*y)*320/N,v=(tx*x+ty*y)*320/N;
+        const lower=smooth(.40,.70,y/N),strength=vine?.62:1;
+        const warp=u+Math.sin(v*.073+phase)*1.8;
+        const ridge=Math.pow(.5+.5*Math.sin(warp*2.3+phase),7);
+        const flake=(hash(Math.floor(warp/3.8)*79+Math.floor(v/9)*17+phase)-.5)*profile.scale;
+        const grit=(hash(x*17.7+y*41.1+phase)-.5)*profile.grain;
+        const cellU=Math.floor(u/6),cellV=Math.floor(v/5),spot=hash(cellU*73+cellV*131+phase);
+        const du=u-cellU*6,dv=v-cellV*5;
+        const lenticel=spot<profile.lenticels&&du>1&&du<4.8&&dv>1.8&&dv<2.5?-.075:0;
+        const peel=profile.peeling&&ridge>.60&&Math.sin(v*.13+phase)>.15?-.038:0;
+        const detail=(grit+flake-profile.furrow*(ridge-.20)+lenticel+peel)*(.35+.65*lower)*strength;
+        const lum=d[k]*.28+d[k+1]*.56+d[k+2]*.16;
+        for(let ch=0;ch<3;ch++){
+          // Retain painted light and fine detail, with a restrained material tint.
+          const toned=d[k+ch]*.52+lum*profile.tone[ch]*.48;
+          o[k+ch]=clamp(toned*(1+detail)+detail*24,0,255);
+        }
+        o[k+3]=Math.round(d[k+3]*(.52+.20*lower)*(1-hueDelta/.12));
+      }
+      g.putImageData(out,0,0);layers[season]=c;
+    }
+    return layers;
+  }
+  function drawBark(sim,season,p) {
+    const layers=sim.anchors.bark;if(!layers)return;
+    const [a,b,mix]=base(sim.tree.type,season,p),g=sim.ctx;
+    g.save();g.globalAlpha=a===b?1:1-mix;g.drawImage(layers[a],0,0,320,320);
+    if(a!==b){g.globalAlpha=mix;g.drawImage(layers[b],0,0,320,320);}g.restore();
+  }
+
+  let hitDefs=null;
+  function buildHitAreas(type,variant,images) {
+    const NS='http://www.w3.org/2000/svg',N=128,hits={},paths={};
+    const reference=id=>`url("${new URL('#'+id,location.href).href}")`;
+    if(!hitDefs){
+      const svg=document.createElementNS(NS,'svg');svg.setAttribute('aria-hidden','true');
+      svg.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
+      hitDefs=document.createElementNS(NS,'defs');svg.appendChild(hitDefs);document.body.appendChild(svg);
+    }
+    for(const [season,img] of Object.entries(images)){
+      const c=document.createElement('canvas');c.width=c.height=N;
+      const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0,N,N);
+      const d=g.getImageData(0,0,N,N).data,segments=[];
+      // Row spans retain gaps in the crown and vine supports. Only this invisible
+      // hit target is clipped; simulated leaves and snow can still overhang.
+      for(let y=0;y<N;y++)for(let x=0;x<N;){
+        if(d[(y*N+x)*4+3]<28){x++;continue;}
+        const start=x;while(x<N&&d[(y*N+x)*4+3]>=28)x++;
+        segments.push(`M${start/N} ${y/N}h${(x-start)/N}v${1/N}h${(start-x)/N}z`);
+      }
+      const id=`orchard-hit-${type}-${variant}-${season}`,clip=document.createElementNS(NS,'clipPath');
+      clip.id=id;clip.setAttribute('clipPathUnits','objectBoundingBox');
+      const path=document.createElementNS(NS,'path');path.setAttribute('d',segments.join(''));
+      clip.appendChild(path);hitDefs.appendChild(clip);hits[season]=reference(id);paths[season]=path;
+    }
+    // Both paintings remain visible during the seasonal cross-fade.
+    for(const [a,b] of [['winter','spring'],['spring','summer'],['summer','autumn'],['autumn','winter']]){
+      const key=`${a}-${b}`,id=`orchard-hit-${type}-${variant}-${key}`,clip=document.createElementNS(NS,'clipPath');
+      clip.id=id;clip.setAttribute('clipPathUnits','objectBoundingBox');
+      clip.append(paths[a].cloneNode(true),paths[b].cloneNode(true));hitDefs.appendChild(clip);hits[key]=reference(id);
+    }
+    return hits;
   }
 
   /* ---------- small sprites ---------- */
@@ -206,7 +332,7 @@
   /* ---------- one living tree ---------- */
   const sims = new Set();
   function markup() {
-    return `<div class="tree-inner living"><img class="tree-img base-a" alt="" draggable="false"><img class="tree-img base-b" alt="" draggable="false"><canvas class="tree-sim" aria-hidden="true"></canvas><div class="fruit-layer"></div></div>`;
+    return `<div class="tree-inner living"><img class="tree-img base-a" alt="" draggable="false"><img class="tree-img base-b" alt="" draggable="false"><canvas class="tree-sim" aria-hidden="true"></canvas><span class="tree-hit" aria-hidden="true"></span><div class="fruit-layer"></div></div>`;
   }
   function attach(tree, el, onReady) {
     const sim = {
@@ -393,6 +519,9 @@
     // so the trunk never turns see-through and old leaves never show through the new picture
     sim.b.style.opacity = Math.min(1, mix * 2).toFixed(3);
     sim.a.style.opacity = Math.min(1, (1 - mix) * 2).toFixed(3);
+    const hitKey=ka===kb||mix<=.005?ka:mix>=.995?kb:`${ka}-${kb}`;
+    const hit=sim.anchors.hits?.[hitKey];
+    if(hit&&sim.hit!==hit){sim.el.querySelector('.tree-hit').style.clipPath=hit;sim.hit=hit;}
 
     if (!calm) {
       // spring: flowers drop their petals one by one
@@ -466,6 +595,8 @@
     ctx.clearRect(0, 0, sim.cv.width, sim.cv.height);
     ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * cw * (0.25 / 1.5), dpr * (cw / 1.5) * 0.08);
     const ground = A.ground;
+
+    drawBark(sim,season.name,p);
 
     // snow drift at the foot of the tree
     let drift = 0;

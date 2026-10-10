@@ -154,7 +154,10 @@
   const aquatic = a => a.sp.habitat === 'water';
   const depth = (y) => 0.72 + ((y - 66) / 30) * 0.5;
   const crowded = (x,y,self) => animals.some(a => a !== self && Math.hypot((x-a.x)/8, (y-a.y)/11) < 1);
-  const behindFrontTree = (x,y) => trees && trees.some(t => SLOTS[t.slot].y > 82 && Math.abs(x-SLOTS[t.slot].x) < 8 && y < SLOTS[t.slot].y && y > SLOTS[t.slot].y-23);
+  const behindFrontTree = (x,y) => trees && trees.some(t => {
+    const slot=SLOTS[t.slot],scale=treeScale(t);
+    return slot.y>82&&Math.abs(x-slot.x)<8*scale&&y<slot.y&&y>slot.y-23*scale;
+  });
   function waterSpot(nearX, self) {
     for (let i = 0; i < 70; i++) {
       const x = nearX == null ? SWIM.cx + (Math.random() - .5) * SWIM.rx * 2 : nearX + (Math.random() - .5) * 20;
@@ -700,6 +703,7 @@
     return store.set("farm-picked", personalPicked);
   };
   const isSapling = (t) => season.abs <= t.plantedAbs && (t.water || 0) < 3;
+  function treeScale(t) { return isSapling(t) ? 1 : 1.10; }
   const pickedNow = (t) => (t.picked.abs === season.abs ? t.picked.list : []);
   function renderTree(t) {
     const slot = SLOTS[t.slot];
@@ -715,7 +719,7 @@
     const wide = T.crown === "wide" ? 1.10 : T.crown === "dome" ? .94 : 1;
     t.el.style.left = slot.x + "%";
     t.el.style.top = slot.y + "%";
-    t.el.style.width = 19.5 * s * wide + "%";
+    t.el.style.width = 19.5 * s * wide * treeScale(t) + "%";
     t.el.style.zIndex = Math.round(slot.y * 10) - 1;
     t.el.style.setProperty('--tree-flex', (.7 + (t.seed % 7) * .07).toFixed(2));
     const out = treeSVG({ type: t.type, seed: t.seed, variant:t.variant, stage: isSapling(t) ? "sapling" : "mature", season: season.name, picked: pickedNow(t), live: !!window.OrchardSim });
@@ -727,7 +731,7 @@
       t.art = out.art;
       if (t.url && t.url.startsWith("blob:")) URL.revokeObjectURL(t.url);
       t.url = out.src || URL.createObjectURL(new Blob([out.art], { type: "image/svg+xml" }));
-      t.el.innerHTML = `<div class="tree-inner"><img class="tree-img" src="${t.url}" alt="" draggable="false"><div class="fruit-layer"></div></div>`;
+      t.el.innerHTML = `<div class="tree-inner"><img class="tree-img" src="${t.url}" alt="" draggable="false"><span class="tree-hit" aria-hidden="true"></span><div class="fruit-layer"></div></div>`;
     }
     t.el.querySelector(".fruit-layer").innerHTML = out.fruits;
     const ripe = out.ripe;
