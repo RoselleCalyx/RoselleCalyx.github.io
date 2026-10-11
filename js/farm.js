@@ -149,7 +149,8 @@
   // Inset from the painted banks so the whole swimming sprite stays in water.
   const SWIM = { cx: WATER.cx, cy: 80.5, rx: 14.5, ry: 3.2 };
   const ROCK = { x: 18, y: 78 };
-  const SLOTS = [{ x: 8, y: 67 }, { x: 47, y: 65 }, { x: 81, y: 64 }, { x: 93, y: 91 }, { x: 31, y: 94 }, {x:27,y:66}, {x:64,y:65}, {x:11,y:96}];
+  // Slot 4 stays in the left cottage garden; the keeper’s foreground is never a planting space.
+  const SLOTS = [{ x: 8, y: 67 }, { x: 47, y: 65 }, { x: 81, y: 64 }, { x: 93, y: 91 }, { x: 17, y: 58 }, {x:27,y:66}, {x:64,y:65}, {x:11,y:96}];
   const MAX_TREES = 8;
   const HOMES = { rabbit: {x: 37,y: 72.5}, panda: {x: 47,y: 92}, fox: {x: 56,y: 65.5}, shiba: {x: 30,y: 92}, duckling: {x: 76,y: 94}, redpanda: {x: 42,y: 67}, raccoon: {x: 88,y: 92}, wolf: {x: 22,y: 68}, crocodile: {x: 66,y: 81}, fennec: {x: 87,y: 67} };
   const inPond = (x, y) => ((x - POND.cx) / POND.rx) ** 2 + ((y - POND.cy) / POND.ry) ** 2 < 1;
