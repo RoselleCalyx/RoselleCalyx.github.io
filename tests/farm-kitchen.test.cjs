@@ -8,7 +8,7 @@ function fixture() {
 }
 test('fixed menu covers every edible ingredient and excludes toys, poison and junk',()=>{
  const {k}=fixture();const covered=new Set(k.recipes.flatMap(r=>r.parts.flatMap(([g])=>k.groups[g])));
- for(const id of ['apple','peach','orange','cherry','kiwi','grape','durian','mango','bayberry','strawberry','rosehip','shoot','morel','chanterelle','porcini','shiitake','matsutake','crucian','carp','koi','goldkoi','catfish','mandarin','bitterling','minnow','loach','eel','shrimp','crayfish','crab','lotus'])assert(covered.has(id),id);
+ for(const id of ['apple','peach','orange','cherry','kiwi','grape','durian','mango','bayberry','strawberry','rosehip','shoot','morel','chanterelle','porcini','shiitake','matsutake','crucian','carp','koi','goldkoi','catfish','blackcarp','snakehead','mandarin','bitterling','minnow','loach','eel','shrimp','crayfish','crab','lotus'])assert(covered.has(id),id);
  for(const id of ['pinecone','amanita','boot','bottle'])assert(!covered.has(id));
  assert(k.recipes.every(r=>r.parts.reduce((n,[,count])=>n+count,0)>=36));
 });
@@ -36,4 +36,14 @@ test('scarce ingredients need fewer pieces, common stock is used first, and mixe
  const used=k.cook('fish-stew',{fish:'goldkoi'}).used;assert.equal(used.goldkoi,1);assert.equal(used.lotus,6);assert.equal(k.read().stock.crucian,24);
  const mixed=k.plan(fish,{crucian:5,carp:3,mandarin:4,lotus:6});assert.equal(mixed.crucian,5);assert.equal(mixed.carp,3);assert.equal(mixed.mandarin,4);
  assert.equal(k.plan(fish,{crucian:5,carp:3,mandarin:3,lotus:6}),null);
+});
+
+test('new fish cook from the pond basket with scarcity-adjusted portions',()=>{
+ const {k,storage}=fixture();
+ assert.equal(k.cost('blackcarp',24),6);assert.equal(k.cost('snakehead',24),12);
+ storage.setItem('wild-pond',JSON.stringify({creel:{blackcarp:6,snakehead:12,lotus:12},seen:{blackcarp:9}}));
+ assert.equal(k.cook('fish-stew',{fish:'blackcarp'}).used.blackcarp,6);
+ assert.equal(k.cook('fish-stew',{fish:'snakehead'}).used.snakehead,12);
+ assert.equal(k.read().meals['fish-stew'],2);assert.equal(k.read().values['wild-pond'].seen.blackcarp,9);
+ assert.equal(k.read().stock.blackcarp,undefined);assert.equal(k.read().stock.snakehead,undefined);
 });

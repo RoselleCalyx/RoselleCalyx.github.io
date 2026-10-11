@@ -5,10 +5,10 @@
     kiwi:['Kiwi','farm'],grape:['Grapes','farm'],durian:['Durian','farm'],mango:['Mango','farm'],
     bayberry:['Wild bayberry','woods'],strawberry:['Wild strawberry','woods'],shoot:['Bamboo shoot','woods'],rosehip:['Rose hip','woods'],
     morel:['Morel','woods'],chanterelle:['Chanterelle','woods'],porcini:['Porcini','woods'],shiitake:['Shiitake','woods'],matsutake:['Matsutake','woods'],pinecone:['Pine cone','woods'],
-    crucian:['Crucian carp','pond'],carp:['Carp','pond'],koi:['Koi','pond'],goldkoi:['Golden koi','pond'],catfish:['Catfish','pond'],mandarin:['Mandarin fish','pond'],
+    crucian:['Crucian carp','pond'],carp:['Carp','pond'],koi:['Koi','pond'],goldkoi:['Golden koi','pond'],catfish:['Catfish','pond'],blackcarp:['Black carp · 大青鱼','pond'],snakehead:['Snakehead · 黑鱼','pond'],mandarin:['Mandarin fish','pond'],
     bitterling:['Bitterling','pond'],minnow:['Stone moroko','pond'],loach:['Loach','pond'],eel:['Rice-field eel','pond'],shrimp:['River shrimp','pond'],crayfish:['Crayfish','pond'],crab:['Mitten crab','pond'],lotus:['Lotus seed pod','pond']
   };
-  const FISH=['crucian','carp','koi','goldkoi','catfish','mandarin','bitterling','minnow','loach','eel'];
+  const FISH=['crucian','carp','koi','goldkoi','catfish','blackcarp','snakehead','mandarin','bitterling','minnow','loach','eel'];
   // The same preferences and action order as the farm's animal interactions.
   const DIET={
     snowcat:[FISH.concat('shrimp'),['crab','crayfish']],rabbit:[['strawberry','apple'],['peach','cherry','rosehip']],
@@ -16,7 +16,7 @@
     shiba:[['apple','peach'],['crucian','carp','porcini','shiitake']],hedgehog:[['strawberry','chanterelle'],['apple','bayberry','porcini','morel']],
     duckling:[['shrimp','minnow','bitterling'],['lotus','strawberry','loach']],penguin:[['crucian','minnow','bitterling','shrimp','mandarin'],['crab','crayfish','loach','carp']],
     redpanda:[['shoot','apple'],['peach','cherry','strawberry']],raccoon:[['shrimp','crayfish','strawberry'],['apple','cherry','crucian','lotus']],
-    wolf:[FISH,['shrimp','crab','crayfish']],crocodile:[['carp','catfish','crucian','eel'],['minnow','loach','shrimp','crayfish']],
+    wolf:[FISH,['shrimp','crab','crayfish']],crocodile:[['carp','catfish','blackcarp','snakehead','crucian','eel'],['minnow','loach','shrimp','crayfish']],
     fennec:[['shrimp','minnow','strawberry'],['apple','bayberry','loach']]
   };
   const HAPPY={snowcat:['knead','wave','happy-hop'],rabbit:['binky','happy-hop','wave'],panda:['wave','happy-hop','pet-stretch'],fox:['pounce','happy-hop','wave'],shiba:['wag','wave','happy-hop'],hedgehog:['curl','wave','happy-hop'],duckling:['flap','happy-hop','wave'],penguin:['flap','wave','happy-hop'],redpanda:['wave','happy-hop'],raccoon:['wave','happy-hop'],wolf:['wag','wave'],crocodile:['swish'],fennec:['pounce','happy-hop','wave']};

@@ -535,10 +535,10 @@
     kiwi:['Kiwi','farm'],grape:['Grapes','farm'],durian:['Durian','farm'],mango:['Mango','farm'],
     bayberry: ["Wild bayberry", "woods"], strawberry: ["Wild strawberry", "woods"], shoot: ["Bamboo shoot", "woods"], rosehip: ["Rose hip", "woods"],
     morel: ["Morel", "woods"], chanterelle: ["Chanterelle", "woods"], porcini: ["Porcini", "woods"], shiitake: ["Shiitake", "woods"], matsutake: ["Matsutake", "woods"], pinecone: ["Pine cone", "woods"],
-    crucian: ["Crucian carp", "pond"], carp: ["Carp", "pond"], koi: ["Koi", "pond"], goldkoi: ["Golden koi", "pond"], catfish: ["Catfish", "pond"], mandarin: ["Mandarin fish", "pond"],
+    crucian: ["Crucian carp", "pond"], carp: ["Carp", "pond"], koi: ["Koi", "pond"], goldkoi: ["Golden koi", "pond"], catfish: ["Catfish", "pond"], blackcarp: ["Black carp · 大青鱼", "pond"], snakehead: ["Snakehead · 黑鱼", "pond"], mandarin: ["Mandarin fish", "pond"],
     bitterling: ["Bitterling", "pond"], minnow: ["Stone moroko", "pond"], loach: ["Loach", "pond"], eel: ["Rice-field eel", "pond"], shrimp: ["River shrimp", "pond"], crayfish: ["Crayfish", "pond"], crab: ["Mitten crab", "pond"], lotus: ["Lotus seed pod", "pond"]
   };
-  const FISH = ["crucian", "carp", "koi", "goldkoi", "catfish", "mandarin", "bitterling", "minnow", "loach", "eel"];
+  const FISH = ["crucian", "carp", "koi", "goldkoi", "catfish", "blackcarp", "snakehead", "mandarin", "bitterling", "minnow", "loach", "eel"];
   // what each friend loves, likes, and how it shows its joy
   const DIET = {
     snowcat: { love: FISH.concat(["shrimp"]), like: ["crab", "crayfish"], act: "knead", does: "kneads the grass and purrs like a small engine" },
@@ -552,7 +552,7 @@
     redpanda: { love: ["shoot", "apple"], like: ["peach", "cherry", "strawberry"], act: "wave", does: "raises a tiny paw and twitches its ringed tail" },
     raccoon: { love: ["shrimp", "crayfish", "strawberry"], like: ["apple", "cherry", "crucian", "lotus"], act: "wave", does: "cups its little paws with delight" },
     wolf: { love: FISH, like: ["shrimp", "crab", "crayfish"], act: "wag", does: "wags its fluffy tail with delight" },
-    crocodile: { love: ["carp", "catfish", "crucian", "eel"], like: ["minnow", "loach", "shrimp", "crayfish"], act: "swish", does: "swishes its tail and sends ripples across the pond" },
+    crocodile: { love: ["carp", "catfish", "blackcarp", "snakehead", "crucian", "eel"], like: ["minnow", "loach", "shrimp", "crayfish"], act: "swish", does: "swishes its tail and sends ripples across the pond" },
     fennec: { love: ["shrimp", "minnow", "strawberry"], like: ["apple", "bayberry", "loach"], act: "pounce", does: "perks up its enormous ears and bounces with delight" }
   };
   const EMOJI = { farm: "🍎", woods: "🍄", pond: "🐟" };
@@ -1168,7 +1168,7 @@
         const allocation = FarmKitchen.plan(r,stock), ready = !!allocation;
         const summary = allocation ? Object.entries(allocation).map(([id,n])=>`${n} ${FOOD[id][0].toLowerCase()}`).join(' + ') : r.parts.map(([group])=>names[group].toLowerCase()).join(' + ');
         const total = allocation ? Object.values(allocation).reduce((sum,n)=>sum+n,0) : null;
-        return `<article class="kitchen-recipe ${ready?'can-cook':''}"><div class="kitchen-dish"><img src="${FarmKitchen.image(r.id)}" alt="${esc(r.name)}" width="144" height="144" loading="lazy" decoding="async"><span class="kitchen-diet">${r.diet==='sea'?'From the pond':'From the garden'}</span><span class="kitchen-made">${meals[r.id]||0} prepared</span></div><h3>${esc(r.name)}</h3><p class="kitchen-summary">${esc(summary)}</p><details class="kitchen-ingredients"><summary>Choose ingredients<span aria-hidden="true">⌄</span></summary><div>${r.parts.map(([group,n])=>{
+        return `<article class="kitchen-recipe ${ready?'can-cook':''}"><div class="kitchen-dish"><img src="${FarmKitchen.image(r.id)}" alt="${esc(r.name)}" width="144" height="144" loading="lazy" decoding="async"><span class="kitchen-diet">${r.diet==='sea'?'From the pond':'From the garden'}</span><span class="kitchen-made">${meals[r.id]||0} prepared</span></div><h3>${esc(r.name)}</h3><p class="kitchen-summary">${esc(r.note || summary)}</p><details class="kitchen-ingredients"><summary>Choose ingredients<span aria-hidden="true">⌄</span></summary><div>${r.parts.map(([group,n])=>{
           const costs = FarmKitchen.groups[group].map(id=>FarmKitchen.cost(id,n));
           const range = Math.min(...costs)===Math.max(...costs) ? costs[0] : `${Math.min(...costs)}–${Math.max(...costs)}`;
           return `<label>${esc(names[group])} <small>${range} needed</small><select class="select" data-group="${group}"><option value="">Mix automatically</option>${FarmKitchen.groups[group].map(id=>`<option value="${id}" ${stock[id] ? '' : 'disabled'}>${esc(FOOD[id][0])} · ${FarmKitchen.cost(id,n)} needed · ${stock[id]||0} owned</option>`).join('')}</select></label>`;

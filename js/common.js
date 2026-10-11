@@ -276,7 +276,12 @@
       calmBtn._t = setTimeout(() => calmBtn.classList.remove("show-tip"), 1800);
     });
     calmLabel();
-    const onScroll = () => header.classList.toggle("scrolled", document.body.dataset.page !== "home" && scrollY > 12);
+    const onScroll = () => {
+      if (document.body.dataset.page === "home") return;
+      const progress = Math.max(0, Math.min(1, scrollY / 160));
+      header.style.setProperty('--page-header', String(progress * progress * (3 - 2 * progress)));
+      header.classList.toggle("scrolled", progress > 0);
+    };
     addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }

@@ -2,7 +2,6 @@
 body[data-page="message"] { background:#0b141d; color:var(--ink); }
 body[data-page="message"] #skyToggle { display:none; }
 body[data-page="message"] .brand svg { filter:none; opacity:.8; }
-body[data-page="message"] #site-header { background:linear-gradient(#0a121bb5,transparent); }
 .night-sea { position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
 .night-background { width:100%; height:100%; object-fit:cover; object-position:20% 50%; }
 .night-sea > .scene-water { position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none; }

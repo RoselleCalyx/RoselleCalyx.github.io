@@ -1,6 +1,5 @@
 /* A quiet interface around a very large sky. */
 body[data-page="voyager"] { background: #03060b; --v-accent: #accfe0; }
-body[data-page="voyager"] #site-header { background: linear-gradient(#04070dda, transparent); }
 body[data-page="voyager"] #skyToggle, body[data-page="voyager"] #calmToggle { display: none; }
 .voyager { height: 100svh; min-height: 680px; position: relative; overflow: hidden; isolation: isolate; }
 .v-scene, .v-vignette, .v-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
