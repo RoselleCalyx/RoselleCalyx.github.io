@@ -23,19 +23,19 @@
   const CATCH = [
     { id: "crucian", name: "Crucian carp · 鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or bamboo cover, any season." },
     { id: "carp", name: "Common carp · 鲤鱼", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
-    { id: "koi", name: "Koi · 锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "春夏秋可钓，夏季最多。Look for a dark red fork-tailed shadow · 锦鲤的暗红色整体鱼影。" },
-    { id: "goldkoi", name: "Golden koi · 黄金锦鲤", rarity: 5, len: [48, 72], fight: 0.55, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "Summer only · 仅夏季。Look for a large golden silhouette; cast beside it and keep the line out of the red." },
+    { id: "koi", name: "Koi · 锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "Spring through autumn, most often in summer. Look for a dark red silhouette with a forked tail; use the rod or bamboo cover." },
+    { id: "goldkoi", name: "Golden koi · 黄金锦鲤", rarity: 5, len: [48, 72], fight: 0.55, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "Summer only, once per summer cycle. Look for a large dark gold silhouette; use the rod or bamboo cover." },
     { id: "catfish", name: "Catfish · 鲶鱼", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
-    { id: "blackcarp", name: "Black carp · 大青鱼", rarity: 3, len: [60, 120], fight: 0.76, kind: "fish", text: "A large, blue-grey fish with a long body and a deeply forked tail.", hint: "春夏秋可捕。Look for the large blue-grey silhouette; rod or bamboo cover." },
-    { id: "snakehead", name: "Snakehead · 黑鱼", rarity: 2, len: [30, 65], fight: 0.65, kind: "fish", text: "Dark mottled flanks, a rounded tail and a long ribbon-like dorsal fin.", hint: "春夏秋可捕。Look for the slender dark olive silhouette with a rounded tail; rod or bamboo cover." },
-    { id: "mandarin", name: "Mandarin fish · 鳜鱼（桂花鱼）", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.”", hint: "春季最多，秋冬也有。Look for a broad olive shadow with a spiny fin · 鳜鱼的宽身和棘状背鳍。" },
+    { id: "blackcarp", name: "Black carp · 大青鱼", rarity: 3, len: [60, 120], fight: 0.76, kind: "fish", text: "A large, blue-grey fish with a long body and a deeply forked tail.", hint: "Spring through autumn. Look for the large blue-grey silhouette with a forked tail; use the rod or bamboo cover." },
+    { id: "snakehead", name: "Snakehead · 黑鱼", rarity: 2, len: [30, 65], fight: 0.65, kind: "fish", text: "Dark mottled flanks, a rounded tail and a long ribbon-like dorsal fin.", hint: "Spring through autumn. Look for the slender dark olive silhouette with a rounded tail; use the rod or bamboo cover." },
+    { id: "mandarin", name: "Mandarin fish · 鳜鱼（桂花鱼）", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.”", hint: "Most common in spring; also found in autumn and winter. Look for a broad olive silhouette with a spiny dorsal fin; use the rod or bamboo cover." },
     { id: "bitterling", name: "Bitterling · 鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "Under the bamboo cover." },
     { id: "minnow", name: "Stone moroko · 麦穗鱼", rarity: 1, len: [5, 11], fight: 0.1, kind: "fish", text: "Quick, small and everywhere in the shallows.", hint: "Under the bamboo cover." },
     { id: "loach", name: "Loach · 泥鳅", rarity: 1, len: [8, 18], fight: 0.2, kind: "fish", text: "Slippery as a rumour; it can breathe air when the water is poor.", hint: "Bamboo cover or trap." },
     { id: "shrimp", name: "River shrimp · 河虾", rarity: 1, len: [3, 7], fight: 0.05, kind: "crust", text: "Glassy and quick. Delicious, briefly boiled.", hint: "Bamboo cover or trap." },
     { id: "crayfish", name: "Crayfish · 小龙虾", rarity: 1, len: [8, 14], fight: 0.1, kind: "crust", text: "Red-armoured and indignant, especially in summer.", hint: "In the trap, warm months." },
     { id: "crab", name: "Mitten crab · 中华绒螯蟹", rarity: 2, len: [6, 10], fight: 0.1, kind: "crust", text: "“When the autumn wind rises, the crabs’ legs itch.” Hairy claws, golden roe.", hint: "In the trap; best in autumn." },
-    { id: "eel", name: "Rice-field eel · 黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "黄鳝春夏秋可得，夏季最多。寻找岸边细长蛇形鱼影，可用鱼罩或鱼竿；也可放地笼。" },
+    { id: "eel", name: "Rice-field eel · 黄鳝", rarity: 3, len: [25, 60], fight: 0.4, kind: "fish", text: "It hides in the mud of the bank by day.", hint: "Spring through autumn, most often in summer. Look for a slender, snake-like silhouette near the bank; use the rod, bamboo cover or trap." },
     { id: "lotus", name: "Lotus seed pod · 莲蓬", rarity: 1, len: [0, 0], kind: "plant", text: "Green and full of sweet seeds; found beside the bamboo cover among the fish.", hint: "Summer, with the bamboo cover." },
     { id: "boot", name: "Old boot · 旧靴子", rarity: 1, len: [0, 0], kind: "junk", text: "Someone’s, once. It goes back on the bank to dry.", hint: "Everyone catches one eventually." },
     { id: "bottle", name: "Message in a bottle · 漂流瓶", rarity: 4, len: [0, 0], kind: "junk", text: "There is a note inside: “Whoever finds this — write back.”", hint: "Drifts in now and then." }
@@ -1165,7 +1165,7 @@
   }
   function openLog() {
     document.getElementById("btnLog").classList.remove("glint");
-    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼竿和竹罩都可捕获。大青鱼是大型蓝灰色分叉尾鱼影，黑鱼是细长暗橄榄色圆尾鱼影。鱼影大小对应个体长度；锦鲤鱼影呈暗红色、分叉尾，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝在岸边有细长蛇形鱼影，也能用地笼捕获。Released fish still count." });
+    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "The five-star Golden koi appears once per summer cycle. Look for its large dark gold silhouette; both the rod and bamboo cover can catch it. Silhouette size reflects the individual fish’s length. Koi are dark red with forked tails; black carp are large and blue-grey; snakeheads are slender and dark olive with rounded tails. Mandarin fish have spiny dorsal fins; catfish have broad heads and long whiskers. Rice-field eels have slender silhouettes near the bank and can also be caught in traps. Released fish still count." });
   }
   function scatterBait() {
     if (frozen()) { toast("The fish are slow under the ice. Bait won’t carry.", 2600); return; }
@@ -1263,11 +1263,11 @@
   document.getElementById("btnBack2").addEventListener("click", () => Wd.back("pond"));
   document.getElementById("btnLog").addEventListener("click", openLog);
   document.getElementById("btnBait").addEventListener("click", scatterBait);
-  document.getElementById("btnTips").addEventListener("click", () => Site.modal(`<h2>Angler’s tips · 钓鱼指南</h2>
-    <p>点击水面抛竿；等待时再次点击水面或鱼竿按钮，可以提前收线，下一次点击才重新抛竿。浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
-    <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。每轮夏季只会短暂露面一次；水下鱼影呈暗金黄色。越稀有出现越少、游得越快，鱼竿和竹罩都能捕获。提竿窗口不随稀有度缩短；保持张力在安全区。</p>
-    <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。黄金锦鲤是完整的金色轮廓；锦鲤呈暗红色、分叉尾；鳜鱼身宽、橄榄色、有棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
-    <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝春夏秋在岸边有细长蛇形鱼影，可罩捕或下竿，也可放地笼约一分钟后回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
+  document.getElementById("btnTips").addEventListener("click", () => Site.modal(`<h2>Angler’s tips</h2>
+    <p>Tap the water to cast. While waiting, tap the water or rod button again to retrieve early; the next tap casts a new line. Strike when the float goes fully under. Hold to reel, release as the tension approaches red, then reel again when it returns to the safe zone. Space works too.</p>
+    <p><b>★★★★★ ${Wd.catchName(BY.goldkoi.name)}</b><br>Summer only, 48–72 cm long. It appears briefly once per summer cycle. Look for a large dark gold silhouette with a forked tail and cast beside it. Rarer fish appear less often and swim faster. Both the rod and bamboo cover can catch them. The strike window stays the same across rarities; keep the tension in the safe zone.</p>
+    <p><b>Read the shadows</b><br>Each silhouette reflects the fish’s actual length. Golden koi are dark gold; koi are dark red with forked tails. Black carp are large and blue-grey; snakeheads are slender and dark olive with rounded tails. Mandarin fish are broad and olive with spiny dorsal fins; catfish have long bodies, broad heads and whiskers. Casting near a silhouette attracts that individual fish; open water can still yield a random catch.</p>
+    <p>Both the rod and bamboo cover can catch swimming fish. Aim the bamboo cover at a silhouette; large fish can be caught too. Rice-field eels appear as slender, snake-like silhouettes near the bank in spring, summer and autumn. Catch them with the cover or rod, or leave a trap for about a minute. Bait draws fish closer and shortens the wait without increasing rare-fish spawn rates.</p>`, {className:"wide"}));
 
   function restoreSavedState() {
     const latest = Wd.store.get("wild-pond", { creel: {}, seen: {}, best: {}, traps: [null, null, null] }) || {};
