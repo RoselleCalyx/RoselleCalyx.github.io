@@ -1172,3 +1172,5 @@ body[data-page="farm"] .bubble.below::after { border-bottom-color: #f6f0e3; }
   @keyframes scene-soft-in { from { opacity: .7; } to { opacity: 1; } }
   @keyframes scene-soft-out { to { opacity: .7; } }
 }
+
+.paper-host-tools {display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}

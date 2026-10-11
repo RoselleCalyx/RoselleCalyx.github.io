@@ -125,3 +125,11 @@ body.owner-signed-in .inbox-toolbar { align-items: center; }
 }
 
 @media (prefers-reduced-motion: reduce) { .owner-select-trigger, .owner-select-trigger::after, .owner-field input, .owner-field textarea { transition: none; } }
+
+.owner-import-actions {display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0;}
+.owner-import-actions input[type="file"] {max-width:100%;font-size:.85rem;}
+.owner-import-preview {display:grid;gap:12px;}
+.owner-import-item {display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);}
+.owner-import-item input {flex:none;margin-top:4px;}
+.owner-import-item span {display:grid;gap:5px;min-width:0;overflow-wrap:anywhere;}
+.owner-import-item small {color:var(--muted);font-size:.8rem;}

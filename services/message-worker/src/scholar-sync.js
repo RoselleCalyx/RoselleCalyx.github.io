@@ -76,6 +76,17 @@ async function getHTML(url, fetcher) {
   const probe=new TextDecoder().decode(bytes.slice(0,1000)),charset=probe.match(/charset=([\w-]+)/i)?.[1] || 'utf-8';
   return new TextDecoder(charset).decode(bytes);
 }
+export async function fetchScholarPapers(fetcher=fetch) {
+  const entries=[];
+  for(let start=0;start<500;start+=100){
+    const url=new URL(SCHOLAR_URL);url.searchParams.set('pagesize','100');url.searchParams.set('cstart',String(start));
+    const page=parseProfile(await getHTML(url.href,fetcher));entries.push(...page);if(page.length<100)break;
+    if(start===400)throw Error('Scholar profile exceeds the supported 500 papers.');
+  }
+  const papers=[];
+  for(const entry of entries)papers.push(parseArticle(await getHTML(entry.url,fetcher),entry.id));
+  return papers;
+}
 export async function syncScholar(env,{force=false,fetcher=fetch}={}) {
   const state=await env.DB.prepare('SELECT * FROM scholar_sync WHERE id=1').first(),now=Date.now();
   if(!force&&state.next_check>now)return {skipped:true};

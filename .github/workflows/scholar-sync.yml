@@ -1,12 +1,6 @@
 name: Sync Google Scholar
 on:
-  schedule:
-    - cron: '17 5 * * *'
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/scholar-sync.yml'
-      - 'scripts/sync-scholar.mjs'
 permissions:
   contents: write
 concurrency:

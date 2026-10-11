@@ -2,6 +2,15 @@
 (function () {
   const { ICON, esc } = window.Site;
   const S = window.SITE || {};
+  const host = window.HostInbox;
+  if (host?.configured) host.restore().then(() => {
+    if (!host.signedIn) return;
+    const tools=document.createElement("div");tools.className="paper-host-tools";
+    for(const [label,href] of [["Sync Google Scholar","inbox.html?paperAction=scholar#papers"],["Import paper / BibTeX","inbox.html#papers"]]) {
+      const a=document.createElement("a");a.className="btn sm";a.textContent=label;a.href=href;tools.append(a);
+    }
+    document.querySelector('.papers-tools')?.prepend(tools);
+  }).catch(() => {});
   const papers = (window.PAPERS || []).slice().sort((a, b) => (b.year || 0) - (a.year || 0));
   const me = S.name || "";
 

@@ -8,8 +8,9 @@
   const species = ["snowcat", "rabbit", "panda", "fox", "shiba", "hedgehog", "duckling", "penguin", "redpanda", "raccoon", "wolf", "crocodile", "fennec"];
   const speciesLabels = { snowcat: "Snow leopard cat", rabbit: "Rabbit", panda: "Panda", fox: "Fox", shiba: "Shiba Inu", hedgehog: "Hedgehog", duckling: "Duckling", penguin: "Penguin", redpanda: "Red panda", raccoon: "Raccoon", wolf: "Wolf", crocodile: "Crocodile", fennec: "Fennec fox" };
   const sections = ["site", "home", "papers", "gallery", "bottles", "farm", "voyager", "message"];
-  let defaults, draft, revision = 0, dirty = false, busy = false, generation = 0, tab = "profile";
+  let defaults, draft, revision = 0, dirty = false, busy = false, generation = 0, tab = location.hash === "#papers" ? "papers" : "profile";
   let updatedAt = null;
+  let scholarIntent = new URLSearchParams(location.search).get("paperAction") === "scholar";
   const newAnimalIds = new Set();
 
   function node(tag, text, className) {
@@ -167,15 +168,43 @@
     collection(root, ["home", "explore"], "Explore cards", "Change destinations and descriptions here.", { title: "", text: "", href: "", icon: "star4" }, (card, path) => grid(card, [field(path.concat("title"), "Title", { required: true }), field(path.concat("text"), "Description"), field(path.concat("href"), "Destination", { required: true }), field(path.concat("icon"), "Icon", { options: ["book", "image", "bottle", "constel", "planet", "paw", "star4", "globe", "mail"] })]));
   }
   function paperPanel(root) {
-    const syncStatus = node("p", "Checking Google Scholar synchronization…", "owner-help");
-    root.append(syncStatus);
-    api.getScholarStatus().then(result => {
-      if (!syncStatus.isConnected) return;
-      syncStatus.textContent = result.lastError
-        ? "Google Scholar is temporarily unavailable. Your papers are safe; synchronization will retry automatically. Last issue: " + result.lastError
-        : result.lastSuccess ? "Google Scholar last synchronized: " + new Date(result.lastSuccess).toLocaleString("en-GB") + ". Checked daily." : "Google Scholar synchronization is scheduled. Your edits and images are preserved.";
-    }).catch(() => { syncStatus.textContent = "Google Scholar status is temporarily unavailable. You can continue editing."; });
-    collection(root, ["papers"], "Papers", "New papers are imported from Google Scholar daily. Your edits, cover images, extra figures and visibility settings are preserved. Add publications, preprints, or projects here too.", () => ({ title: "", authors: [draft.site.name || ""], venue: "", year: new Date().getFullYear(), type: "publication", topics: [], image: "", selected: false, abstract: "", links: { pdf: "", code: "", project: "", data: "" }, bibtex: "", figures: [] }), (card, path, paper) => {
+    const importer = group("Import publications", "Preview metadata first, add selected papers to your draft, then Save & publish. Complete fields, images and visibility are preserved; duplicates only fill missing information.");
+    const actions = node("div", undefined, "owner-import-actions");
+    const sync = button("Sync Google Scholar", () => lookup(true), "btn");
+    sync.id="ownerScholarSync";
+    const open = node("a", "Open Scholar ↗", "btn ghost"); open.href="https://scholar.google.com/citations?hl=en&user=yamQhewAAAAJ"; open.target="_blank"; open.rel="noopener";
+    actions.append(sync,open); importer.append(actions);
+    const label=node("label",undefined,"owner-field");label.append(node("span","Paper URL, DOI or BibTeX"));
+    const input=node("textarea");input.rows=5;input.maxLength=100000;input.placeholder="https://doi.org/… or https://arxiv.org/abs/… or @article{…}";label.append(input);importer.append(label);
+    const file=node("input");file.type="file";file.accept=".bib,text/plain,application/x-bibtex";file.setAttribute("aria-label","Import BibTeX file");
+    file.addEventListener("change",async()=>{const f=file.files[0];if(!f)return;if(f.size>100000){feedback.textContent="Choose a BibTeX file smaller than 100 KB.";return}input.value=await f.text();});
+    const search=button("Preview import",()=>lookup(false),"btn");const row=node("div",undefined,"owner-import-actions");row.append(search,file);importer.append(row);
+    const feedback=node("p","Supports DOI links (including publisher URLs containing a DOI), arXiv, ACL Anthology and BibTeX. Scholar exports can be pasted or uploaded here.","owner-help");feedback.setAttribute("role","status");feedback.setAttribute("aria-live","polite");importer.append(feedback);
+    const preview=node("div",undefined,"owner-import-preview");importer.append(preview);root.append(importer);
+    let requesting=false;
+    async function lookup(scholar){
+      if(requesting||busy||!api.signedIn)return;
+      requesting=true;sync.disabled=search.disabled=file.disabled=input.disabled=true;preview.replaceChildren();feedback.textContent=scholar?"Reading your live Scholar profile…":"Retrieving publication metadata…";
+      const currentGeneration=generation;
+      try{
+        const result=scholar?await api.previewScholar():await api.previewPaperImport(input.value);
+        if(currentGeneration!==generation||!api.signedIn||!preview.isConnected)return;
+        const plan=PaperDraft.merge(draft.papers,result.papers),choices=[];
+        feedback.textContent="Source: "+result.source+" · "+plan.rows.filter(r=>r.kind==='new').length+" new · "+plan.rows.filter(r=>r.kind==='fill').length+" with missing information · "+plan.rows.filter(r=>r.kind==='duplicate').length+" duplicates. Nothing has been published.";
+        for(const [index,item] of plan.rows.entries()){
+          const line=node("label",undefined,"owner-import-item"),check=node("input");check.type="checkbox";check.checked=item.kind!=='duplicate';check.disabled=item.kind==='duplicate';choices.push(check);
+          const details=node("span");details.append(node("strong",item.paper.title),node("small",item.paper.authors.join(", ")+" · "+item.paper.year+" · "+item.paper.venue),node("small",{new:"New paper",fill:"Existing paper — fill missing fields",duplicate:"Already complete — skipped"}[item.kind]));line.append(check,details);preview.append(line);
+        }
+        const add=button("Add selected to draft",()=>{
+          if(busy||!api.signedIn||currentGeneration!==generation)return;
+          const selected=result.papers.filter((_,i)=>choices[i].checked&&!choices[i].disabled);
+          if(!selected.length){feedback.textContent="Select at least one new paper or incomplete entry.";return;}
+          draft.papers=PaperDraft.merge(draft.papers,selected).papers;setDirty();render();showTab("papers");status("Imported "+selected.length+" publication(s) into your draft. Review them, add figures if desired, then Save & publish.");
+        },"btn");add.disabled=!plan.rows.some(r=>r.kind!=='duplicate');preview.append(add);
+      }catch(error){if(currentGeneration===generation&&preview.isConnected)feedback.textContent=error.message||"Import failed. Your draft was kept.";}
+      finally{requesting=false;sync.disabled=search.disabled=file.disabled=input.disabled=false;}
+    }
+    collection(root, ["papers"], "Papers", "Import metadata above or add a paper manually. Review your draft before publishing; all entries remain editable and support cover images and extra figures.", () => ({ title: "", authors: [draft.site.name || ""], venue: "", year: new Date().getFullYear(), type: "publication", topics: [], image: "", selected: false, abstract: "", links: { pdf: "", code: "", project: "", data: "" }, bibtex: "", figures: [] }), (card, path, paper) => {
       paper.links ||= {}; paper.figures ||= [];
       card.append(field(path.concat("published"), "Show this paper on the website", { type: "checkbox", defaultValue: true, help: "Turn off to hide it without deleting its details." }));
       card.append(field(path.concat("title"), "Title", { required: true }));
@@ -301,7 +330,10 @@
       status(error.message || "Website content could not be loaded. Please try again.", true);
       $("ownerSaveState").textContent = draft ? "Unpublished changes" : "Content unavailable";
       if (error.code === "auth_expired" || error.code === "forbidden") window.dispatchEvent(new CustomEvent("host-auth-expired"));
-    } finally { if (version === generation) setBusy(false); }
+    } finally { if (version === generation) {
+      setBusy(false);
+      if (draft && scholarIntent && api.signedIn) { scholarIntent=false;showTab("papers");document.getElementById("ownerScholarSync")?.click(); }
+    } }
   }
   $("ownerContentForm").addEventListener("submit", async event => {
     event.preventDefault();

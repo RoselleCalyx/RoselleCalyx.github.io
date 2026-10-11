@@ -78,9 +78,10 @@
     if (localPreview) throw new InboxError("local_preview", localPreviewMessage);
     if (!base) throw new InboxError("not_configured", configurationError);
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const { requestTimeout = timeoutMs, ...fetchOptions } = options;
+    const timer = setTimeout(() => controller.abort(), requestTimeout);
     try {
-      const response = await fetch(base + path, Object.assign({}, options, { credentials: "omit", signal: controller.signal }));
+      const response = await fetch(base + path, Object.assign({}, fetchOptions, { credentials: "omit", signal: controller.signal }));
       const body = await response.text();
       let data = null;
       if (body) { try { data = JSON.parse(body); } catch (_) { if (response.ok) throw new InboxError("invalid_response", "The inbox service returned an unreadable response."); } }
@@ -97,6 +98,7 @@
         if (data && data.code === "resident_conflict") throw new InboxError("resident_conflict", "This animal was updated elsewhere. Your changes are kept here. Refresh its published details before saving again.", response.status);
         if (data && /^media_|^upload_/.test(data.code || "")) throw new InboxError(data.code, data.message || "This image could not be uploaded. Please try again.", response.status);
         if (response.status === 413) throw new InboxError("too_large", path === "/api/host/media" ? data?.message || "This cropped image is too large to upload. Choose a smaller output." : "This content is too large to publish. Reduce the text or number of items, then try again.", 413);
+        if (data && data.code === "paper_import") throw new InboxError(data.code, data.message, response.status);
         if (data && data.code === "validation") throw new InboxError("validation", data.message || "Please check the content fields.", response.status);
         if (response.status === 404) throw new InboxError("not_available", "This feature is not available on the connected service yet. Deploy the latest owner-workspace service.", 404);
         throw new InboxError("http_error", "The inbox service is unavailable. Check the configuration or try again shortly.", response.status);
@@ -345,6 +347,14 @@
     if (!data || data.ok !== true || !Number.isSafeInteger(data.revision) || data.revision < 0 || !data.content || Array.isArray(data.content) || typeof data.content !== "object") throw new InboxError("invalid_response", "Website content could not be loaded.");
     return data;
   }
+  async function previewPaperImport(input) {
+    requireFarmService();
+    return authedRequest("/api/host/papers/import", {method:"POST",body:JSON.stringify({input}),requestTimeout:45000});
+  }
+  async function previewScholar() {
+    requireFarmService();
+    return authedRequest("/api/host/papers/scholar", {method:"POST",body:"{}",requestTimeout:60000});
+  }
   async function getScholarStatus() {
     requireFarmService();
     return authedRequest("/api/host/scholar-sync");
@@ -381,7 +391,7 @@
   const api = window.HostInbox = Object.freeze({
     configured: Boolean(base) && !localPreview, localPreview, mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
     farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
-    getContent, getScholarStatus, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
+    getContent, previewPaperImport, previewScholar, getScholarStatus, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
     get identity() { return session && session.user; },
     get signedIn() { return Boolean(session); }
   });
