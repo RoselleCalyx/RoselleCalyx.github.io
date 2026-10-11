@@ -1,48 +1,117 @@
-/* ------------------------------------------------------------------
-   Papers. Add a new object to the list to add a paper.
-   type:     "publication" | "preprint" | "project"
-   links:    any link left empty ("") is hidden
-   selected: true shows a star and keeps it in the "Selected" filter
-   bibtex:   optional — generated automatically when omitted
-   ------------------------------------------------------------------ */
+/* Google Scholar snapshot. New publications are synchronized daily by the backend; host edits and images are preserved. */
 window.PAPERS = [
   {
-    title: "MAC-XA: Multi-view Anatomy-Correspondence Fusion for Coronary Stenosis Reporting from X-ray Angiography",
-    authors: ["Chen Jia", "Co-author A", "Co-author B"],
-    venue: "MICCAI 2026 (submitted)",
-    year: 2026,
-    type: "preprint",
-    topics: ["Medical Imaging", "Multi-view Learning", "Report Generation"],
-    image: "assets/paper1.png",
-    selected: true,
-    abstract:
-      "We propose an explicit anatomy-correspondence learning framework for multi-view coronary X-ray angiography report generation. The method aligns anatomically corresponding regions across views and improves structured stenosis reporting by fusing clinically relevant evidence more reliably than implicit attention-based fusion.",
-    links: { pdf: "", code: "", project: "", data: "" }
+    "title": "MAC-XA: Multi-view Anatomy-Correspondence Fusion for Coronary Stenosis Reporting from X-ray Angiography",
+    "authors": [
+      "Chen Jia",
+      "Baochang Zhang",
+      "Fatia Kusuma Dewi",
+      "Amir Yousefi",
+      "Heribert Schunkert",
+      "Reza Ghotbi",
+      "Nassir Navab"
+    ],
+    "venue": "arXiv preprint arXiv:2607.06268",
+    "year": 2026,
+    "type": "preprint",
+    "topics": [
+      "Medical Imaging",
+      "Multi-view Learning",
+      "Report Generation"
+    ],
+    "image": "assets/paper1.png",
+    "selected": true,
+    "abstract": "Multi-view reasoning in coronary X-ray angiography is inherently a cross-projection geometric problem, yet automated report generation in this setting remains largely unexplored. The 3D vascular topology leads to projection-dependent branch overlap and foreshortening, rendering single-view modeling fundamentally incomplete and unstable for lesion localization and stenosis grading. Although multi-view fusion appears promising, learning anatomically consistent fusion from real angiograms is impeded by a critical limitation: cross-view alignment is unobservable and cannot be explicitly supervised. Consequently, conventional fusion relies on implicit correlations rather than verified anatomical correspondence. We address this by reformulating multi-view stenosis reporting as an alignment-constrained aggregation problem. A controllable synthetic angiography generation strategy is introduced to expose geometry-derived patch-level correspondence supervision unavailable in real data. An anatomy-correspondence module learns cross-view correspondence matrices that explicitly align auxiliary features within the main-view coordinate space prior to fusion, thereby constraining evidence aggregation to anatomically consistent regions. Experiments on synthetic data and zero-shot transfer to real angiograms show that this alignment-constrained design improves correspondence consistency and structured stenosis reporting compared to single-view modeling and conventional multi-view fusion methods. The code will be publicly available upon publication.",
+    "links": {
+      "pdf": "https://arxiv.org/pdf/2607.06268",
+      "code": "",
+      "project": "https://arxiv.org/abs/2607.06268",
+      "data": ""
+    },
+    "id": "scholar-IjCSPb-OGe4C",
+    "bibtex": "@misc{scholar-IjCSPb-OGe4C,\n  title = {MAC-XA: Multi-view Anatomy-Correspondence Fusion for Coronary Stenosis Reporting from X-ray Angiography},\n  author = {Chen Jia and Baochang Zhang and Fatia Kusuma Dewi and Amir Yousefi and Heribert Schunkert and Reza Ghotbi and Nassir Navab},\n  year = {2026},\n  eprint = {2607.06268},\n  archivePrefix = {arXiv},\n  url = {https://arxiv.org/abs/2607.06268}\n}"
   },
   {
-    title: "Retrieval-Augmented Chest X-ray Report Generation with Clinically Guided Fusion",
-    authors: ["First Author A", "Chen Jia", "Author C"],
-    venue: "MICCAI 2025",
-    year: 2025,
-    type: "publication",
-    topics: ["Medical Imaging", "Report Generation", "Clinical AI"],
-    image: "assets/paper2.png",
-    selected: true,
-    abstract:
-      "This work studies retrieval-augmented report generation for chest X-ray interpretation, with a focus on reducing semantic errors and improving clinical faithfulness in generated reports.",
-    links: { pdf: "", code: "", project: "", data: "" }
+    "title": "Semantic-aware chest x-ray report generation with domain-specific lexicon and diversity-controlled retrieval",
+    "authors": [
+      "Baochang Zhang*",
+      "Chen Jia*",
+      "Shuting Liu",
+      "Heribert Schunkert",
+      "Nassir Navab"
+    ],
+    "venue": "International Conference on Medical Image Computing and Computer-Assisted Intervention",
+    "year": 2025,
+    "type": "publication",
+    "topics": [
+      "Medical Imaging",
+      "Report Generation",
+      "Clinical AI"
+    ],
+    "image": "assets/paper2.png",
+    "selected": true,
+    "abstract": "Image-to-text radiology report generation aims to produce comprehensive diagnostic reports by leveraging both X-ray images and historical textual data. Existing retrieval-based methods focus on maximizing similarity scores, leading to redundant content and limited diversity in generated reports. Additionally, they lack sensitivity to medical domain-specific information, failing to emphasize critical anatomical structures and disease characteristics essential for accurate diagnosis. To address these limitations, we propose a novel retrieval-augmented framework that integrates exemplar radiology reports with X-ray images to enhance report generation. First, we introduce a diversity-controlled retrieval strategy to improve information diversity and reduce redundancy, ensuring broader clinical knowledge coverage. Second, we develop a comprehensive medical lexicon covering chest anatomy, diseases, radiological …",
+    "links": {
+      "pdf": "https://papers.miccai.org/miccai-2025/paper/3102_paper.pdf",
+      "code": "",
+      "project": "https://link.springer.com/chapter/10.1007/978-3-032-04978-0_58",
+      "data": ""
+    },
+    "id": "scholar-u-x6o8ySG0sC",
+    "bibtex": "@inproceedings{scholar-u-x6o8ySG0sC,\n  title = {Semantic-aware chest x-ray report generation with domain-specific lexicon and diversity-controlled retrieval},\n  author = {Baochang Zhang and Chen Jia and Shuting Liu and Heribert Schunkert and Nassir Navab},\n  year = {2025},\n  booktitle = {International Conference on Medical Image Computing and Computer-Assisted Intervention},\n  pages = {607-616},\n  publisher = {Springer Nature Switzerland},\n  doi = {10.1007/978-3-032-04978-0\\_58},\n  url = {https://link.springer.com/chapter/10.1007/978-3-032-04978-0\\_58}\n}"
   },
   {
-    title: "Legal Document Summarization with Domain-Aware Language Modeling",
-    authors: ["Author A", "Chen Jia", "Author C"],
-    venue: "NAACL 2025",
-    year: 2025,
-    type: "publication",
-    topics: ["NLP", "Summarization"],
-    image: "assets/paper3.png",
-    selected: false,
-    abstract:
-      "We study domain-aware summarization for legal documents and investigate how task-specific modeling choices can improve summary quality and faithfulness in specialized domains.",
-    links: { pdf: "", code: "", project: "" }
+    "title": "Relexed: Retrieval-enhanced legal summarization with exemplar diversity",
+    "authors": [
+      "TYSS Santosh",
+      "Chen Jia",
+      "Patrick Goroncy",
+      "Matthias Grabmair"
+    ],
+    "venue": "Findings of the Association for Computational Linguistics: NAACL 2025",
+    "year": 2025,
+    "type": "publication",
+    "topics": [
+      "NLP",
+      "Summarization"
+    ],
+    "image": "assets/paper3.png",
+    "selected": false,
+    "abstract": "This paper addresses the task of legal summarization, which involves distilling complex legal documents into concise, coherent summaries. Current approaches often struggle with content theme deviation and inconsistent writing styles due to their reliance solely on source documents. We propose RELexED, a retrieval-augmented framework that utilizes exemplar summaries along with the source document to guide the model. RELexED employs a two-stage exemplar selection strategy, leveraging a determinantal point process to balance the trade-off between similarity of exemplars to the query and diversity among exemplars, with scores computed via influence functions. Experimental results on two legal summarization datasets demonstrate that RELexED significantly outperforms models that do not utilize exemplars and those that rely solely on similarity-based exemplar selection.",
+    "links": {
+      "pdf": "https://aclanthology.org/2025.findings-naacl.26.pdf",
+      "code": "",
+      "project": "https://aclanthology.org/2025.findings-naacl.26/"
+    },
+    "id": "scholar-u5HHmVD_uO8C",
+    "bibtex": "@inproceedings{scholar-u5HHmVD_uO8C,\n  title = {Relexed: Retrieval-enhanced legal summarization with exemplar diversity},\n  author = {TYSS Santosh and Chen Jia and Patrick Goroncy and Matthias Grabmair},\n  year = {2025},\n  booktitle = {Findings of the Association for Computational Linguistics: NAACL 2025},\n  pages = {427--434},\n  url = {https://aclanthology.org/2025.findings-naacl.26/}\n}"
+  },
+  {
+    "id": "scholar-9yKSN-GCB0IC",
+    "title": "Distribution-informed Efficient Conformal Prediction for Full Ranking",
+    "authors": [
+      "Wenbo Liao",
+      "Huipeng Huang",
+      "Chen Jia",
+      "Huajun Xi",
+      "Hao Zeng",
+      "Hongxin Wei"
+    ],
+    "venue": "arXiv preprint arXiv:2601.23128",
+    "year": 2026,
+    "type": "preprint",
+    "topics": [],
+    "image": "",
+    "selected": false,
+    "published": true,
+    "abstract": "Quantifying uncertainty is critical for the safe deployment of ranking models in real-world applications. Recent work offers a rigorous solution using conformal prediction in a full ranking scenario, which aims to construct prediction sets for the absolute ranks of test items based on the relative ranks of calibration items. However, relying on upper bounds of non-conformity scores renders the method overly conservative, resulting in substantially large prediction sets. To address this, we propose Distribution-informed Conformal Ranking (DCR), which produces efficient prediction sets by deriving the exact distribution of non-conformity scores. In particular, we find that the absolute ranks of calibration items follow Negative Hypergeometric distributions, conditional on their relative ranks. DCR thus uses the rank distribution to derive non-conformity score distribution and determine conformal thresholds. We provide theoretical guarantees that DCR achieves improved efficiency over the baseline while ensuring valid coverage under mild assumptions. Extensive experiments demonstrate the superiority of DCR, reducing average prediction set size by up to 36%, while maintaining valid coverage.",
+    "links": {
+      "pdf": "https://arxiv.org/pdf/2601.23128",
+      "project": "https://arxiv.org/abs/2601.23128",
+      "code": "",
+      "data": ""
+    },
+    "bibtex": "@misc{scholar-9yKSN-GCB0IC,\n  title = {Distribution-informed Efficient Conformal Prediction for Full Ranking},\n  author = {Wenbo Liao and Huipeng Huang and Chen Jia and Huajun Xi and Hao Zeng and Hongxin Wei},\n  year = {2026},\n  eprint = {2601.23128},\n  archivePrefix = {arXiv},\n  url = {https://arxiv.org/abs/2601.23128}\n}",
+    "figures": []
   }
 ];

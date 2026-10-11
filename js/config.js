@@ -12,7 +12,7 @@ window.SITE = {
 
   // Leave a link empty ("") to hide its icon.
   links: {
-    scholar: "https://scholar.google.com/",
+    scholar: "https://scholar.google.com/citations?hl=en&user=yamQhewAAAAJ",
     linkedin: "https://www.linkedin.com/",
     github: "https://github.com/RoselleCalyx",
     cv: "assets/cv.pdf"

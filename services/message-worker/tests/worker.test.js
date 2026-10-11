@@ -14,6 +14,8 @@ class D1Mock {
     this.sqlite.exec(readFileSync(new URL("../migrations/0004_farm_species.sql", import.meta.url), "utf8"));
     this.sqlite.exec(readFileSync(new URL("../migrations/0006_resident_management.sql", import.meta.url), "utf8"));
     this.sqlite.exec(readFileSync(new URL("../migrations/0007_visitor_aliases.sql", import.meta.url), "utf8"));
+    this.sqlite.exec(readFileSync(new URL("../migrations/0008_scholar_sync.sql", import.meta.url), "utf8"));
+    this.sqlite.exec("UPDATE scholar_sync SET next_check=9007199254740991");
     this.failMessageWrite = false;
     this.failOutboxWrite = false;
     this.queries = 0;

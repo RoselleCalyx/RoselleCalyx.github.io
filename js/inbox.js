@@ -345,6 +345,10 @@
     if (!data || data.ok !== true || !Number.isSafeInteger(data.revision) || data.revision < 0 || !data.content || Array.isArray(data.content) || typeof data.content !== "object") throw new InboxError("invalid_response", "Website content could not be loaded.");
     return data;
   }
+  async function getScholarStatus() {
+    requireFarmService();
+    return authedRequest("/api/host/scholar-sync");
+  }
   async function saveContent(revision, content) {
     requireFarmService();
     const data = await authedRequest("/api/host/site-content", { method: "PUT", body: JSON.stringify({ revision, content }) });
@@ -377,7 +381,7 @@
   const api = window.HostInbox = Object.freeze({
     configured: Boolean(base) && !localPreview, localPreview, mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
     farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
-    getContent, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
+    getContent, getScholarStatus, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
     get identity() { return session && session.user; },
     get signedIn() { return Boolean(session); }
   });

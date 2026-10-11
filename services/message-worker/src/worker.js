@@ -1,3 +1,4 @@
+import { syncScholar } from './scholar-sync.js';
 import { farmRoute } from './farm.js';
 import { HTTPError } from "./errors.js";
 import { readSiteContent, saveSiteContent } from "./site-content.js";
@@ -187,6 +188,10 @@ async function hostRoute(request, env, path, url) {
   }
   if (path === "/api/host/me" && request.method === "GET") return { id: "host", email: env.HOST_EMAIL };
   if (path === "/api/host/site-content" && request.method === "GET") return readSiteContent(env);
+  if (path === "/api/host/scholar-sync" && request.method === "GET") {
+    const state = await env.DB.prepare('SELECT last_success, next_check, last_error FROM scholar_sync WHERE id=1').first();
+    return {ok:true,lastSuccess:state.last_success,nextCheck:state.next_check,lastError:state.last_error};
+  }
   if (path === "/api/host/site-content" && request.method === "PUT") return saveSiteContent(env, await jsonBody(request, ["revision", "content"], 1024 * 1024));
   if (path === "/api/host/media" && request.method === "POST") {
     await rateLimit(request, env, "owner-media", 60, 3600);
@@ -297,6 +302,7 @@ export default {
         env.DB.prepare("DELETE FROM host_sessions WHERE refresh_expires <= ?").bind(now())
       ]);
       await drainOutbox(env);
+      await syncScholar(env);
     })();
     if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(task);
     else await task;

@@ -167,7 +167,15 @@
     collection(root, ["home", "explore"], "Explore cards", "Change destinations and descriptions here.", { title: "", text: "", href: "", icon: "star4" }, (card, path) => grid(card, [field(path.concat("title"), "Title", { required: true }), field(path.concat("text"), "Description"), field(path.concat("href"), "Destination", { required: true }), field(path.concat("icon"), "Icon", { options: ["book", "image", "bottle", "constel", "planet", "paw", "star4", "globe", "mail"] })]));
   }
   function paperPanel(root) {
-    collection(root, ["papers"], "Papers", "Add publications, preprints, or projects. The first image is the card cover; extra figures open in the image viewer.", () => ({ title: "", authors: [draft.site.name || ""], venue: "", year: new Date().getFullYear(), type: "publication", topics: [], image: "", selected: false, abstract: "", links: { pdf: "", code: "", project: "", data: "" }, bibtex: "", figures: [] }), (card, path, paper) => {
+    const syncStatus = node("p", "Checking Google Scholar synchronization…", "owner-help");
+    root.append(syncStatus);
+    api.getScholarStatus().then(result => {
+      if (!syncStatus.isConnected) return;
+      syncStatus.textContent = result.lastError
+        ? "Google Scholar is temporarily unavailable. Your papers are safe; synchronization will retry automatically. Last issue: " + result.lastError
+        : result.lastSuccess ? "Google Scholar last synchronized: " + new Date(result.lastSuccess).toLocaleString("en-GB") + ". Checked daily." : "Google Scholar synchronization is scheduled. Your edits and images are preserved.";
+    }).catch(() => { syncStatus.textContent = "Google Scholar status is temporarily unavailable. You can continue editing."; });
+    collection(root, ["papers"], "Papers", "New papers are imported from Google Scholar daily. Your edits, cover images, extra figures and visibility settings are preserved. Add publications, preprints, or projects here too.", () => ({ title: "", authors: [draft.site.name || ""], venue: "", year: new Date().getFullYear(), type: "publication", topics: [], image: "", selected: false, abstract: "", links: { pdf: "", code: "", project: "", data: "" }, bibtex: "", figures: [] }), (card, path, paper) => {
       paper.links ||= {}; paper.figures ||= [];
       card.append(field(path.concat("published"), "Show this paper on the website", { type: "checkbox", defaultValue: true, help: "Turn off to hide it without deleting its details." }));
       card.append(field(path.concat("title"), "Title", { required: true }));

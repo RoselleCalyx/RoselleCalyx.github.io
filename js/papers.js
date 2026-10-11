@@ -64,7 +64,7 @@
   }
 
   function card(p, i) {
-    const authors = (p.authors || []).map((a) => (a === me ? `<strong>${esc(a)}</strong>` : esc(a))).join(", ");
+    const authors = (p.authors || []).map((a) => (a.replace(/\*+$/, "") === me ? `<strong>${esc(a)}</strong>` : esc(a))).join(", ");
     const links = LINKS.filter(([k]) => p.links && p.links[k])
       .map(([k, label, icon]) => `<a class="btn sm" href="${esc(p.links[k])}" target="_blank" rel="noopener">${ICON[icon]}${label}</a>`).join("");
     const typeLabel = { publication: "Publication", preprint: "Preprint", project: "Project" }[p.type] || "";
