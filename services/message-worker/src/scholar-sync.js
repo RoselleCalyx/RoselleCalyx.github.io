@@ -82,14 +82,27 @@ export async function syncScholar(env,{force=false,fetcher=fetch}={}) {
   const lock=await env.DB.prepare('UPDATE scholar_sync SET next_check=? WHERE id=1 AND next_check=? RETURNING id').bind(now+6*3600000,state.next_check).first();
   if(!lock)return {skipped:true};
   try{
-    const entries=[];
-    for(let start=0;start<500;start+=100){
-      const url=new URL(SCHOLAR_URL);url.searchParams.set('pagesize','100');url.searchParams.set('cstart',String(start));
-      const page=parseProfile(await getHTML(url.href,fetcher));entries.push(...page);if(page.length<100)break;
-      if(start===400)throw Error('Scholar profile exceeds the supported 500 papers.');
+    let incoming;
+    try {
+      const entries=[];
+      for(let start=0;start<500;start+=100){
+        const url=new URL(SCHOLAR_URL);url.searchParams.set('pagesize','100');url.searchParams.set('cstart',String(start));
+        const page=parseProfile(await getHTML(url.href,fetcher));entries.push(...page);if(page.length<100)break;
+        if(start===400)throw Error('Scholar profile exceeds the supported 500 papers.');
+      }
+      incoming=[];
+      for(const entry of entries)incoming.push(parseArticle(await getHTML(entry.url,fetcher),entry.id));
+    } catch (directError) {
+      // GitHub's independent daily reader provides the same source when Scholar refuses Worker IPs.
+      const response=await fetcher('https://raw.githubusercontent.com/RoselleCalyx/RoselleCalyx.github.io/main/data/scholar.json',{signal:AbortSignal.timeout(15000)});
+      if(!response.ok)throw directError;
+      const snapshot=await response.json();
+      const age=now-Date.parse(snapshot.retrievedAt);
+      if(snapshot.profile!==SCHOLAR_URL || !Number.isFinite(age) || age< -300000 || age>3*86400000 || !Array.isArray(snapshot.papers) || !snapshot.papers.length)throw Error('Scholar is unavailable and the backup snapshot is stale; existing papers were kept.');
+      validateSiteContent({papers:snapshot.papers});
+      if(snapshot.papers.some(p=>!/^scholar-[A-Za-z0-9_-]+$/.test(p.id)))throw Error('Invalid Scholar backup identifiers.');
+      incoming=snapshot.papers;
     }
-    const incoming=[];
-    for(const entry of entries)incoming.push(parseArticle(await getHTML(entry.url,fetcher),entry.id));
     const row=await env.DB.prepare('SELECT revision,content_json FROM site_content WHERE id=1').first();
     const merged=mergeScholar(JSON.parse(row.content_json),incoming,JSON.parse(state.baseline_json));
     const contentJSON=JSON.stringify(merged.content),changed=contentJSON!==row.content_json;

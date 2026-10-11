@@ -33,3 +33,10 @@ test('custom host IDs and edited titles stay linked to their Scholar source',()=
  const next=mergeScholar(first.content,[{...p,venue:'New venue'}],first.baseline);
  assert.equal(next.content.papers.length,1);assert.equal(next.content.papers[0].title,'Host title');assert.equal(next.content.papers[0].venue,'New venue');assert.equal(next.content.papers[0].id,'host-paper');
 });
+test('fresh GitHub Scholar snapshots import when Google refuses Worker requests',async()=>{
+ const DB=db(),snapshot={profile:SCHOLAR_URL,retrievedAt:new Date().toISOString(),papers:[source()]};
+ const result=await syncScholar({DB},{fetcher:async url=>url.includes('raw.githubusercontent.com')?Response.json(snapshot):new Response('blocked',{status:403})});
+ assert.equal(result.ok,true);assert.equal(result.papers,1);assert.equal(DB.sqlite.prepare('SELECT last_error FROM scholar_sync').get().last_error,'');
+ const stale=await syncScholar({DB},{force:true,fetcher:async url=>url.includes('raw.githubusercontent.com')?Response.json({...snapshot,retrievedAt:'2020-01-01'}):new Response('blocked',{status:403})});
+ assert.equal(stale.ok,false);assert.match(stale.message,/stale/);assert.equal(JSON.parse(DB.sqlite.prepare('SELECT content_json FROM site_content').get().content_json).papers.length,1);
+});
