@@ -25,6 +25,9 @@
   const land = document.getElementById("heroLand");
   const ui = document.getElementById("heroUI");
   const cosmos = document.getElementById("heroCosmos");
+  const paintedSky = document.createElement("canvas"), paintedContext = paintedSky.getContext("2d");
+  paintedSky.className = "hero-painted-sky";
+  if (cosmos) cosmos.appendChild(paintedSky);
   const veil = document.getElementById("heroVeil");
   const dim = document.getElementById("heroDim");
   const finale = document.getElementById("finale");
@@ -571,6 +574,9 @@
     pTarget = total > 0 ? clamp(-r.top / total, 0, 1) : 0;
     descent = descentGeometry();
     fallTarget = descent ? clamp((scrollY - descent.start) / descent.distance, 0, 1) : 0;
+    const headerStart = documentTop(story) + story.offsetHeight - hero.offsetHeight;
+    const headerEnd = Math.max(headerStart + 1, descent ? descent.start + descent.distance : headerStart + innerHeight * .7);
+    document.body.style.setProperty("--home-header", smooth(0, 1, clamp((scrollY - headerStart) / (headerEnd - headerStart), 0, 1)).toFixed(3));
     leaving(r);
   }
   let leaveLast = -1;
@@ -752,7 +758,14 @@
     drawRingDust(cR, S, motionTime);
     // Cassini is foreground: all near-side ring surfaces must be behind it.
     drawArrival(cR, p, S, motionTime);
-    if (cosmos) cosmos.style.transform = calm ? "none" : `translate3d(${Math.sin(time*.025)*.35}%, ${-p*1.5}%, 0)`;
+    if (cosmos) {
+      cosmos.style.transform = calm ? "none" : `translate3d(${Math.sin(time*.025)*.35}%, ${-p*1.5}%, 0)`;
+      if (window.Sky?.style === "impressionist") {
+        const width = Math.round(cosmos.clientWidth), height = Math.round(cosmos.clientHeight);
+        if (paintedSky.width !== width || paintedSky.height !== height) { paintedSky.width = width; paintedSky.height = height; }
+        Sky.drawBackdrop(paintedContext, width, height);
+      }
+    }
 
     // ---- the page around the story ----
     const uiA = 1 - smooth(0.02, 0.1, p);

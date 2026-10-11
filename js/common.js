@@ -276,7 +276,7 @@
       calmBtn._t = setTimeout(() => calmBtn.classList.remove("show-tip"), 1800);
     });
     calmLabel();
-    const onScroll = () => header.classList.toggle("scrolled", scrollY > 12);
+    const onScroll = () => header.classList.toggle("scrolled", document.body.dataset.page !== "home" && scrollY > 12);
     addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }

@@ -405,6 +405,7 @@
   }
 
   window.Sky = {
+    drawBackdrop(g, width, height) { if (canvas.width && canvas.height) g.drawImage(canvas, 0, 0, width, height); },
     STYLES, LABELS,
     get style() { return style; },
     setStyle(s) {

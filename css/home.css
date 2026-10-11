@@ -79,3 +79,17 @@ body[data-page="home"] .about-links .btn:hover { background: rgba(236, 230, 214,
   body[data-page="home"] .coda p { font-size: .8rem; }
   .bio-copy { margin-top: 22px; }
 }
+
+/* The header joins the page only as the sticky painting starts to leave. */
+body[data-page="home"] #site-header,
+body[data-page="home"] #site-header.scrolled {
+  background: rgb(5 8 17 / calc(var(--home-header, 0) * .88));
+  border-bottom-color: rgb(244 226 180 / calc(var(--home-header, 0) * .14));
+  box-shadow: none;
+  backdrop-filter: blur(calc(var(--home-header, 0) * 12px));
+  -webkit-backdrop-filter: blur(calc(var(--home-header, 0) * 12px));
+  transition: none;
+}
+.hero-painted-sky { display: none; width: 100%; height: 100%; }
+body[data-home-sky="impressionist"] .hero-cosmos { background-image: none; filter: none; opacity: 1; }
+body[data-home-sky="impressionist"] .hero-painted-sky { display: block; }

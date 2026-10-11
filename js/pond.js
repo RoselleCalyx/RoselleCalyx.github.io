@@ -23,8 +23,8 @@
   const CATCH = [
     { id: "crucian", name: "Crucian carp · 鲫鱼", rarity: 1, len: [10, 26], fight: 0.3, kind: "fish", text: "The pond’s everyday fish — silver-gold, round and stubborn.", hint: "Rod or bamboo cover, any season." },
     { id: "carp", name: "Common carp · 鲤鱼", rarity: 2, len: [32, 72], fight: 0.72, kind: "fish", text: "Big scales, two pairs of barbels and one long powerful run.", hint: "On the rod. It pulls hard." },
-    { id: "koi", name: "Koi · 锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "春夏秋可钓，夏季最多。Look for a warm-toned fork-tailed shadow · 锦鲤的暖褐色整体鱼影。" },
-    { id: "goldkoi", name: "Golden koi · 黄金锦鲤", rarity: 5, len: [48, 72], fight: 0.85, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "Summer only · 仅夏季。Look for a large golden silhouette; cast beside it and keep the line out of the red." },
+    { id: "koi", name: "Koi · 锦鲤", rarity: 3, len: [30, 60], fight: 0.55, kind: "fish", text: "Red, white and gold — probably slipped down from the farm pond.", hint: "春夏秋可钓，夏季最多。Look for a dark red fork-tailed shadow · 锦鲤的暗红色整体鱼影。" },
+    { id: "goldkoi", name: "Golden koi · 黄金锦鲤", rarity: 5, len: [48, 72], fight: 0.55, kind: "fish", text: "A legend among anglers. Make a wish before you let it go.", hint: "Summer only · 仅夏季。Look for a large golden silhouette; cast beside it and keep the line out of the red." },
     { id: "catfish", name: "Catfish · 鲶鱼", rarity: 2, len: [35, 85], fight: 0.82, kind: "fish", text: "Whiskered and nocturnal; it pulls like a stubborn ox.", hint: "On the rod, in the warm months." },
     { id: "mandarin", name: "Mandarin fish · 鳜鱼（桂花鱼）", rarity: 3, len: [25, 46], fight: 0.62, kind: "fish", text: "“Peach blossoms on the stream, and the mandarin fish are fat.”", hint: "春季最多，秋冬也有。Look for a broad olive shadow with a spiny fin · 鳜鱼的宽身和棘状背鳍。" },
     { id: "bitterling", name: "Bitterling · 鳑鲏", rarity: 1, len: [4, 8], fight: 0.1, kind: "fish", text: "Rainbow-flanked and tiny; it lays its eggs inside freshwater mussels.", hint: "Under the bamboo cover." },
@@ -60,7 +60,7 @@
   const fishDifficulty = s => {
     const c = BY[s.id], tier = Math.max(0, c.rarity - 1);
     const size = s.specimen ? clamp((s.specimen.cm - c.len[0]) / Math.max(1, c.len[1] - c.len[0]), 0, 1) : .5;
-    return { tier, fight: clamp((c.fight || .3) * (.85 + size * .3) + tier * .025, .08, .98), biteWindow: Math.max(.55, .95 - tier * .09) };
+    return { tier, fight: clamp((c.fight || .3) * (.85 + size * .3), .08, .98), biteWindow: .95 };
   };
   const pickFrom = (table) => { const tot = table.reduce((a, [, w]) => a + w, 0); let x = Math.random() * tot; for (const [id, w] of table) if ((x -= w) <= 0) return id; return table[0][0]; };
   function sizeOf(id) {
@@ -457,6 +457,27 @@
 
   /* ================= living water ================= */
   let shadows = [], ripples = [], parts = [], reeds = [], pads = [], weather = [], flies = [], bubbles = [];
+  let summerSchedule = null;
+  function summerLegend() {
+    if (season.name !== 'summer' || busyCard || net || haul || rod.state !== 'idle') return;
+    const now = Date.now(), current = Wd.season();
+    if (!summerSchedule || summerSchedule.abs !== current.abs) {
+      try { summerSchedule = JSON.parse(sessionStorage.getItem('pond-summer-legend-v1') || 'null'); } catch (_) {}
+      if (!summerSchedule || summerSchedule.abs !== current.abs || !Number.isInteger(summerSchedule.count) || summerSchedule.count < 0 || summerSchedule.count > 2 || !Number.isFinite(summerSchedule.next)) {
+        summerSchedule = {abs:current.abs,count:0,next:now + Math.min(6000, current.left * .08)};
+      }
+    }
+    if (summerSchedule.count >= 2 || now < summerSchedule.next || shadows.some(s => s.id === 'goldkoi')) return;
+    const fish = makeShadow(false, 'goldkoi');
+    fish.x = fish.tx = W * (.35 + Math.random() * .3); fish.y = fish.ty = H * .66;
+    fish.until = 0; fish.leaveAt = time + 30 + Math.random() * 12;
+    const replace = shadows.findIndex(s => s.mode === 'wander' && s.id !== 'koi');
+    if (replace < 0) return;
+    shadows[replace] = fish;
+    summerSchedule.count++;
+    summerSchedule.next = now + Math.min(75000, Math.max(1000, (current.left - 2000) * .35));
+    try { sessionStorage.setItem('pond-summer-legend-v1', JSON.stringify(summerSchedule)); } catch (_) {}
+  }
   const shadowTable = () => {
     const fish = rodTable().filter(([id]) => BY[id].kind === 'fish');
     const eel = TRAP[season.name]?.find(([id]) => id === 'eel');
@@ -842,9 +863,9 @@
     const wig = Math.sin(s.wig) * width * .55;
     ctx.save(); ctx.translate(s.x, s.y); ctx.scale(1, .55); ctx.rotate(s.h);
     ctx.globalAlpha = s.alpha * (s.id === "goldkoi" ? .65 : BY[s.id].rarity >= 3 ? .53 : .42);
-    const color = s.id === 'goldkoi' ? '#bd9434' : s.id === 'koi' ? '#76513c' : s.id === 'mandarin' ? '#334337' : '#142422';
+    const color = s.id === 'goldkoi' ? '#c19a32' : s.id === 'koi' ? '#9b443c' : s.id === 'mandarin' ? '#334337' : '#142422';
     const shade = ctx.createLinearGradient(0, -width, 0, width);
-    shade.addColorStop(0, color); shade.addColorStop(1, s.id === 'goldkoi' ? '#8b722f' : '#182d29');
+    shade.addColorStop(0, color); shade.addColorStop(1, s.id === 'goldkoi' ? '#806b2d' : s.id === 'koi' ? '#64372f' : '#182d29');
     ctx.fillStyle = shade;
     // Long, tapered body; broad-headed catfish and deep-bodied perch remain distinct.
     ctx.beginPath(); ctx.moveTo(half, 0);
@@ -883,7 +904,8 @@
       if (!calm && s.mode !== "trapped") {
         if (s.mode === "wander" || s.mode === "flee") {
           if (time > s.until || Math.hypot(s.tx - s.x, s.ty - s.y) < 10) {
-            for (let i = 0; i < 12; i++) { const tx = W * (s.id === "eel" ? .045 + Math.random() * .12 : .05 + Math.random() * .9), ty = H * (s.id === "eel" ? .8 + Math.random() * .13 : HZ + .1 + Math.random() * .48); if (inWater(tx, ty)) { s.tx = tx; s.ty = ty; break; } }
+            if (s.id === 'goldkoi' && time > s.leaveAt - 8) { s.tx = W * (s.x < W*.5 ? .03 : .97); s.ty = H*.64; }
+            else for (let i = 0; i < 12; i++) { const tx = W * (s.id === "eel" ? .045 + Math.random() * .12 : .05 + Math.random() * .9), ty = H * (s.id === "eel" ? .8 + Math.random() * .13 : HZ + .1 + Math.random() * .48); if (inWater(tx, ty)) { s.tx = tx; s.ty = ty; break; } }
             if (time < bait.until && bait.x != null) { s.tx = bait.x + (Math.random() - 0.5) * 60 * k; s.ty = bait.y + (Math.random() - 0.5) * 20 * k; }
             s.until = time + 3 + Math.random() * 5; if (s.mode === "flee" && time > s.until - 3) s.mode = "wander";
           }
@@ -1133,7 +1155,7 @@
   }
   function openLog() {
     document.getElementById("btnLog").classList.remove("glint");
-    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼影大小对应个体长度；锦鲤鱼影呈暖褐色、分叉尾，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝在岸边有细长蛇形鱼影，也能用地笼捕获。Released fish still count." });
+    Wd.journal({ title: "Catch Log", sub: "Everything the pond has given up", items: CATCH, seen: save.seen, counts: save.creel, best: save.best, iconOf, note: "五星是 Golden koi · 黄金锦鲤，仅夏季出没：寻找大型金色鱼影，用鱼竿在旁边抛投。鱼影大小对应个体长度；锦鲤鱼影呈暗红色、分叉尾，鳜鱼背鳍带棘，鲶鱼身长、有须。黄鳝在岸边有细长蛇形鱼影，也能用地笼捕获。Released fish still count." });
   }
   function scatterBait() {
     if (frozen()) { toast("The fish are slow under the ice. Bait won’t carry.", 2600); return; }
@@ -1233,8 +1255,8 @@
   document.getElementById("btnBait").addEventListener("click", scatterBait);
   document.getElementById("btnTips").addEventListener("click", () => Site.modal(`<h2>Angler’s tips · 钓鱼指南</h2>
     <p>点击水面抛竿；等待时再次点击水面或鱼竿按钮，可以提前收线，下一次点击才重新抛竿。浮漂完全沉下去时提竿；按住收线，张力接近红区就松开，回到安全区再收。Space works too.</p>
-    <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。越稀有越少出现、游得越快，提竿窗口也越短。它挣扎很强，保持张力在安全区；同种鱼里，个体越大越难收线。</p>
-    <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。黄金锦鲤是完整的金色轮廓；锦鲤呈暖褐色、分叉尾；鳜鱼身宽、橄榄色、有棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
+    <p><b>★★★★★ Golden koi · 黄金锦鲤</b><br>只在夏季出现，体长 48–72 cm。寻找大型、通体淡金色、分叉尾的鱼影，将浮漂投到旁边。每轮夏季会短暂露面两次，也可能随机遇到；水下鱼影呈暗金黄色。越稀有出现越少、游得越快，鱼竿和竹罩都能捕获。提竿窗口不随稀有度缩短；保持张力在安全区。</p>
+    <p><b>Read the shadows · 辨认鱼影</b><br>影子大小对应这条鱼的实际体长。黄金锦鲤是完整的金色轮廓；锦鲤呈暗红色、分叉尾；鳜鱼身宽、橄榄色、有棘状背鳍；鲶鱼身长、头宽、有长须。靠近鱼影抛竿会吸引这条鱼，空水域仍会随机遇鱼。</p>
     <p>鱼竿和竹罩都可以捕获游动鱼；竹罩要对准鱼影，大鱼也能罩住。黄鳝春夏秋在岸边有细长蛇形鱼影，可罩捕或下竿，也可放地笼约一分钟后回来。撒饵让鱼靠近、缩短等待时间，不会直接提高稀有鱼出现率。</p>`, {className:"wide"}));
 
   function restoreSavedState() {
@@ -1275,6 +1297,7 @@
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (document.hidden || !fit()) return;
     time += dt;
+    summerLegend();
     updateRod(dt); updateNet();
     if (!frozen() && Math.random() < dt * 0.25) { const s = shadows[(Math.random() * shadows.length) | 0]; if (s && s.mode === "wander") ripple(s.x, s.y, 0.5, 0.5); }
     if (!frozen() && Math.random() < dt * 0.03 && shadows.length) { const s = shadows[(Math.random() * shadows.length) | 0]; if (s.mode === "wander") splash(s.x, s.y, 10, 0.6); }
