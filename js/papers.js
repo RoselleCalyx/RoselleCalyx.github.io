@@ -79,7 +79,7 @@
     const typeLabel = { publication: "Publication", preprint: "Preprint", project: "Project" }[p.type] || "";
     const images = figures(p), cover = p.image || images[0]?.src;
     return `<article class="paper glass reveal" data-i="${i}">
-      <div class="paper-thumb"${cover ? ' role="button" tabindex="0" aria-label="Enlarge paper figures"' : ""}>${cover ? `<img src="${esc(cover)}" alt="${esc(images[0]?.alt ?? images[0]?.title ?? p.title)}" loading="lazy">` : ""}</div>
+      <div class="paper-thumb${cover ? "" : " is-placeholder"}"${cover ? ' role="button" tabindex="0" aria-label="Enlarge paper figures"' : ""}>${cover ? `<img src="${esc(cover)}" alt="${esc(images[0]?.alt ?? images[0]?.title ?? p.title)}" loading="lazy">` : '<img src="assets/paper-placeholder.svg" alt="" width="640" height="480" loading="lazy">'}</div>
       <div class="paper-body">
         <div class="paper-top"><h3>${esc(p.title)}</h3>${p.selected ? `<span class="selected" title="Selected">${ICON.starF}</span>` : ""}</div>
         <div class="paper-authors">${authors}</div>
