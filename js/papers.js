@@ -6,7 +6,7 @@
   if (host?.configured) host.restore().then(() => {
     if (!host.signedIn) return;
     const tools=document.createElement("div");tools.className="paper-host-tools";
-    for(const [label,href] of [["Sync Google Scholar","inbox.html?paperAction=scholar#papers"],["Import paper / BibTeX","inbox.html#papers"]]) {
+    for(const [label,href] of [["Import paper / BibTeX","inbox.html#papers"]]) {
       const a=document.createElement("a");a.className="btn sm";a.textContent=label;a.href=href;tools.append(a);
     }
     document.querySelector('.papers-tools')?.prepend(tools);

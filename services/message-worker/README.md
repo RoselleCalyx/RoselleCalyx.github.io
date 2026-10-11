@@ -121,9 +121,9 @@ The site still uses browser visitor credentials, not public user accounts: anoth
 
 ## Manual publication imports
 
-Scholar no longer runs on a schedule: the Worker timer continues inbox housekeeping only, and the GitHub Scholar reader is manual-dispatch only. Signed-in hosts have Sync Google Scholar and Import paper / BibTeX shortcuts on `papers.html`; both open the Papers editor. Importing previews never publishes or modifies the database. Selected items enter the current draft and use the existing Save & publish revision check.
+Scholar no longer runs on a schedule: the Worker timer continues inbox housekeeping only, and the ineffective GitHub Scholar reader has been removed. Signed-in hosts have an Import paper / BibTeX shortcut on `papers.html`; it opens the Papers editor. Importing previews never publishes or modifies the database. Selected items enter the current draft and use the existing Save & publish revision check.
 
-`POST /api/host/papers/scholar` reads the live Scholar profile and full article metadata. A blocked or incomplete response returns an explicit error and directs the host to Scholar’s BibTeX export; it never silently presents a cached snapshot as a fresh synchronization. Paste or upload that export through the same importer.
+The direct Scholar importer was removed after Google rejected both server environments. The editor links to the public Scholar profile for exporting citations; paste or upload that BibTeX through the importer. No stale snapshot is presented as a fresh sync.
 
 `POST /api/host/papers/import` accepts `{input}` containing a DOI, a publisher URL containing a DOI, an arXiv/ACL Anthology link, or up to 30 BibTeX entries. DOI metadata comes from Crossref with its official BibTeX when available; arXiv supplies exact-ID Atom metadata; ACL supplies its official citation export. BibTeX parsing handles nested braces, quoted strings, ordered/corporate authors and standard month abbreviations. It rejects incomplete citations and unresolved macros rather than inventing authors or years. Requests are bounded, authenticated and rate-limited, and network retrieval uses fixed metadata hosts without following arbitrary redirects.
 

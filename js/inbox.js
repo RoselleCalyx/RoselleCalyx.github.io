@@ -351,14 +351,6 @@
     requireFarmService();
     return authedRequest("/api/host/papers/import", {method:"POST",body:JSON.stringify({input}),requestTimeout:45000});
   }
-  async function previewScholar() {
-    requireFarmService();
-    return authedRequest("/api/host/papers/scholar", {method:"POST",body:"{}",requestTimeout:60000});
-  }
-  async function getScholarStatus() {
-    requireFarmService();
-    return authedRequest("/api/host/scholar-sync");
-  }
   async function saveContent(revision, content) {
     requireFarmService();
     const data = await authedRequest("/api/host/site-content", { method: "PUT", body: JSON.stringify({ revision, content }) });
@@ -391,7 +383,7 @@
   const api = window.HostInbox = Object.freeze({
     configured: Boolean(base) && !localPreview, localPreview, mode, setupKind, configurationError, signIn, restore, signOut, list, markRead,
     farmAvailable: mode === "cloudflare", listAdoptions, reviewAdoption, listOrchard, removeTree,
-    getContent, previewPaperImport, previewScholar, getScholarStatus, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
+    getContent, previewPaperImport, saveContent, uploadImage, updateMessage, removeResident, listResidents, updateResident,
     get identity() { return session && session.user; },
     get signedIn() { return Boolean(session); }
   });

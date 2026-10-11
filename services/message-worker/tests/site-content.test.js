@@ -301,10 +301,9 @@ test('trusted owner records show a Host badge while visitors keep word-only alia
   assert.match(published.farm.residents[1].adoptedBy,/^[A-Za-z ]+$/);
   assert.deepEqual((await (await f.call('/api/host/site-content',{token})).json()).content,content);
 });
-test('paper import and Scholar preview require host auth, produce previews and never publish implicitly',async()=>{
+test('paper imports require host auth and never publish implicitly',async()=>{
  const f=fixture(),input='@article{sample,title={New verified paper},author={Jia, Chen},year={2026},journal={Journal}}';
- for(const path of ['/api/host/papers/import','/api/host/papers/scholar'])assert.equal((await f.call(path,{method:'POST',body:path.endsWith('import')?{input}:{}})).status,401);
+ assert.equal((await f.call('/api/host/papers/import',{method:'POST',body:{input}})).status,401);
  const token=await f.login();const imported=await f.call('/api/host/papers/import',{method:'POST',token,body:{input}});assert.equal(imported.status,200);assert.equal((await imported.json()).papers[0].authors[0],'Chen Jia');assert.equal((await (await f.call('/api/site-content')).json()).revision,0);
- const original=globalThis.fetch;globalThis.fetch=async()=>new Response('blocked',{status:403});
- try{const blocked=await f.call('/api/host/papers/scholar',{method:'POST',token,body:{}});assert.equal(blocked.status,422);assert.match((await blocked.json()).message,/BibTeX/);assert.equal((await (await f.call('/api/site-content')).json()).revision,0);}finally{globalThis.fetch=original;}
+ assert.equal((await f.call('/api/host/papers/scholar',{method:'POST',token,body:{}})).status,404);
 });

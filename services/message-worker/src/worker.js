@@ -1,4 +1,3 @@
-import { fetchScholarPapers } from './scholar-sync.js';
 import { importPapers } from './paper-import.js';
 import { farmRoute } from './farm.js';
 import { HTTPError } from "./errors.js";
@@ -194,16 +193,6 @@ async function hostRoute(request, env, path, url) {
     const body = await jsonBody(request, ["input"], 128 * 1024);
     try { return await importPapers(body.input); }
     catch (error) { if (error instanceof HTTPError) throw error; throw new HTTPError(422, "paper_import", "The metadata source is temporarily unavailable. Paste the paper’s BibTeX instead."); }
-  }
-  if (path === "/api/host/papers/scholar" && request.method === "POST") {
-    await rateLimit(request, env, "scholar-preview", 6, 3600);
-    await jsonBody(request, [], 1024);
-    try { return {ok:true,papers:await fetchScholarPapers(),source:"Live Google Scholar"}; }
-    catch (_) { throw new HTTPError(422, "paper_import", "Google Scholar refused or could not complete this request. Open your Scholar profile, select papers and export BibTeX, then import that file below. Existing papers and unsaved edits were kept."); }
-  }
-  if (path === "/api/host/scholar-sync" && request.method === "GET") {
-    const state = await env.DB.prepare('SELECT last_success, next_check, last_error FROM scholar_sync WHERE id=1').first();
-    return {ok:true,lastSuccess:state.last_success,nextCheck:state.next_check,lastError:state.last_error};
   }
   if (path === "/api/host/site-content" && request.method === "PUT") return saveSiteContent(env, await jsonBody(request, ["revision", "content"], 1024 * 1024));
   if (path === "/api/host/media" && request.method === "POST") {
