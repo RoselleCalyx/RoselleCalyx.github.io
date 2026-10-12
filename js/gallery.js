@@ -317,8 +317,7 @@
         zoomAnimation: !calm, fadeAnimation: !calm, markerZoomAnimation: !calm,
         minZoom: 1, maxZoom: 16
       }).setView([30, 10], 2);
-      $("mapFallback")?.remove();
-      L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+      const detail = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
         attribution: "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors", maxZoom: 16
       }).addTo(map);
       const icon = L.divIcon({
@@ -383,6 +382,11 @@
       };
       new ResizeObserver(resize).observe($("map"));
       overview(); resize();
+      const atlasScript = document.createElement("script");
+      atlasScript.src = "js/gallery-atlas.js?v=20261012-vector-atlas";
+      atlasScript.onload = () => window.GalleryAtlas(map, detail).catch(() => {}).finally(() => $("mapFallback")?.remove());
+      atlasScript.onerror = () => $("mapFallback")?.remove();
+      document.head.appendChild(atlasScript);
     }).catch(() => {
       mapLoading = null;
       const fallback = $("mapFallback");
