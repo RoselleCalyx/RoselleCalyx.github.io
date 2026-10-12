@@ -507,8 +507,9 @@
     reeds.sort((a, b) => a.y - b.y);
     pads = [];
     if (!frozen()) [[0.2, 0.56, 6], [0.48, 0.63, 4], [0.7, 0.52, 5], [0.12, 0.83, 3]].forEach(([u, v, n]) => {
-      for (let i = 0; i < n; i++) { const x = W * u + (r() - 0.5) * 120 * k, y = H * v + (r() - 0.5) * 30 * k; const s = scaleAt(y); pads.push({ x, y, r: (16 + r() * 12) * k * s, a: r() * TAU, ph: r() * TAU, flower: season.name === "summer" && r() < 0.3, bud: season.name === "spring" && r() < 0.2, yellow: season.name === "autumn" && r() < 0.5 }); }
+      for (let i = 0; i < n; i++) { const x = W * u + (r() - 0.5) * 120 * k, y = H * v + (r() - 0.5) * 30 * k; const s = scaleAt(y); pads.push({ x, y, r: (16 + r() * 12) * k * s, a: r() * TAU, ph: r() * TAU, pod: (season.name === "summer" || season.name === "autumn") && i === 0, flower: season.name === "summer" && (i === 1 || (i > 1 && r() < 0.3)), bud: season.name === "spring" && r() < 0.2, yellow: season.name === "autumn" && r() < 0.5 }); }
     });
+    pads.sort((a,b) => a.y - b.y);
     const fn = { spring: 10, summer: 26, autumn: 4, winter: 0 }[season.name] * (Wd.lowPower ? 0.5 : 1);
     flies = Array.from({ length: Math.round(fn) }, () => ({ x: Math.random() * W, y: H * (0.3 + Math.random() * 0.5), ph: Math.random() * TAU, sp: 0.4 + Math.random() * 0.6 }));
     const wk = { spring: "petal", summer: "", autumn: "leaf", winter: "snow" }[season.name];
@@ -953,8 +954,11 @@
       window.PondPlants?.floating(ctx,kind,W*u+drift.x,H*v+drift.y,w*k,(Wd.reduce||window.Sky?.calm?phase:time*.7+phase),season.name);
     });
     pads.forEach((p) => {
-      const bob = Math.sin(time * 0.8 + p.ph) * 0.8 * k;
-      const textured=window.PondPlants?.leaf(ctx,p.x,p.y+bob,p.r,p.a+Math.sin(time*.16+p.ph)*.035,season.name);
+      const still = Wd.reduce || window.Sky?.calm;
+      const drift = plantDrift(p.x,p.y,p.ph);
+      const bob = still ? 0 : Math.sin(time * 0.8 + p.ph) * 0.8 * k;
+      ctx.save(); ctx.translate(drift.x,drift.y);
+      const textured=window.PondPlants?.leaf(ctx,p.x,p.y+bob,p.r,p.a+(still ? 0 : Math.sin(time*.16+p.ph)*.035),season.name);
       if(!textured){
       ctx.save(); ctx.translate(p.x, p.y + bob); ctx.scale(1, 0.36);
       ctx.fillStyle = p.yellow ? "#8a8a3a" : "#2f6a3a";
@@ -962,7 +966,10 @@
       ctx.strokeStyle = "rgba(160,210,140,.35)"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(0, 0, p.r * 0.92, p.a + 0.4, p.a + TAU - 0.4); ctx.stroke();
       ctx.restore();
       }
-      if (p.flower || p.bud) {
+      const phase = still ? p.ph : time*.7+p.ph;
+      if (p.pod) window.PondPlants?.floating(ctx,"seedpod",p.x+p.r*.25,p.y+bob,p.r*.85,phase,season.name);
+      const paintedFlower = p.flower && window.PondPlants?.floating(ctx,"flower",p.x+p.r*.2,p.y+bob,p.r*1.2,phase,season.name);
+      if ((p.flower && !paintedFlower) || p.bud) {
         const fx = p.x + p.r * 0.2, fy = p.y + bob - 2 * k, fs = p.r * (p.bud ? 0.4 : 0.6);
         for (let i = 0; i < (p.bud ? 3 : 8); i++) {
           const a = -Math.PI / 2 + (i - (p.bud ? 1 : 3.5)) * (p.bud ? 0.25 : 0.38);
@@ -972,6 +979,7 @@
         }
         if (p.flower) { ctx.fillStyle = "#ffd65a"; ctx.beginPath(); ctx.arc(fx, fy - fs * 0.1, fs * 0.16, 0, TAU); ctx.fill(); }
       }
+      ctx.restore();
     });
   }
   function drawReeds(dt) {

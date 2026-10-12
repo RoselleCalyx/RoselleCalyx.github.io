@@ -1,7 +1,7 @@
 /* Painted botanical objects on a rooted bending mesh, with seasonal variants. */
 (function(){
   const images={},variants=new Map();
-  for(const [kind,file] of Object.entries({cattail:'cattail-object-v1',reed:'reed-object-v4',leaf:'lotus-leaf-object-v1',hyacinth:'hyacinth-object-v4',ottelia:'ottelia-object-v4',grass:'grass-object-v4'})){
+  for(const [kind,file] of Object.entries({cattail:'cattail-object-v1',reed:'reed-object-v4',leaf:'lotus-leaf-object-v1',flower:'lotus-flower-object-v1',seedpod:'lotus-seedpod-object-v1',hyacinth:'hyacinth-object-v4',ottelia:'ottelia-object-v4',grass:'grass-object-v4'})){
     const img=new Image();img.decoding='async';img.src='assets/wild/'+file+'.webp';
     img.onload=async()=>{try{await img.decode();images[kind]=img;}catch{}};
   }
@@ -49,5 +49,5 @@
     const submerged=kind==='ottelia'?.13:0;
     g.drawImage(img,0,0,iw,ih*(1-submerged),-w/2,-h*(1-submerged),w,h*(1-submerged));g.restore();return true;
   }
-  window.PondPlants={reed,leaf,floating,get ready(){return Object.keys(images).length===6;}};
+  window.PondPlants={reed,leaf,floating,get ready(){return Object.keys(images).length===8;}};
 })();

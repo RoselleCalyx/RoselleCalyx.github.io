@@ -306,11 +306,18 @@
     });
   }
   function initMap() {
-    if (map) { map.invalidateSize(); return; }
+    if (map) { requestAnimationFrame(() => map.invalidateSize({ pan: false })); return; }
     if (mapLoading) return;
     mapLoading = loadLeaflet().then(() => {
-      $("mapFallback").remove();
-      map = L.map("map", { zoomControl: true, worldCopyJump: true, attributionControl: true }).setView([30, 10], 2);
+      const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      map = L.map("map", {
+        zoomControl: false, worldCopyJump: true, attributionControl: true,
+        zoomSnap: .25, zoomDelta: .5, wheelPxPerZoomLevel: 140, wheelDebounceTime: 60,
+        bounceAtZoomLimits: false, inertiaMaxSpeed: 900,
+        zoomAnimation: !calm, fadeAnimation: !calm, markerZoomAnimation: !calm,
+        minZoom: 1, maxZoom: 16
+      }).setView([30, 10], 2);
+      $("mapFallback")?.remove();
       L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
         attribution: "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors", maxZoom: 16
       }).addTo(map);
@@ -328,10 +335,54 @@
         const m = L.marker(a.coords, { icon, title: a.place }).addTo(map);
         m.bindPopup(`<b>${esc(a.title || a.place)}</b>${esc(a.place)} · ${fmtDate(a.date)}<br><span style="color:var(--ink-2)">${esc(a.story || "")}</span><br><button class="btn sm" type="button" data-open="${esc(a.id)}">View photos</button>`);
       });
+      const overview = () => {
+        map.stop();
+        if (pts.length) map.fitBounds(L.latLngBounds(pts), { padding: [54, 54], maxZoom: pts.length === 1 ? 4 : 5, animate: !calm });
+        else map.setView([25, 10], 2, { animate: !calm });
+      };
       if (pts.length > 1) {
         L.polyline(albums.slice().reverse().filter((a) => a.coords).map((a) => a.coords), { color: "#e2c07c", weight: 1, opacity: 0.45, dashArray: "4 6" }).addTo(map);
-        map.fitBounds(pts, { padding: [40, 40] });
       }
+      const Controls = L.Control.extend({
+        options: { position: "topright" },
+        onAdd() {
+          const el = L.DomUtil.create("div", "atlas-controls");
+          const glyph = path => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+          el.innerHTML = `<span class="atlas-caption">ATLAS</span>
+            <button type="button" data-map="in" title="Zoom in" aria-label="Zoom in">${glyph('<path d="M12 5v14M5 12h14"/>')}</button>
+            <button type="button" data-map="out" title="Zoom out" aria-label="Zoom out">${glyph('<path d="M5 12h14"/>')}</button>
+            <span class="atlas-divider"></span>
+            <button type="button" data-map="home" title="Show all journeys" aria-label="Show all journeys">${glyph('<circle cx="12" cy="12" r="8"/><path d="m15 9-2 4-4 2 2-4Z"/>')}</button>`;
+          L.DomEvent.disableClickPropagation(el);
+          L.DomEvent.disableScrollPropagation(el);
+          el.addEventListener("click", e => {
+            const button = e.target.closest("button");
+            if (!button || button.disabled) return;
+            const action = button.dataset.map;
+            if (action === "home") overview();
+            else { map.stop(); map.setZoom(map.getZoom() + (action === "in" ? .5 : -.5), { animate: !calm }); }
+          });
+          const update = () => {
+            el.querySelector('[data-map="in"]').disabled = map.getZoom() >= map.getMaxZoom();
+            el.querySelector('[data-map="out"]').disabled = map.getZoom() <= map.getMinZoom();
+          };
+          map.on("zoomend zoomlevelschange", update); update();
+          return el;
+        }
+      });
+      new Controls().addTo(map);
+      L.control.scale({ position: "bottomleft", imperial: false, maxWidth: 110 }).addTo(map);
+      let resizeFrame;
+      const resize = () => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(() => {
+          if (!$("map").clientHeight || $("mapView").hidden) return;
+          map.invalidateSize({ pan: false });
+          map.setMinZoom(Math.max(1, Math.ceil(Math.log2($("map").clientHeight / 256) * 4) / 4));
+        });
+      };
+      new ResizeObserver(resize).observe($("map"));
+      overview(); resize();
     }).catch(() => {
       mapLoading = null;
       const fallback = $("mapFallback");
