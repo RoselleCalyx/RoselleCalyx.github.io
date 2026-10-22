@@ -298,7 +298,7 @@ function namesPainted(page, constellations) {
   return page.painted.map(label => label.text).filter(text => names.has(text));
 }
 
-test('mobile whole-sky labels prioritize selected and hovered objects without changing hits', () => {
+test('mobile labels prioritize selected and hovered objects at overview and zoom without changing hits', () => {
   const constellations = crowdedSky(), p = page({ mobile: true, constellations });
   p.api.setHover({ type: 'const', id: 'hov' });
   assert.deepEqual(namesPainted(p, constellations), ['Orion', 'Hovered', 'Remote']);
@@ -306,7 +306,7 @@ test('mobile whole-sky labels prioritize selected and hovered objects without ch
   p.listClick('hidden');
   assert.deepEqual(namesPainted(p, constellations), ['Hidden', 'Hovered', 'Remote'], 'a newly selected hidden label is restored');
   p.api.setView({ k: 2 });
-  assert.deepEqual(namesPainted(p, constellations), constellations.map(c => c.name), 'zoom restores the original labels');
+  assert.deepEqual(namesPainted(p, constellations), ['Hidden', 'Hovered', 'Remote'], 'zoom keeps crowded labels suppressed and the active objects named');
 });
 
 test('desktop labels retain their original display and quiz labels remain hidden', () => {

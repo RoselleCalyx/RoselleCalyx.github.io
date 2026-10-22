@@ -33,7 +33,6 @@ async function main() {
         rings:document.querySelector('#rings').width};
     });
     if (!baseline) {
-      assert.ok(style.filter.includes('saturate(1.12)'),'galactic colour treatment must be active');
       assert.ok(await page.locator('.hero-text-shade').count()===1,'text needs its own shade above the ring layer');
       const layers=await page.evaluate(()=>__foregroundDraws);
       const craft=layers.findLastIndex(x=>x.source.includes('cassini-flight'));

@@ -218,7 +218,7 @@
 
     // constellations
     const dimOthers = selected && selected.type === "const" && view.k > 1.4;
-    const compactLabels = mobileMap.matches && view.k <= 1.4;
+    const compactLabels = mobileMap.matches;
     const labels = [];
     CONS.forEach((c) => {
       const isSel = selected && selected.type === "const" && selected.id === c.id;
@@ -234,7 +234,7 @@
       c.stars.forEach((s, i) => {
         const tw = reduce ? 1 : 0.85 + 0.15 * Math.sin(time * 1.7 + s[1]);
         const r = starR(s[3]) * Math.sqrt(view.k) * (isSel ? 1.25 : 1);
-        const g = r * 6 * tw;
+        const g = r * (mobileMap.matches && !isSel ? 4.5 : 6) * tw;
         ctx.globalAlpha = dimOthers && !isSel ? 0.5 : 1;
         ctx.drawImage(GLOW, pts[i][0] - g / 2, pts[i][1] - g / 2, g, g);
       });
@@ -244,12 +244,12 @@
         const m = centroid(pts);
         const label = {
           text: c.name, x: m[0], y: isSel ? Math.min(...pts.map((q) => q[1])) - 16 : m[1] - 14,
-          font: `${isSel ? 17 : 14}px "Montserrat", "Segoe UI", sans-serif`,
+          font: `${mobileMap.matches ? (isSel ? 15 : 11) : (isSel ? 17 : 14)}px "Montserrat", "Segoe UI", sans-serif`,
           color: isSel || isHov ? "#f4e2b4" : "rgba(220,215,200,.62)",
           priority: isSel ? 2 : isHov ? 1 : 0
         };
         if (compactLabels) labels.push(label); else drawConstellationLabel(label);
-        if (isSel && view.k > 1.6) {
+        if (isSel && view.k > (mobileMap.matches ? 2.6 : 1.6)) {
           ctx.font = '11px "Inter", sans-serif'; ctx.fillStyle = "rgba(244,226,180,.75)";
           c.stars.forEach((s, i) => { if (s[3] < 2.6) ctx.fillText(s[0], pts[i][0], pts[i][1] + 16); });
         }
@@ -314,14 +314,14 @@
       ctx.font = label.font;
       const metrics = ctx.measureText(label.text);
       const bounds = {
-        left: label.x - metrics.width / 2 - 4, right: label.x + metrics.width / 2 + 4,
+        left: label.x - metrics.width / 2 - 7, right: label.x + metrics.width / 2 + 7,
         top: label.y - (metrics.actualBoundingBoxAscent || parseFloat(label.font)) - 3,
         bottom: label.y + (metrics.actualBoundingBoxDescent || 3) + 3
       };
       const overlaps = occupied.some((other) => bounds.left < other.right && bounds.right > other.left
         && bounds.top < other.bottom && bounds.bottom > other.top);
       // The active objects remain named even if they overlap one another.
-      if (!label.priority && overlaps) return;
+      if (!label.priority && (overlaps || bounds.left < 8 || bounds.right > size - 8 || bounds.top < 8 || bounds.bottom > size - 8)) return;
       drawConstellationLabel(label);
       occupied.push(bounds);
     });

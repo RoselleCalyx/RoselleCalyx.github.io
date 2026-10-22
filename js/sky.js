@@ -91,12 +91,12 @@
     const r = rng(20240915);
     const area = cssW * cssH;
     twinkles = [];
-    const nt = Math.min(260, Math.round(area / 8500));
+    const nt = Math.min(150, Math.round(area / 15000));
     for (let i = 0; i < nt; i++) {
       const col = STAR_COLORS[(r() * STAR_COLORS.length) | 0];
       twinkles.push({
-        x: r() * W, y: r() * H * (r() < 0.75 ? 0.75 : 1), s: (0.9 + Math.pow(r(), 3) * 2.6) * dpr,
-        ph: r() * 6.28, sp: 0.4 + r() * 2.2, col, spr: sprFor(col), spike: r() < 0.06
+        x: r() * W, y: r() * H * (r() < 0.75 ? 0.75 : 1), s: (0.65 + Math.pow(r(), 4) * 1.4) * dpr,
+        ph: r() * 6.28, sp: 0.25 + r() * 0.8, col, spr: sprFor(col), spike: r() < 0.015
       });
     }
     moonSprite = makeMoon();
@@ -144,7 +144,7 @@
           blob(b, x, y, bw * (0.02 + r() * 0.07), (r() < 0.5 ? "rgba(240,120,210," : "rgba(170,110,240,") + ((0.1 + r() * 0.16) * coreW(t)).toFixed(3) + ")");
         }
       }
-      const nd = Math.round(((W * H) / (dpr * dpr) / 260) * (mw.rich ? 8 : 1));
+      const nd = Math.round(((W * H) / (dpr * dpr) / 700) * (mw.rich ? 8 : 1));
       for (let i = 0; i < nd; i++) {
         const t = r();
         const [x, y] = at(t, gauss(r) * bw * (mw.rich ? 0.3 : 0.4));
@@ -170,12 +170,12 @@
         b.globalCompositeOperation = "source-over";
       }
     }
-    const n = Math.round((W * H) / (dpr * dpr) / 1000);
+    const n = Math.round((W * H) / (dpr * dpr) / 1800);
     for (let i = 0; i < n; i++) {
       const x = r() * W, y = r() * H;
       const big = r() < 0.08;
       const s = (big ? 0.9 + r() * 0.7 : 0.3 + r() * 0.6) * dpr;
-      b.globalAlpha = 0.25 + r() * 0.7;
+      b.globalAlpha = 0.18 + r() * 0.5;
       b.fillStyle = STAR_COLORS[(r() * STAR_COLORS.length) | 0];
       b.beginPath(); b.arc(x, y, s, 0, 6.283); b.fill();
     }
@@ -268,8 +268,8 @@
     for (let i = 0; i < twinkles.length; i++) {
       const t = twinkles[i];
       const a = reduce || calm ? 0.8 : 0.5 + 0.5 * Math.sin(time * t.sp + t.ph);
-      const s = t.s * 7;
-      ctx.globalAlpha = 0.25 + a * 0.75;
+      const s = t.s * (warm ? 7 : 4.5);
+      ctx.globalAlpha = warm ? 0.25 + a * 0.75 : 0.2 + a * 0.4;
       ctx.drawImage(warm ? SPR.gold : t.spr, t.x - s / 2, t.y - s / 2, s, s);
       if (t.spike) {
         ctx.globalAlpha = a * 0.5;
