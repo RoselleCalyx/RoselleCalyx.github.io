@@ -15,17 +15,20 @@ function geometry({ hidden = [], noLayout = [], missing = [] } = {}) {
     getClientRects() { return this.hidden || noLayout.includes(id) ? [] : [{}]; }
   }]));
   for (const id of missing) delete nodes[id];
-  const context = { bio: nodes.about, document: { getElementById: id => nodes[id] }, F: {}, FINAL_ENTRY: 1,
+  const context = { window: {}, bio: nodes.about, document: { getElementById: id => nodes[id] },
+    F: { left: 0, top: 0, S: 1 }, SAT: { x: 573, y: 318 }, FINAL_ENTRY: 1,
     burnFlight: () => ({ x: 400, y: 200 }), P: (x, y) => [x * 2, y * 2], dpr: 2, vw: 1440, vh: 1000,
     story: { offsetTop: 0, offsetHeight: 3000, offsetParent: null } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/cassini-flight.js'), 'utf8'), context);
+  context.CassiniFlight = context.window.CassiniFlight;
   vm.runInNewContext(source.slice(start, end) + '\nthis.anchor = descentAnchor(); this.geometry = descentGeometry();', context);
   return { id: context.anchor?.id, value: context.geometry && JSON.parse(JSON.stringify(context.geometry)) };
 }
 
-test('Home handoff keeps its existing geometry while About is visible', () => {
+test('Home handoff anchors its contact geometry to the visible About card', () => {
   const result = geometry();
   assert.equal(result.id, 'about');
-  assert.deepEqual(result.value, { sx: 800, sy: 400, start: 1980, border: 3400, clearance: 24, endY: 1040, distance: 876 });
+  assert.deepEqual(result.value, { sx: 800, sy: 400, start: 1980, border: 3400, clearance: 2, endY: 1040, distance: 898 });
 });
 
 test('hiding About anchors the handoff to the first visible remaining Home section', () => {

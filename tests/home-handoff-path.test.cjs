@@ -69,3 +69,45 @@ test('Home path reverses deterministically when visitors scroll back', () => {
     }
   }
 });
+
+test('The last ember stays fully visible until the actual border is nearby', () => {
+  const scope={smooth,Math};
+  vm.runInNewContext(source.slice(start,end)+'\nthis.fade=handoffFade;',scope);
+  for(const gap of [24,32,48,80,200])assert.equal(scope.fade(gap),1);
+  assert.equal(scope.fade(12),.5);
+  assert.equal(scope.fade(0),0);
+  assert.equal(scope.fade(-30),0);
+  let previous=0;
+  for(let gap=0;gap<=24;gap+=.05){
+    const a=scope.fade(gap);
+    assert.ok(a>=previous&&a-previous<.004,'the last 24 pixels fade smoothly');
+    previous=a;
+  }
+});
+
+test('Descent meets the real biography edge on phone and desktop before fading out', () => {
+  const geometryStart=source.indexOf('  function descentGeometry()');
+  const geometryEnd=source.indexOf('  function readScroll()',geometryStart);
+  for(const [vw,vh] of sizes)for(const dpr of densities){
+    const S=vw/1672,story={offsetHeight:vh*6},anchor={offsetTop:vh*6+260};
+    const scope={Math,smooth,vw,vh,dpr,p:1,SAT:{x:573,y:318},FINAL_ENTRY:.785,
+      F:{left:0,top:0,S},story,cvFall:{height:vh*dpr},
+      documentTop:el=>el===story?0:el.offsetTop,descentAnchor:()=>anchor,
+      burnFlight:()=>({x:480,y:220}),P:(x,y)=>[x*S*dpr,y*S*dpr],
+      CassiniFlight:{view:()=>({x:573*S,y:318*S,zoom:1})}};
+    vm.runInNewContext(source.slice(geometryStart,geometryEnd)+source.slice(start,end)+
+      '\nthis.descent=descentGeometry();this.pose=handoffPose;this.fade=handoffFade;',scope);
+    const g=scope.descent,stop=scope.pose(1,false),scrollEnd=g.start+g.distance;
+    assert.equal(g.clearance,2);
+    assert.ok(Math.abs(g.border-scrollEnd-stop.y/dpr-2)<1e-9);
+    let previous=0;
+    for(let q=.8;q<=1;q+=.001){
+      const scroll=g.start+g.distance*q,y=scope.pose(q,false).y/dpr;
+      const gap=g.border-scroll-g.clearance-y;
+      if(gap>=24)assert.equal(scope.fade(gap),1,'no premature fade in open space');
+      assert.ok(y>=previous);previous=y;
+    }
+    const terminalGap=g.border-scrollEnd-g.clearance-stop.y/dpr;
+    assert.ok(scope.fade(terminalGap)<1e-20,'the light is gone at contact');
+  }
+});

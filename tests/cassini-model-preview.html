@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><base href="../"><title>Cassini model verification</title>
+<style>body{background:#0a101b;color:#eee;font:16px system-ui}img{max-height:75vh;max-width:95vw}output{display:block}button,a{margin:12px;color:inherit}</style>
+<output id="status">Loading the NASA orbiter…</output><a id="export" download="cassini-opening.png">Download model render</a><br><img id="preview" alt="NASA Cassini model render">
+<script>
+if(new URLSearchParams(location.search).has('fallback')){
+  const get=HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext=function(type,...args){return type.startsWith('webgl')?null:get.call(this,type,...args);};
+}
+</script>
+<script src="js/cassini-flight.js"></script><script src="js/cassini-art.js"></script>
+<script>
+const started=performance.now();
+function inspect(){
+  const model=document.querySelector('#cassiniModel');
+  if(model?.dataset.state==='ready'){
+    const stage=new URLSearchParams(location.search).get('p')||0;
+    const scratch=document.createElement('canvas');scratch.width=scratch.height=1024;
+    CassiniArt.draw(scratch.getContext('2d'),512,512,1,0,CassiniFlight.attitude(Number(stage)));
+    const url=model.toDataURL('image/png');
+    document.querySelector('#export').href=url;document.querySelector('#preview').src=url;
+    const context=scratch.getContext('2d'),pixels=context.getImageData(0,0,1024,1024).data;
+    let count=0;for(let i=3;i<pixels.length;i+=4)if(pixels[i]>16)count++;
+    document.querySelector('#status').textContent=`ready · Cassini derivative · ${count} visible pixels · pose ${stage}`;
+  }else if(model?.dataset.state==='fallback'||performance.now()-started>15000){
+    const scratch=document.createElement('canvas');scratch.width=scratch.height=1024;
+    CassiniArt.draw(scratch.getContext('2d'),512,512,1,0,CassiniFlight.attitude(0));
+    document.querySelector('#preview').src=scratch.toDataURL();
+    document.querySelector('#status').textContent=`${model?.dataset.state} · model still`;
+  }else requestAnimationFrame(inspect);
+}requestAnimationFrame(inspect);
+</script></html>

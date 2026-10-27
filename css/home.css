@@ -93,3 +93,9 @@ body[data-page="home"] #site-header.scrolled {
 .hero-painted-sky { display: none; width: 100%; height: 100%; }
 body[data-home-sky="impressionist"] .hero-cosmos { background-image: none; filter: none; opacity: 1; }
 body[data-home-sky="impressionist"] .hero-painted-sky { display: block; }
+
+/* Give the final orbit and the atmospheric farewell room to breathe. */
+body[data-page="home"] .story { height: 620vh; }
+@media (max-width: 700px) { body[data-page="home"] .story { height: 560vh; } }
+/* Keep the flight narration clear of the traveller and cat in the foreground. */
+body[data-page="home"] .mission-log { top: max(84px, 12vh); bottom: auto; }

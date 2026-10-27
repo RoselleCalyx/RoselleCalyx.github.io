@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><base href="../"><title>Foreground contour inspection</title>
+<style>body{margin:0;background:#101522;color:#eee;font:14px system-ui}nav{padding:10px}button{margin-right:12px}svg{width:100vw;height:85vh}text{fill:#b5ede3;font-size:6px;paint-order:stroke;stroke:#000;stroke-width:.8}</style>
+<nav><button onclick="frame('380 310 390 285')">Traveller and cat</button><button onclick="frame('540 450 110 110')">Legs and boots</button><button onclick="frame('0 360 1672 401')">Rock ridge</button><button onclick="frame('0 0 1672 761')">Whole painting</button><button onclick="toggle()">Toggle contours</button><output id="checks"></output></nav>
+<svg id="view" viewBox="380 310 390 285"><image href="assets/home-landscape.webp" width="1672" height="761"/><g id="grid"></g><g id="contours"></g></svg>
+<script src="js/home-occlusion.js"></script>
+<script>
+const g=document.querySelector('#grid'),ns='http://www.w3.org/2000/svg';
+for(let x=0;x<1672;x+=10)for(let y=0;y<761;y+=10){if(x<380||x>770||y<310||y>600)continue;const t=document.createElementNS(ns,'circle');t.setAttribute('cx',x);t.setAttribute('cy',y);t.setAttribute('r','.5');t.setAttribute('fill','#6de0d0');g.appendChild(t);if(x%50===0&&y%50===0){const text=document.createElementNS(ns,'text');text.setAttribute('x',x+1);text.setAttribute('y',y-1);text.textContent=x+','+y;g.appendChild(text);}}
+const outlines=document.querySelector('#contours');
+for(const d of Object.values(HomeOcclusion.contours)){
+ const p=document.createElementNS(ns,'path');p.setAttribute('d',d);p.setAttribute('fill','none');p.setAttribute('stroke','#6de0d0');p.setAttribute('stroke-width','.65');outlines.appendChild(p);
+}
+const mask=HomeOcclusion.createMask(),mc=mask.getContext('2d');
+const probes=[[544,360,true],[480,465,true],[613,510,true],[634,451,true],[672,518,true],[737,573,true],[700,650,true],[100,600,true],[800,200,false],[600,400,false],[619,471,false],[650,425,false],[716,510,false],[900,540,false],[1110,520,false],[1510,700,false],[585,500,true],[590,495,true],[595,500,true],[595,510,true],[590,520,true],[580,525,true],[599,532,true],[628,505,false]];
+const pass=probes.filter(([x,y,solid])=>(mc.getImageData(x,y,1,1).data[3]>240)===solid).length;
+document.querySelector('#checks').textContent=`${pass}/${probes.length} mask probes passed`;
+function toggle(){outlines.style.display=outlines.style.display==='none'?'':'none';}
+function frame(box){document.querySelector('#view').setAttribute('viewBox',box);}
+</script>
