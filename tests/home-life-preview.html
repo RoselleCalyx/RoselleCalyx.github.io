@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><base href="../"><title>Living painting verification</title>
+<style>body{margin:0;background:#07101d;color:#eee;font:14px system-ui}nav{padding:14px}button{margin:0 10px}#stage{position:relative;width:100%;overflow:hidden;aspect-ratio:1672/761}canvas{position:absolute;inset:0;width:100%;height:100%}#export{color:#efdab1;margin:0 15px}output{margin:10px}</style>
+<nav><button id="motion">Pause breeze</button><button id="light">Toggle entry light</button><a id="export" download="living-painting.png">Export frame</a><output id="state">Loading…</output></nav><div id="stage"><canvas id="original"></canvas></div>
+<script>
+if(new URLSearchParams(location.search).has('fallback')){
+  const get=HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext=function(type,...args){return type.startsWith('webgl')?null:get.call(this,type,...args);};
+}
+</script>
+<script src="js/home-occlusion.js"></script><script src="js/home-life.js"></script>
+<script>
+const original=document.getElementById('original'),living=HomeLife.create(original),art=new Image();let calm=false,burn=0;
+original.style.width=original.style.height='100%';
+art.onload=()=>{original.width=1672;original.height=761;original.getContext('2d').drawImage(art,0,0);living.prepare();document.getElementById('state').textContent=living.ready?'Living painting ready':'Original painting fallback';};art.src='assets/home-landscape.webp';
+document.getElementById('motion').onclick=e=>{calm=!calm;e.target.textContent=calm?'Resume breeze':'Pause breeze';};
+document.getElementById('light').onclick=()=>{burn=burn?0:1;};
+function frame(t){living.render(t/1000,calm,burn,{x:405,y:264});requestAnimationFrame(frame);}requestAnimationFrame(frame);
+document.getElementById('export').onpointerdown=()=>{document.getElementById('export').href=(living.ready?document.getElementById('livingLandscape'):original).toDataURL();};
+</script></html>

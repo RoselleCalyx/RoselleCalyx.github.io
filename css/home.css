@@ -99,3 +99,10 @@ body[data-page="home"] .story { height: 620vh; }
 @media (max-width: 700px) { body[data-page="home"] .story { height: 560vh; } }
 /* Keep the flight narration clear of the traveller and cat in the foreground. */
 body[data-page="home"] .mission-log { top: max(84px, 12vh); bottom: auto; }
+
+.hero-living-land { translate: 0 calc(var(--fall,0) * 20vh); }
+.ring-entry { position:absolute; right:4.1vw; bottom:calc(4.2vh + 126px); display:flex; align-items:center; gap:10px; min-height:44px; padding:9px 15px; border:1px solid rgb(244 226 180 / .3); border-radius:40px; background:rgb(7 12 23 / .54); color:var(--gold-2); font-size:.72rem; letter-spacing:.06em; backdrop-filter:blur(10px); transition:background .2s,border-color .2s; }
+.ring-entry:hover { background:rgb(30 31 36 / .8); border-color:var(--gold); }
+.ring-entry:focus-visible { outline:2px solid var(--gold); outline-offset:5px; }
+@media(max-width:700px){.ring-entry {right:18px;bottom:78px;padding:7px 13px;font-size:.65rem;}}
+@media(prefers-reduced-motion:reduce){.hero-living-land{translate:none;}}

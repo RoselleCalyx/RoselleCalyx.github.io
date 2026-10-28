@@ -5,6 +5,7 @@ Chen Jia 的个人主页。纯静态网站：没有构建步骤，推送到 GitH
 | 页面 | 文件 | 内容 |
 | --- | --- | --- |
 | Home | `index.html` | 土星、Cassini 与山巅的旅人：向下滚动，Cassini 坠入土星大气层 |
+| Among the Rings | `rings.html` | 环带观测台：冰粒近景、真实积分轨迹、密度图、无卫星对照与逐粒追踪 |
 | Papers | `papers.html` | 论文卡片、图片、PDF / Code / Project / Data 链接、BibTeX |
 | Gallery | `gallery.html` | 足迹时间线、照片墙、世界地图 |
 | Message | `message.html` | 漂流瓶：写信给我、捡起别人的瓶子 |
@@ -52,6 +53,8 @@ python -m http.server 8000
 - 故事结束后，整幅画面会溶进同一片星空；最后的辉光缓缓下坠，依次变成金色余烬、灰烬和微光，在 About 边框上方消散。终点随实际布局更新，快速滚动也不会盖住 bio
 - 向下滚动推进故事；不滚动就不会强制播放。`index.html?p=0.7` 可以直接停在某一时刻；`index.html?fall=0.6` 可以预览辉光下坠的某个阶段（0–1，预览用）
 - 自适应画质：低性能设备 / 触屏会降低土星分辨率和粒子数量；系统“减少动态效果”和 ☾ 安静模式都会生效
+
+首页现在有随风轻动的发梢、衣料与花草、小猫的呼吸和偶尔动耳，以及 Cassini 烧蚀时极淡的前景暖光。点击土星或 **Explore the rings** 可以进入独立的冰粒近景；手机与安静模式有相应适配。画面与物理模型的范围见 [Living worlds](docs/living-worlds.md)。
 
 ## 星图说明
 

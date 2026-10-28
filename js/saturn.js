@@ -25,6 +25,7 @@
   const cvR = document.getElementById("rings"), cR = cvR ? cvR.getContext("2d") : cF;   // spacecraft, wake and foreground occlusion
   if (!story || !cS || !cF) return;
   const land = document.getElementById("heroLand");
+  const living=window.HomeLife?.create(land);
   const ui = document.getElementById("heroUI");
   const cosmos = document.getElementById("heroCosmos");
   const paintedSky = document.createElement("canvas"), paintedContext = paintedSky.getContext("2d");
@@ -285,6 +286,7 @@
       }
     }
     c.putImageData(im, 0, 0);
+    living?.prepare();
   };
   landscape.src = "assets/home-landscape.webp";
   function skyStyle() {
@@ -321,6 +323,7 @@
       land.style.left = F.left + "px";
       land.style.top = F.top + LAND_Y0 * F.S + "px";
     }
+    living?.layout();
     const want = Math.min(Math.round(SAT.R * F.S * dpr), lowPower ? 320 : 480);
     if (!planet || Math.abs(want - Rpx) / Rpx > 0.08) {
       const first = !planet;
@@ -734,6 +737,8 @@
     if(target===0||Math.abs(target-fall)<.0005)fall=target;
     camera=CassiniFlight.view(p,vw,vh,F);
     drawHandoff(calm);
+    const glow=CassiniFlight.entryEffects(p);
+    living?.render(time,calm,glow.plume*glow.fade,burnFlight(p));
     if (Math.abs(pTarget - p) < 0.0005) p = pTarget;
     const S = F.S * dpr * camera.zoom;
 

@@ -82,7 +82,8 @@
   function apply(context,frame,density){
     const scale=frame.S*density;
     context.save();context.globalAlpha=1;context.globalCompositeOperation='destination-out';
-    context.drawImage(createMask(),frame.left*density,(frame.top+180*frame.S)*density,1672*scale,761*scale);
+    const live=window.HomeLife?.active;
+    context.drawImage(live?.ready?live.mask:createMask(),frame.left*density,(frame.top+180*frame.S)*density,1672*scale,761*scale);
     context.restore();
   }
   window.HomeOcclusion={createMask,apply,contours:{traveller,cat,ridge}};

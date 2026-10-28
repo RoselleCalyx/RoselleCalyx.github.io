@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Living worlds · viewport preview</title>
+<style>body{margin:0;background:#111b29;color:#eee;font:12px system-ui}nav{min-height:40px;display:flex;gap:15px;align-items:center;justify-content:center;flex-wrap:wrap}a{color:#edd5a5}#wrap{position:relative;margin:auto}iframe{display:block;position:absolute;top:0;left:0;border:1px solid #667;transform-origin:top left}output{display:block;text-align:center;padding:8px}</style>
+<nav><a href="../index.html" target="scene">Living overlook</a><a href="../rings.html?paused=1" target="scene">Among the rings</a><span id="dimensions"></span></nav><div id="wrap"><iframe title="Viewport preview" name="scene" src="../rings.html?paused=1"></iframe></div><output id="check">Checking layout…</output>
+<script>
+const q=new URLSearchParams(location.search),w=Math.max(320,Math.min(1920,+q.get('w')||390)),h=Math.max(480,Math.min(1200,+q.get('h')||700));
+const frame=document.querySelector('iframe'),wrap=document.getElementById('wrap'),scale=Math.min(1,(innerWidth-24)/w);
+frame.style.width=w+'px';frame.style.height=h+'px';frame.style.transform='scale('+scale+')';wrap.style.width=w*scale+'px';wrap.style.height=h*scale+'px';document.getElementById('dimensions').textContent=w+' × '+h;
+frame.onload=()=>{setTimeout(()=>{const d=frame.contentDocument,controls=d.querySelector('#ringControls')?.getBoundingClientRect(),overflow=d.documentElement.scrollWidth>d.documentElement.clientWidth;document.getElementById('check').textContent=(overflow?'OVERFLOW':'No horizontal overflow')+(controls?' · Controls '+(controls.bottom<=h&&controls.left>=0&&controls.right<=w?'fit':'OUTSIDE'):'');},900);};
+</script></html>
