@@ -342,8 +342,8 @@
   }
 
   /* ---------- Cassini, drawn as in the painting: boom forward, dish behind ---------- */
-  function drawCassini(c, x, y, s, ang, orientation) {
-    if (window.CassiniArt) CassiniArt.draw(c, x, y, s, ang, orientation);
+  function drawCassini(c, x, y, s, ang, orientation, light) {
+    if (window.CassiniArt) CassiniArt.draw(c, x, y, s, ang, orientation, light);
   }
 
   const FIRE = (() => {
@@ -451,7 +451,7 @@
     const f=burnFlight(progress),[x,y]=P(f.x,f.y),s=f.scale*S;
     const e=CassiniFlight.entryEffects(progress);
     if(e.sheath>0&&e.fade>0)drawEntryFire(c,x,y,S*.72,f,e,progress,motionTime);
-    if(e.hull>0){c.save();c.globalAlpha=e.hull;drawCassini(c,x,y,s,f.angle,f.orientation);c.restore();}
+    if(e.hull>0){c.save();c.globalAlpha=e.hull;drawCassini(c,x,y,s,f.angle,f.orientation,CassiniFlight.illumination(f,progress));c.restore();}
     // Ablation follows the velocity; fragments lag in the wake under drag.
     const breakup=e.breakup,fade=e.embers;
     if(breakup>0&&fade>0){

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><base href="../"><title>Cassini lighting states</title>
+<style>body{margin:0;background:#070a12;color:#cfd6e4;font:13px system-ui}main{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;padding:8px}
+figure{margin:0;background:radial-gradient(circle at 70% 80%,#2a1d22,#0b0f1a 70%)}canvas{width:100%;display:block}figcaption{padding:4px 8px}</style>
+<output id="status">Loading…</output><main id="grid"></main>
+<script src="js/cassini-flight.js"></script><script src="js/cassini-art.js"></script>
+<script>
+// Renders the craft at chosen scroll progress values with the scene's light.
+const stages=(new URLSearchParams(location.search).get('p')||'0,.12,.26,.4,.55,.7,.75,.77').split(',').map(Number);
+const zoom=Number(new URLSearchParams(location.search).get('zoom')||1.6);
+const tiles=stages.map(p=>{
+  const f=document.createElement('figure'),c=document.createElement('canvas');c.width=c.height=640;
+  const cap=document.createElement('figcaption');f.append(c,cap);document.querySelector('#grid').append(f);return {p,c,cap};
+});
+function frame(){
+  if(document.querySelector('#cassiniModel')?.dataset.state==='ready'){
+    for(const t of tiles){
+      const q=CassiniFlight.sample(t.p),light=CassiniFlight.illumination(q,t.p),g=t.c.getContext('2d');
+      g.clearRect(0,0,640,640);CassiniArt.draw(g,320,320,640/864*zoom,q.angle,q.orientation,light);
+      t.cap.textContent=`p ${t.p} · lit ${light.lit.toFixed(2)} · warmth ${light.warmth.toFixed(2)} · planetshine ${light.planetshine.toFixed(2)} · heat ${light.heat.toFixed(2)}`;
+    }
+    document.querySelector('#status').textContent='ready';
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></html>

@@ -25,14 +25,16 @@ function removeOriginalBoom(T,source){
 
 export function addEpicDetails(T,rig,source){
   removeOriginalBoom(T,source);
-  const design=new T.Group();design.name='Cassini · gilded voyager';rig.add(design);
-  const champagne=new T.MeshStandardMaterial({color:0xbba477,metalness:.58,roughness:.47});
-  const ceramic=new T.MeshStandardMaterial({color:0xc8b99b,metalness:.18,roughness:.7});
-  const graphite=new T.MeshStandardMaterial({color:0x252d38,metalness:.48,roughness:.58});
-  const titanium=new T.MeshStandardMaterial({color:0x6e6c65,metalness:.65,roughness:.5});
-  const amber=new T.MeshStandardMaterial({color:0xc9a269,emissive:0xffc178,emissiveIntensity:.8,metalness:.3,roughness:.5});
-  const lens=new T.MeshPhysicalMaterial({color:0x18343c,metalness:.55,roughness:.18,clearcoat:.9,
-    emissive:0x3a7b81,emissiveIntensity:.18});
+  const design=new T.Group();design.name='Cassini · nocturne';rig.add(design);
+  // Nocturne finish: satin dark metals that only reveal form where the moving
+  // sunset grazes them, a trace of smoked champagne, and cold signal hairlines.
+  const champagne=new T.MeshStandardMaterial({color:0x9c8b6b,metalness:.8,roughness:.3});
+  const ceramic=new T.MeshPhysicalMaterial({color:0xb9bcbf,metalness:.12,roughness:.5,clearcoat:.45,clearcoatRoughness:.35});
+  const graphite=new T.MeshStandardMaterial({color:0x262d37,metalness:.58,roughness:.36});
+  const titanium=new T.MeshStandardMaterial({color:0x585c64,metalness:.82,roughness:.32});
+  const signal=new T.MeshStandardMaterial({color:0x10202a,emissive:0x8fdcff,emissiveIntensity:2.3,metalness:.2,roughness:.4});
+  const lens=new T.MeshPhysicalMaterial({color:0x0b1d24,metalness:.4,roughness:.12,clearcoat:1,
+    iridescence:.8,iridescenceIOR:2,emissive:0x2f9fb8,emissiveIntensity:.4});
   function mesh(geometry,material,x=0,y=0,z=0,parent=design){
     const item=new T.Mesh(geometry,material);item.position.set(x,y,z);parent.add(item);return item;
   }
@@ -49,7 +51,13 @@ export function addEpicDetails(T,rig,source){
     }
     mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),16,.009,4,false),champagne);
   }
-  for(let i=0;i<6;i++)rim(2.015,.012,2.295,amber,i*Math.PI/3+.15,.16);
+  for(let i=0;i<6;i++)rim(2.015,.012,2.295,signal,i*Math.PI/3+.15,.16);
+  // A faint detached halo floats just behind the dish lip, like a listening ring.
+  const halo=new T.MeshBasicMaterial({color:0x7fcff2,transparent:true,opacity:.55,blending:T.AdditiveBlending,depthWrite:false});
+  rim(2.13,.009,2.2,halo);
+  // An octagonal signal line girds the bus between the shields and the base.
+  const girdle=mesh(new T.TorusGeometry(1.29,.012,4,8),signal,0,-1.27,0);
+  girdle.rotation.set(Math.PI/2,0,Math.PI/8);
   // A compact faceted collar connects the ivory antenna to the armored bus.
   mesh(new T.CylinderGeometry(.56,.73,.32,12),graphite,0,1.02,0);
   mesh(new T.CylinderGeometry(.73,.73,.035,12),champagne,0,.85,0);
@@ -67,7 +75,7 @@ export function addEpicDetails(T,rig,source){
     const panel=mesh(shieldGeometry,i%3===0?graphite:ceramic,r*Math.sin(a),-.56,r*Math.cos(a));panel.rotation.y=a;
     const rail=mesh(railGeometry,champagne,1.24*Math.sin(a+.29),-.56,1.24*Math.cos(a+.29));rail.rotation.y=a+.29;
     if(i%2===0){
-      const seam=mesh(seamGeometry,amber,1.25*Math.sin(a),-.51,1.25*Math.cos(a));seam.rotation.y=a;
+      const seam=mesh(seamGeometry,signal,1.25*Math.sin(a),-.51,1.25*Math.cos(a));seam.rotation.y=a;
     }
     for(const y of [-1.2,.08]){
       const fastener=mesh(new T.SphereGeometry(.031,6,4),champagne,1.26*Math.sin(a),y,1.26*Math.cos(a));
@@ -91,7 +99,7 @@ export function addEpicDetails(T,rig,source){
   // A slender carbon-composite instrument mast replaces the bulky gold
   // sleeve: three tapering spars, tiny braces, three joints and a sensor tip.
   // Its modestly shortened span is a fictional design choice for this scene.
-  const carbon=new T.MeshStandardMaterial({color:0x303b45,metalness:.32,roughness:.68});
+  const carbon=new T.MeshStandardMaterial({color:0x1d242c,metalness:.45,roughness:.5});
   function spar(from,to,radius,material){
     const direction=new T.Vector3().subVectors(to,from),middle=from.clone().add(to).multiplyScalar(.5);
     const item=mesh(new T.CylinderGeometry(radius*.65,radius,direction.length(),6),material,middle.x,middle.y,middle.z);
@@ -112,7 +120,7 @@ export function addEpicDetails(T,rig,source){
     }
   }
   const braceGeometry=new T.BufferGeometry();braceGeometry.setAttribute('position',new T.Float32BufferAttribute(braces,3));
-  design.add(new T.LineSegments(braceGeometry,new T.LineBasicMaterial({color:0x75808b,transparent:true,opacity:.65})));
+  design.add(new T.LineSegments(braceGeometry,new T.LineBasicMaterial({color:0x5f6c7a,transparent:true,opacity:.6})));
   for(const t of [.04,.36,.69,.985]){
     const collar=mesh(new T.CylinderGeometry(.09-.04*t,.09-.04*t,.035,10),champagne,0,mastY,z0+(z1-z0)*t);
     collar.rotation.x=Math.PI/2;
@@ -120,6 +128,11 @@ export function addEpicDetails(T,rig,source){
   const sensor=mesh(new T.CylinderGeometry(.065,.075,.18,6),graphite,0,mastY,z1-.06);sensor.rotation.x=Math.PI/2;
   mesh(new T.TorusGeometry(.056,.009,4,12),champagne,0,mastY,z1-.155);
   mesh(new T.CircleGeometry(.04,12),lens,0,mastY,z1-.166).rotation.y=Math.PI;
+  // A slender listening spire rises from the dish feed; its tip carries the
+  // beacon, whose pulse the renderer draws over the model.
+  mesh(new T.CylinderGeometry(.008,.016,1.2,6),titanium,0,2.42,-.1);
+  mesh(new T.TorusGeometry(.035,.006,4,16),signal,0,2.62,-.1).rotation.x=Math.PI/2;
+  mesh(new T.SphereGeometry(.028,8,6),new T.MeshBasicMaterial({color:0xe6f8ff}),0,3.03,-.1);
   // Reuse immutable meshes/materials; the entire design shares the rigid
   // spacecraft attitude and the scene's lighting, including during breakup.
   design.userData.fictional=true;

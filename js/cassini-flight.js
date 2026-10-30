@@ -100,5 +100,26 @@
       fade:1-ease(.795,.865,p),embers:1-ease(.817,.891,p)};
   }
 
-  window.CassiniFlight={sample,orbit,view,attitude,entryEffects,earthDirection:EARTH};
+  // The light that reaches the hull at a sampled point, in model space (+Y up,
+  // +Z toward the viewer). The horizon sun sits far beyond the painted glow, so
+  // the craft is mostly backlit; Saturn eclipses it softly on the far passage
+  // and during entry, and reflects a faint cream planetshine. Artistic, fixed.
+  const SUN=[960,602,-500],SATURN=[573,318,0,262];
+  function unit(x,y,z){const l=Math.hypot(x,y,z)||1;return [x/l,y/l,z/l];}
+  function illumination(q,p){
+    const z=q.z||0,sun=unit(SUN[0]-q.x,SUN[1]-q.y,SUN[2]-z);
+    const cx=SATURN[0]-q.x,cy=SATURN[1]-q.y,cz=-z,d=Math.hypot(cx,cy,cz);
+    const along=cx*sun[0]+cy*sun[1]+cz*sun[2];
+    const miss=Math.sqrt(Math.max(0,d*d-along*along))/SATURN[3];
+    const eclipse=along>0?1-ease(.82,1.08,miss):0;
+    const e=entryEffects(p);
+    return {sun:[sun[0],-sun[1],sun[2]],planet:[cx/d,-cy/d,cz/d],
+      lit:1-.86*eclipse,
+      // Low over the horizon the light is deep amber; higher, a paler gold.
+      warmth:clamp((q.y-120)/480),
+      planetshine:clamp(Math.pow(SATURN[3]*1.6/d,2),0,1),
+      heat:e.sheath*e.fade,motion:[Math.cos(q.motionAngle||0),-Math.sin(q.motionAngle||0),0]};
+  }
+
+  window.CassiniFlight={sample,orbit,view,attitude,entryEffects,illumination,earthDirection:EARTH};
 })();

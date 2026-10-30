@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 const context={window:{}};
 vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../js/cassini-flight.js'),'utf8'),context);
-const {orbit,sample,view}=context.window.CassiniFlight;
+const {orbit,sample,view,illumination}=context.window.CassiniFlight;
 test('Kepler orbit preserves radius in the three-dimensional projection',()=>{
   for(let i=0;i<200;i++){
     const q=orbit(i*Math.PI/100);
@@ -109,4 +109,16 @@ test('Entry brightness and visibility stay bounded and continuous when scrubbing
     const a=entryEffects(p-1e-7),b=entryEffects(p+1e-7);
     for(const k of Object.keys(a))assert.ok(Math.abs(a[k]-b[k])<.0001);
   }
+});
+test('Scene light follows the craft: sunset rim, Saturn eclipse and entry heat',()=>{
+  const at=p=>illumination(sample(p),p);
+  const opening=at(0),shadow=at(.27),entry=at(.775);
+  assert.equal(opening.lit,1);assert.equal(opening.heat,0);
+  // The far passage crosses Saturn's shadow; the light dims but never vanishes.
+  assert.ok(shadow.lit<.3&&shadow.lit>=.14);
+  assert.ok(entry.heat>.9);
+  for(const q of [opening,shadow,entry])for(const v of [q.sun,q.planet,q.motion])
+    assert.ok(Math.abs(Math.hypot(...v)-1)<1e-9);
+  // The horizon sun lies beyond the painting, so the craft is backlit.
+  assert.ok(opening.sun[2]<0);
 });

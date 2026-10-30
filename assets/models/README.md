@@ -16,14 +16,16 @@ are removed from the rendered geometry and replaced with a narrower, moderately
 shortened three-spar carbon truss, small champagne joints and a compact sensor.
 The source bus and antenna geometry stay. Own additions include beveled ceramic
 shields, narrow structural rails, a recessed optical head, compact heat exchangers,
-and segmented dish trim with restrained amber accents. Warm materials and
-horizon lighting connect it to the painted landscape. These new details are our
+segmented dish trim with cold signal hairlines, a faint halo behind the dish lip
+and a slender beacon spire on the feed. The "nocturne" finish uses satin dark
+metals, thin-film anodized foil and a pearl ceramic dish, lit by the scene's
+moving sunset, Saturn's shadow and planetshine. These new details are our
 art direction, not historical Cassini engineering. The associated NASA download page credits the model to
 NASA/Brian E. Kumanchik; NASA makes these resources available under its
 [media usage guidelines](https://www.nasa.gov/nasa-brand-center/images-and-media/).
 No NASA endorsement is implied.
 
-`cassini-opening-gilded.webp` is a transparent still rendered locally from this exact
+`cassini-opening-nocturne.webp` is a transparent still rendered locally from this exact
 model at the opening pose. It is the loading, WebGL-unavailable and context-loss
 fallback, so the silhouette does not switch to a different generated spacecraft.
 

@@ -51,8 +51,8 @@ The active renderer uses the orbiter-only GLB published by NASA/Brian E. Kumanch
 from [Cassini-Huygens (A)](https://science.nasa.gov/3d-resources/cassini-huygens-a/).
 The 1.58 MB source model supplies the recognizable Cassini structure. Our own
 `js/cassini-design.js` adds a fictional future exploration edition: beveled ceramic
-panels and gold structural rails, an optical head, compact heat exchangers, a
-segmented antenna lip and subtle amber contact arcs. The original thick foil mast
+panels and smoked-champagne rails, an optical head, compact heat exchangers, a
+segmented antenna lip with cold signal arcs, a dish halo and a beacon spire. The original thick foil mast
 and collars are removed only outside the bus, then replaced with a narrower,
 moderately shorter three-spar carbon truss, small champagne joints and sensor tip.
 The bus and antenna remain the design's foundation. These refinements prioritize
@@ -60,9 +60,22 @@ the epic painted setting rather than historical hardware fidelity.
 See `assets/models/README.md` for the source, attribution and configuration.
 
 A locally vendored Three.js r170 renderer draws the same rigid object into a
-transparent canvas. The ivory dish, softened hardware, champagne foil and warm rim light are our
-own finish over the official geometry. Lighting remains fixed in scene space,
-so it is consistent across orientations.
+transparent canvas. The "nocturne" finish is our own over the official geometry:
+satin graphite and titanium, thin-film anodized foil whose sheen shifts between
+bronze and violet, a pearl ceramic dish, cold signal hairlines, a faint halo
+behind the dish and a slow double-pulse beacon on a feed spire (steady under
+reduced motion).
+
+Lighting lives in scene space and follows the craft's place in the painting
+(`CassiniFlight.illumination`). The horizon sun sits far beyond the painted glow,
+so the hull is mostly backlit: a warm rim plus the sunset sky's scattered glow,
+deep amber low over the horizon and paler gold higher up, against a cold
+viewer-side fill. On the far passage (about .23–.30) and during entry the ray
+toward the sun crosses Saturn, so the craft dims into a soft eclipse and only
+the beacon remains clear. Saturn adds a cream planetshine that grows with
+proximity, and plasma heat lights the hull from the direction of motion. A
+small painted environment map gives the metals their reflections. This is art
+direction, not a radiometric model.
 The craft no longer crossfades independent generated viewpoints.
 
 The model's +Y antenna normal tracks one explicit Earth direction in the scene:
@@ -74,7 +87,7 @@ The Earth vector is an artistic viewing convention, not the historical Earth
 position recovered from ephemerides. The orbital story and attitude timing remain
 compressed and illustrative.
 
-The opening still (`assets/models/cassini-opening-gilded.webp`) is rendered from
+The opening still (`assets/models/cassini-opening-nocturne.webp`) is rendered from
 the exact same model and pose. Loading, missing WebGL, or context loss uses this
 still instead of changing the spacecraft's shape. GPU renders are cached while
 the attitude is unchanged, and the render resolution reduces for distant views.
