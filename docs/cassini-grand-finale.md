@@ -108,3 +108,27 @@ Background edit prompt:
 ## Verification
 
 86 checks cover orbital geometry, atmospheric drag, continuity, fixed full-scene framing, quaternion normalization, Earth-pointing throughout controlled flight, post-signal tumble, staged atmospheric heating and afterglow, wheel input and biography handoff. Browser checks verify the NASA model reaches its ready state and that the same-model fallback remains visible when WebGL is disabled. The local visual harness is `tests/cassini-model-preview.html`.
+
+
+## Titan, the 22 petals and bloom
+
+Titan now moves on a circular ring-plane orbit compressed to 3.76 Saturn radii
+(the real orbit is 20.3), timed so it passes Cassini at the 11 September 2017
+beat (p ≈ .49) just above the painted horizon, then sets into the clouds. It is
+drawn behind Saturn on the far side. `CassiniFlight.illumination` adds Titan's
+direction and a `titanshine` term; the hull receives a hazy orange light that
+peaks near p .52–.55. Titan's sprite is a hazed orange disc with a thin blue
+upper-haze limb, not a cratered moon.
+
+During the Grand Finale beat (p .27–.49) the 22 final orbits are drawn as
+precessing petals (`orbit(mean, peri, omega)` turns each ellipse in its plane).
+Flown orbits remain faint, the current one is ice-cyan, and a counter reads
+“GRAND FINALE · ORBIT n / 22”. Precession and periapsis are illustrative.
+
+Bloom: after each WebGL render the renderer keeps a 72-pixel copy and adds it
+back, slightly enlarged, with `lighter` compositing. Dark hull contributes almost
+nothing; sunlit rims and plasma-heated metal gain a halo that strengthens with
+entry heat. No per-frame image filtering runs.
+
+The homepage's full-screen canvases are capped at 1.5× pixel density (1.25× on
+low-power devices), about a third less fill than 2× on high-density screens.

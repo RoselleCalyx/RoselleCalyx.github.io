@@ -10,9 +10,11 @@
     for(let i=0;i<9;i++)E-=(E-e*Math.sin(E)-mean)/(1-e*Math.cos(E));
     return E;
   }
-  function orbit(mean,peri=1.085) {
+  // omega turns the ellipse within its own plane (the petal plot's precession).
+  function orbit(mean,peri=1.085,omega=0) {
     const apo=3.65,a=(apo+peri)/2,e=(apo-peri)/(apo+peri);
-    const E=eccentric(mean,e),q=a*(Math.cos(E)-e),w=a*Math.sqrt(1-e*e)*Math.sin(E);
+    const E=eccentric(mean,e),q0=a*(Math.cos(E)-e),w0=a*Math.sqrt(1-e*e)*Math.sin(E);
+    const q=q0*Math.cos(omega)-w0*Math.sin(omega),w=q0*Math.sin(omega)+w0*Math.cos(omega);
     // 64-degree inclination to the ring plane, seen at its 19-degree opening.
     const inc=64*Math.PI/180,B=.33,tilt=.31;
     const rx=-q,ry=w*(Math.cos(inc)*Math.sin(B)-Math.sin(inc)*Math.cos(B));
@@ -100,6 +102,15 @@
       fade:1-ease(.795,.865,p),embers:1-ease(.817,.891,p)};
   }
 
+  // Titan on a circular ring-plane orbit, compressed to 3.76 Saturn radii (the
+  // real orbit is 20.3) and timed to pass Cassini at the 11 September 2017
+  // flyby beat (p = .49). It then sets into the clouds. Artistic, not ephemeris.
+  function titan(p){
+    const theta=-1.366+2.2*p,rho=3.76,B=.33,tilt=.31;
+    const rx=rho*Math.cos(theta),w=rho*Math.sin(theta),ry=w*Math.sin(B);
+    return {x:573+(rx*Math.cos(tilt)-ry*Math.sin(tilt))*R,y:318+(rx*Math.sin(tilt)+ry*Math.cos(tilt))*R,
+      z:w*Math.cos(B)*R,theta};
+  }
   // The light that reaches the hull at a sampled point, in model space (+Y up,
   // +Z toward the viewer). The horizon sun sits far beyond the painted glow, so
   // the craft is mostly backlit; Saturn eclipses it softly on the far passage
@@ -112,8 +123,8 @@
     const along=cx*sun[0]+cy*sun[1]+cz*sun[2];
     const miss=Math.sqrt(Math.max(0,d*d-along*along))/SATURN[3];
     const eclipse=along>0?1-ease(.82,1.08,miss):0;
-    const e=entryEffects(p);
-    return {sun:[sun[0],-sun[1],sun[2]],planet:[cx/d,-cy/d,cz/d],
+    const e=entryEffects(p),t=titan(p),tx=t.x-q.x,ty=t.y-q.y,tz=t.z-z,td=Math.hypot(tx,ty,tz)||1;
+    return {titan:[tx/td,-ty/td,tz/td],titanshine:clamp(Math.pow(.8*R/td,2),0,1),sun:[sun[0],-sun[1],sun[2]],planet:[cx/d,-cy/d,cz/d],
       lit:1-.86*eclipse,
       // Low over the horizon the light is deep amber; higher, a paler gold.
       warmth:clamp((q.y-120)/480),
@@ -121,5 +132,5 @@
       heat:e.sheath*e.fade,motion:[Math.cos(q.motionAngle||0),-Math.sin(q.motionAngle||0),0]};
   }
 
-  window.CassiniFlight={sample,orbit,view,attitude,entryEffects,illumination,earthDirection:EARTH};
+  window.CassiniFlight={sample,orbit,view,attitude,entryEffects,illumination,titan,earthDirection:EARTH};
 })();

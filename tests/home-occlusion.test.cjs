@@ -31,3 +31,13 @@ test('Folded legs and boots remain a continuous foreground during the crossing',
   }
   assert.equal(alpha(628,505),0,'real air between the outer trouser edge and cat stays open');
 });
+
+test('The right-hand outcrop occludes up to its sunlit rims, not into the cloud sea',async()=>{
+  const {data,info}=await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+  const alpha=(x,y)=>data[(y*info.width+x)*4+3];
+  // Each point lay between the old coarse ridge and the real rock edge.
+  for(const [x,y] of [[765,584],[832,600],[900,615],[960,632],[1000,646],[1062,690],[1100,708],[1250,725],[1325,733],[1376,754]])
+    assert.ok(alpha(x,y)>240,`near rock at ${x},${y}`);
+  for(const [x,y] of [[960,620],[1010,636],[1060,670],[1150,688],[1240,712],[1300,725],[1395,758]])
+    assert.equal(alpha(x,y),0,`cloud above the outcrop at ${x},${y}`);
+});

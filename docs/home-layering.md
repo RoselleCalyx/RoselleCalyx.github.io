@@ -44,3 +44,11 @@ an unintended window as the craft crossed story progress .19–.20. Seven regres
 points now cover that fabric/contact region while preserving the real air gap
 between the outer trouser leg and cat. The segment was replayed with actual scroll
 input after the correction.
+
+
+The near ridge from the cat's tail to the right-hand outcrop (x 733–1386) was
+re-traced at 4.7× magnification over the painting. The earlier coarse polyline sat
+up to 25 px below the sunlit rock rims, so the spacecraft occasionally drew over
+rock around story progress .15–.17 and .62–.67. The new edge includes the sunlit
+rims and the bush beside the cat, and keeps cloud gaps open; 17 regression probes
+in `tests/home-occlusion.test.cjs` cover it.

@@ -122,3 +122,20 @@ test('Scene light follows the craft: sunset rim, Saturn eclipse and entry heat',
   // The horizon sun lies beyond the painting, so the craft is backlit.
   assert.ok(opening.sun[2]<0);
 });
+test('Titan passes Cassini at the final flyby beat and its light peaks then',()=>{
+  const {titan}=context.window.CassiniFlight;
+  const gap=p=>{const t=titan(p),s=sample(p);return Math.hypot(t.x-s.x,t.y-s.y);};
+  assert.ok(gap(.49)<120,'Titan sits beside Cassini at 11 September');
+  assert.ok(gap(.2)>500&&gap(.7)>300,'and is far away before and after');
+  const shine=p=>illumination(sample(p),p).titanshine;
+  assert.ok(shine(.52)>.9&&shine(.2)<.1);
+  // The flyby happens above the painted horizon (row 602), so it is visible.
+  assert.ok(titan(.49).y<590);
+});
+test('Grand Finale petals keep the orbit size while precessing',()=>{
+  for(const omega of [-.15,0,.15])for(let i=0;i<40;i++){
+    const q=orbit(i*Math.PI/20,1.03,omega);
+    assert.ok(Math.abs(Math.hypot(q.x-573,q.y-318,q.z)-q.r)<1e-8);
+  }
+  assert.notEqual(orbit(1,1.03,.1).x.toFixed(3),orbit(1,1.03,0).x.toFixed(3));
+});

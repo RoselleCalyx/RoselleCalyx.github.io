@@ -35,6 +35,7 @@
   const dim = document.getElementById("heroDim");
   const finale = document.getElementById("finale");
   const logEl = document.getElementById("missionLog");
+  const finaleCount = document.getElementById("finaleCount");
   const cvFall=document.getElementById('starFall'),cFall=cvFall?.getContext('2d');
   const bio = document.getElementById('about');
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -45,7 +46,7 @@
   const SAT = { x: 573, y: 318, R: 262 };              // Saturn in painting pixels
   const TILT = 0.31;                                     // on-screen tilt of the ring plane
   const B = 0.33;                                        // ring opening angle (~19°)
-  const MOONS = [{ x: 1550, y: 222, r: 30 }, { x: 1455, y: 437, r: 11 }];
+  const MOONS = [{ x: 1550, y: 222, r: 30 }, { x: 1455, y: 437, r: 11 }]; // [0] is Titan, placed by CassiniFlight.titan
   const SUN = { x: 960, y: 602 };                        // the glow on the horizon
 
   const LOG = [
@@ -229,6 +230,26 @@
 
 
   // Cache a lit sphere with surface relief; no texture work runs during animation.
+  // Titan: no craters, a thick orange haze and a thin blue upper-haze limb.
+  function titanSprite(r) {
+    const size = Math.ceil(r * 2.4 + 6), cv = document.createElement("canvas");
+    cv.width = cv.height = size;
+    const c = cv.getContext("2d"), im = c.createImageData(size, size), mid = size / 2;
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const nx = (x + .5 - mid) / r, ny = (y + .5 - mid) / r, dd = nx * nx + ny * ny, d = Math.sqrt(dd), k = (y * size + x) * 4;
+      if (d < 1) {
+        const nz = Math.sqrt(1 - dd), light = .1 + .9 * Math.pow(Math.max(0, nx * -.66 + ny * .35 + nz * .66), .7);
+        const band = .94 + .06 * Math.sin(ny * 7 + n1(nx * 6) * 2), haze = 1 - .25 * Math.pow(d, 6);
+        im.data[k] = 232 * light * band * haze; im.data[k + 1] = 156 * light * band * haze; im.data[k + 2] = 72 * light * band * haze;
+        im.data[k + 3] = 255;
+      } else if (d < 1.18) {
+        // Detached high haze scatters blue on the sunward limb.
+        const a = (1 - (d - 1) / .18) ** 2 * Math.max(0, .25 + .75 * (nx * -.66 + ny * .35) / d);
+        im.data[k] = 120; im.data[k + 1] = 170; im.data[k + 2] = 230; im.data[k + 3] = a * 150;
+      }
+    }
+    c.putImageData(im, 0, 0); return cv;
+  }
   function moonSprite(r, seed) {
     const size = Math.ceil(r * 2 + 6), cv = document.createElement("canvas");
     cv.width = cv.height = size;
@@ -308,7 +329,8 @@
     window.HOME_ART_SIZE?.();
     const r = cvS.getBoundingClientRect();
     if (r.width < 10 || r.height < 10) return;
-    const nextDpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 2);
+    // Four full-screen layers: 1.5x keeps edges crisp at a third less fill than 2x.
+    const nextDpr = Math.min(window.devicePixelRatio || 1, lowPower ? 1.25 : 1.5);
     if (F && r.width === vw && r.height === vh && nextDpr === dpr) return;
     vw = r.width; vh = r.height;
     dpr = nextDpr;
@@ -333,12 +355,20 @@
         renderSaturn(Math.max(60, Math.round(want / 4)), (cv) => { planet = cv; Rpx = Math.max(60, Math.round(want / 4)); planetAt = performance.now(); full(); });
       } else full();
     }
-    moons = MOONS.map((m, i) => moonSprite(m.r * F.S * dpr, i * 17 + 3));
+    moons = MOONS.map((m, i) => i === 0 ? titanSprite(m.r * F.S * dpr) : moonSprite(m.r * F.S * dpr, i * 17 + 3));
     if (veil) {                                             // deep space wrapped around the planet and its rings
       const R = SAT.R * F.S, w = R * 4.8, h = R * 2.8;
       veil.style.width = w + "px"; veil.style.height = h + "px";
       veil.style.transform = `translate(${F.left + SAT.x * F.S - w / 2}px, ${F.top + SAT.y * F.S - h / 2}px) rotate(${TILT}rad)`;
     }
+  }
+
+  // Titan follows its compressed orbit; nearer means slightly larger.
+  function drawTitan(c, t) {
+    if (!moons[0]) return;
+    const [x, y] = P(t.x, t.y), k = camera.zoom / (1 + Math.max(-.4, t.z / SAT.R) * .12);
+    const w = moons[0].width * k, h = moons[0].height * k;
+    c.drawImage(moons[0], x - w / 2, y - h / 2, w, h);
   }
 
   /* ---------- Cassini, drawn as in the painting: boom forward, dish behind ---------- */
@@ -471,6 +501,11 @@
     c.globalAlpha=1;c.globalCompositeOperation='source-over';
   }
 
+  // Grand Finale beat (p .27–.49): which of the 22 orbits is being flown.
+  function grandFinale(progress) {
+    const alpha = smooth(.25, .29, progress) * (1 - smooth(.47, .51, progress));
+    return { alpha, orbit: clamp(Math.floor((progress - .27) / .22 * 22), 0, 21) };
+  }
   function drawOrbit(c, progress, behind) {
     const alpha=smooth(.09,.22,progress)*(1-smooth(.60,.72,progress));
     if(alpha<=0)return;
@@ -486,6 +521,23 @@
         drawing?c.lineTo(x,y):c.moveTo(x,y);drawing=true;
       }
       c.stroke();
+    }
+    // The 22 Grand Finale orbits dive between Saturn and its innermost ring.
+    // Flown orbits stay as faint petals; the current one is highlighted.
+    const finale=grandFinale(progress);
+    if(finale.alpha>0){
+      for(let petal=0;petal<22;petal++){
+        const current=petal===finale.orbit;
+        c.lineWidth=(current?1.2:.6)*dpr;
+        c.strokeStyle=current?`rgba(143,220,255,${finale.alpha*.6})`:`rgba(222,199,148,${finale.alpha*(petal<finale.orbit?.1:.035)})`;
+        c.beginPath();let drawing=false;
+        for(let i=0;i<=200;i++){
+          const q=CassiniFlight.orbit(Math.PI*2*i/200,1.03,(petal-10.5)*.014);
+          if((q.z<0)!==behind){drawing=false;continue;}
+          const [x,y]=P(q.x,q.y);drawing?c.lineTo(x,y):c.moveTo(x,y);drawing=true;
+        }
+        c.stroke();
+      }
     }
     // Short luminous arc records only the spacecraft's recent passage.
     c.lineWidth=1.15*dpr;
@@ -688,6 +740,11 @@
   let logIndex = -1;
   function updateLog() {
     if (!logEl) return;
+    if (finaleCount) {
+      const g = grandFinale(p);
+      finaleCount.style.opacity = g.alpha.toFixed(3);
+      if (g.alpha > 0) finaleCount.textContent = `GRAND FINALE · ORBIT ${String(g.orbit + 1).padStart(2, "0")} / 22`;
+    }
     let i = -1;
     for (let k = 0; k < LOG.length; k++) if (p >= LOG[k][0]) i = k;
     if (i === logIndex) return;
@@ -764,6 +821,8 @@
     cS.fillStyle = g; cS.fillRect(sx - 760 * S, sy - 760 * S, 1520 * S, 1520 * S);
     cS.restore();
     drawOrbit(cS,p,true);
+    const titanPose = CassiniFlight.titan(p);
+    if (titanPose.z < 0) drawTitan(cS, titanPose);
     if (planet) {
       const [px, py] = P(SAT.x, SAT.y);
       const k = (SAT.R * S) / Rpx;
@@ -776,8 +835,9 @@
       cS.restore();
       cS.globalAlpha = 1;
     }
+    if (titanPose.z >= 0) drawTitan(cS, titanPose);
     MOONS.forEach((m, i) => {
-      if (!moons[i]) return;
+      if (!moons[i] || i === 0) return;
       const drift = calm ? 0 : Math.sin(time * .035 + i) * 4;
       const [x, y] = P(m.x + drift, m.y + drift * .25);
       const mw=moons[i].width*camera.zoom,mh=moons[i].height*camera.zoom;

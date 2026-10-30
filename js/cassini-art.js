@@ -20,15 +20,19 @@
     gr.addColorStop(.5,'rgba(90,170,230,.12)');gr.addColorStop(1,'rgba(60,120,200,0)');
     g.fillStyle=gr;g.fillRect(0,0,64,64);return c;
   })();
+  // Bloom: a tiny copy of each render, added back enlarged. Dark hull adds
+  // almost nothing; sunlit rims, the dish and plasma-lit metal gain a halo.
+  const bloom=document.createElement('canvas');bloom.width=bloom.height=72;
+  const bloomContext=bloom.getContext('2d');
   function opening(){
     const F=window.CassiniFlight;
     return F&&F.illumination?F.illumination(F.sample(0),0):null;
   }
   function applyLight(light){
-    const {sun,glow,fill,planet,sky,heat,warm,pale}=lights;
+    const {sun,glow,fill,planet,titan,sky,heat,warm,pale}=lights;
     if(!light){
       sun.position.set(7.4,-2.8,6.7);sun.intensity=2.35;sun.color.setHex(0xffddb0);
-      glow.intensity=planet.intensity=heat.intensity=0;scene.environmentIntensity=.6;return;
+      glow.intensity=planet.intensity=titan.intensity=heat.intensity=0;scene.environmentIntensity=.6;return;
     }
     const lit=light.lit,[x,y]=light.sun;
     sun.position.set(...light.sun).multiplyScalar(10);
@@ -41,6 +45,8 @@
     fill.intensity=.55+.2*(1-lit);
     planet.position.set(...light.planet).multiplyScalar(10);
     planet.intensity=.9*light.planetshine*(.2+.8*lit);
+    // Titan's hazy orange glow washes the hull as the flyby passes.
+    if(light.titan){titan.position.set(...light.titan).multiplyScalar(10);titan.intensity=1.4*light.titanshine;}
     sky.intensity=.44+.12*lit;
     heat.position.set(...light.motion).multiplyScalar(10);heat.intensity=5*light.heat;
     scene.environmentIntensity=.25+.55*lit+.6*light.heat;
@@ -71,12 +77,20 @@
         }
         light=light||opening();
         const key=rig.quaternion.toArray().map(v=>v.toFixed(5)).join(',')+
-          (light?'|'+[light.lit,light.warmth,light.planetshine,light.heat,...light.sun].map(v=>v.toFixed(2)).join(','):'');
+          (light?'|'+[light.lit,light.warmth,light.planetshine,light.titanshine||0,light.heat,...light.sun].map(v=>v.toFixed(2)).join(','):'');
         const desired=Math.abs(scale)> .65?1024:512;
         if(desired!==resolution){renderer.setSize(desired,desired,false);resolution=desired;lastPose='';}
-        if(key!==lastPose){applyLight(light);renderer.render(scene,camera);lastPose=key;}
+        if(key!==lastPose){
+          applyLight(light);renderer.render(scene,camera);lastPose=key;
+          bloomContext.clearRect(0,0,72,72);bloomContext.drawImage(canvas,0,0,72,72);
+        }
         const size=DISPLAY_SIZE*scale;
         ctx.drawImage(canvas,x-size/2,y-size/2,size,size);
+        const glow=.22+.5*(light?light.heat:0);
+        ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha*=glow;
+        ctx.drawImage(bloom,x-size*.53,y-size*.53,size*1.06,size*1.06);
+        ctx.globalAlpha*=.6;ctx.drawImage(bloom,x-size*.6,y-size*.6,size*1.2,size*1.2);
+        ctx.restore();
         beacon(ctx,x,y,size,light);
       }else if(still.complete&&still.naturalWidth){
         // A still rendered from this exact model, never a generated substitute.
@@ -118,12 +132,13 @@
       glow:new THREE.DirectionalLight(0xffc690,0),
       fill:new THREE.DirectionalLight(0x7f95c4,.35),
       planet:new THREE.DirectionalLight(0xe9d3aa,0),
+      titan:new THREE.DirectionalLight(0xffa24f,0),
       sky:new THREE.HemisphereLight(0x6a7ba0,0x3a2629,.4),
       heat:new THREE.DirectionalLight(0xffa765,0),
       warm:new THREE.Color(0xff9550),pale:new THREE.Color(0xffe6c2)
     };
     lights.fill.position.set(-4,3,9);
-    for(const name of ['sun','glow','fill','planet','sky','heat'])scene.add(lights[name]);
+    for(const name of ['sun','glow','fill','planet','titan','sky','heat'])scene.add(lights[name]);
     const draco=new modules[2].DRACOLoader();
     draco.setDecoderPath(new URL('js/vendor/three/draco/',document.baseURI).href);
     const loader=new modules[1].GLTFLoader();loader.setDRACOLoader(draco);

@@ -81,7 +81,7 @@
     // ignore small height changes (mobile URL bar) to avoid rebuilding
     if (!force && nw === cssW && Math.abs(nh - cssH) < 140) return;
     cssW = nw; cssH = nh;
-    dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     W = canvas.width = Math.round(cssW * dpr);
     H = canvas.height = Math.round(cssH * dpr);
     build();

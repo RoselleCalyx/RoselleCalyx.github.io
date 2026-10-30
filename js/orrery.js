@@ -120,6 +120,8 @@
     let d = today, speed = 20, playing = true, running = false, raf = 0, last = 0, hover = null;
     let amax = 32, amaxT = 32;              // distance scale (AU at the rim)
     let J = null;                            // journey state
+    let route = false;                       // Saturn selected: show the whole 1997–2004 route
+    const ROUTE = []; for (let x = LAUNCH; x <= SOI; x += 3) ROUTE.push(cassini(x));
     const belt = Array.from({ length: 420 }, () => ({ a: 2.2 + Math.random() * 1.1, l0: Math.random() * 360, w: Math.random() }));
     let stars = null;
 
@@ -250,6 +252,24 @@
       updateCaption(J.d);
       if (J.d >= SOI) { J.hold = (J.hold || 0) + dt; if (J.hold > 1.8) { J.phase = 2; J.t2 = 0; } }
       return pos;
+    }
+
+    // The complete cruise, dashed, with each gravity assist where it happened.
+    // Planets keep moving at today's date; the markers are fixed in history.
+    function drawRoute() {
+      ctx.save(); ctx.lineCap = "round"; ctx.setLineDash([4, 5]);
+      ctx.strokeStyle = "rgba(143,220,255,.75)"; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ROUTE.forEach((p, i) => { const [x, y] = map(p.r, p.lon); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke(); ctx.setLineDash([]);
+      NODES.forEach((nd) => {
+        const [x, y] = map(nd.r, nd.lon);
+        ctx.strokeStyle = "rgba(143,220,255,.9)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, 6, 0, TAU); ctx.stroke();
+        ctx.fillStyle = "#e9f6fb"; ctx.beginPath(); ctx.arc(x, y, 1.6, 0, TAU); ctx.fill();
+        tag(`${nd.label} · ${fmt(nd.d)}`, x, y, 7, 11, false, "rgba(200,236,250,.9)", 4);
+      });
+      ctx.restore();
     }
 
     /* Saturn seen from above its north pole, pre-rendered */
@@ -433,6 +453,7 @@
       } else {
         if (playing && !calm) d += speed * dt;
         current = drawSystem(d, true);
+        if (route) drawRoute();
       }
       placeTags();
       if (opts.onDate) opts.onDate(fmt(J ? J.d : d), J ? (J.phase === 1 ? "cruise" : "tour") : "live");
@@ -463,6 +484,8 @@
       slower() { speed = Math.max(1, speed / 2); return speed; },
       today() { d = Date.now() / 86400000 + 2440587.5 - 2451545.0; },
       journey: startJourney,
+      // Zoom in to the inner system so Venus and Earth flybys stay readable.
+      setRoute(on) { route = !!on; if (!J) amaxT = route ? 11 : 32; },
       endJourney: stopJourney,
       get inJourney() { return !!J; },
       get speed() { return speed; }

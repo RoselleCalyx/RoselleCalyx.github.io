@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#04070d">
+  <title>Enceladus Plumes · Chen Jia</title>
+  <meta name="description" content="Watch ice grains rise from Enceladus's tiger stripes. Most fall back; the fastest escape and feed Saturn's E ring.">
+  <link rel="stylesheet" href="css/style.css?v=20261022-quiet-sky">
+  <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1">
+  <link rel="stylesheet" href="css/rings.css?v=20261030-nocturne1">
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body data-page="rings" class="plume-page">
+  <a class="ring-skip" href="#ringControls">Skip to plume controls</a>
+  <main class="ring-world">
+    <canvas id="plumeScene" tabindex="0" role="img" aria-label="Enceladus seen against the Sun, with ice grains rising from its south polar fractures. Drag to look around; plus and minus change the distance."></canvas>
+    <div class="ring-vignette" aria-hidden="true"></div>
+    <div class="ring-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <header class="ring-header"><a href="index.html" class="ring-home"><span aria-hidden="true">✦</span> Chen Jia</a><nav class="station-nav"><a href="rings.html">← Field station 01 · A ring</a></nav></header>
+    <div class="ring-intro"><p class="ring-eyebrow">FIELD STATION 02 · ENCELADUS</p><h1>A small moon<br><em>feeds a ring.</em></h1><p>Ice rises from the tiger stripes. Most falls back as snow.</p></div>
+    <aside class="ring-telemetry" aria-label="Plume measurements"><div><span>ESCAPE SPEED</span><b id="escapeSpeed">239 m/s</b></div><div><span>ESCAPING</span><b id="escapeShare">—</b></div><div><span>ELAPSED</span><b id="plumeElapsed">T + 0.0 h</b></div></aside>
+    <div class="ring-zoom" role="group" aria-label="Viewing distance"><button type="button" id="plumeZoomIn" aria-label="Move closer">＋</button><button type="button" id="plumeZoomOut" aria-label="Move further away">−</button></div>
+    <div class="ring-status" id="plumeStatus" role="status">Approaching Enceladus…</div>
+    <section class="ring-controls" id="ringControls" aria-label="Plume controls" tabindex="-1">
+      <div class="ring-control-heading"><span class="ring-live" aria-hidden="true"></span><span id="plumeState">Jets active along four tiger stripes</span><span class="ring-grains" id="plumeCount"></span></div>
+      <div class="ring-control-body">
+        <div class="ring-sliders">
+          <label class="ring-slider" for="jetStrength"><span>Jet speed <output id="jetValue" for="jetStrength">1.0×</output></span><input id="jetStrength" type="range" min="0.6" max="1.6" value="1" step="0.05"><small>Faster vents push more grains past escape speed.</small></label>
+          <label class="ring-slider" for="plumeTime"><span>Time flow <output id="plumeTimeValue" for="plumeTime">1.0×</output></span><input id="plumeTime" type="range" min="0.2" max="4" value="1" step="0.1"><small>Speed up to watch the E ring form.</small></label>
+        </div>
+        <div class="ring-actions"><div class="ring-view-switch" role="group" aria-label="Viewpoint"><button type="button" id="viewBacklit" aria-pressed="true">Against the Sun</button><button type="button" id="viewRing" aria-pressed="false">E ring</button></div><div class="ring-playback"><button type="button" id="plumePause" aria-pressed="false">Pause</button><button type="button" id="plumeFate" aria-pressed="false">Show fates</button><button type="button" id="plumeReset">Reset ↺</button></div></div>
+      </div>
+      <details class="ring-notes"><summary>What am I seeing? <span aria-hidden="true">＋</span></summary><div>
+        <p>Cassini found water-ice grains and vapour venting from four warm fractures near Enceladus’s south pole, nicknamed the tiger stripes. Backlit by the Sun, the fine grains scatter light forward, so the plume glows most when you look toward the Sun.</p>
+        <p>Each grain here follows the same local Hill equations as the A-ring window: Saturn’s tide, the orbital rotation and Enceladus’s gravity, in units of its Hill radius (about 950 km) and its orbital rate (one unit ≈ 5.2 hours). Enceladus is 252 km in radius and its escape speed is about 239 m/s. Slower grains arc back down; faster grains leave its small Hill sphere and are sheared into a stream ahead of and behind the moon: the beginning of the E ring.</p>
+        <p>Vents are spread along four stripes about 130 km long and 35 km apart. The speed distribution, about one grain in six escaping at 1×, and the vertical exaggeration of grain sizes are illustrative; vapour, charging and drag from Saturn’s magnetosphere are omitted.</p>
+        <p><a href="https://science.nasa.gov/resource/enceladus-jets/" target="_blank" rel="noopener">NASA · Enceladus jets ↗</a><a href="https://science.nasa.gov/saturn/moons/enceladus/" target="_blank" rel="noopener">NASA · Enceladus ↗</a></p>
+      </div></details>
+    </section>
+    <noscript><p class="ring-noscript">Enable JavaScript to watch the plumes.</p></noscript>
+  </main>
+  <script type="module" src="js/enceladus.js?v=20261030-plume1"></script>
+</body>
+</html>

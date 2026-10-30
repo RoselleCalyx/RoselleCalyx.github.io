@@ -106,3 +106,6 @@ body[data-page="home"] .mission-log { top: max(84px, 12vh); bottom: auto; }
 .ring-entry:focus-visible { outline:2px solid var(--gold); outline-offset:5px; }
 @media(max-width:700px){.ring-entry {right:18px;bottom:78px;padding:7px 13px;font-size:.65rem;}}
 @media(prefers-reduced-motion:reduce){.hero-living-land{translate:none;}}
+/* Grand Finale orbit counter, shown only during the 22-orbit beat. */
+body[data-page="home"] .finale-count{position:absolute;left:50%;top:calc(max(84px,12vh) + 84px);transform:translateX(-50%);z-index:3;opacity:0;pointer-events:none;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.62rem;letter-spacing:.22em;color:#8fdcff;text-shadow:0 0 12px #000,0 0 3px #000;white-space:nowrap}

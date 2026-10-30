@@ -537,6 +537,7 @@
 
   /* ---------- info panel ---------- */
   const info = $("smInfo");
+  let orrery = null;                     // created with the Solar System view below
   function renderInfo() {
     if (!selected) return;
     let head = "", body = "", facts = [], key = selected.type + ":" + selected.id, favable = selected.type !== "planet";
@@ -566,6 +567,10 @@
     fb.hidden = !favable;
     fb.setAttribute("aria-pressed", isFav(key));
     fb.innerHTML = (isFav(key) ? ICON.starF : ICON.starO) + (isFav(key) ? "In my favorites" : "Add to my favorites");
+    // Saturn leads back to Cassini: its route in the Solar System view, and a replay.
+    const saturn = selected.type === "planet" && selected.id === "saturn";
+    $("infoCassini").hidden = !saturn || !window.Orrery;
+    if (orrery) orrery.setRoute(saturn && mode === "orrery");
     drawZoom();
   }
   info.querySelector(".fav-btn").addEventListener("click", () => {
@@ -738,7 +743,7 @@
   /* ---------- the solar system and Cassini's journey ---------- */
   const oc = $("orrery"), bar = $("orreryBar"), cap = $("journeyCaption");
   let lastDate = "";
-  const orrery = window.Orrery ? Orrery.create(oc, {
+  orrery = window.Orrery ? Orrery.create(oc, {
     onPick: (k) => select({ type: "planet", id: k }, false),
     onDate: (txt) => { if (txt !== lastDate) { lastDate = txt; $("oDate").textContent = txt; } },
     onCaption: (c) => {
@@ -774,6 +779,11 @@
       orrery.journey();
       orrery.play(true);
       $("oPlay").textContent = "❚❚";
+    });
+    $("infoCassini").addEventListener("click", () => {
+      $("cassiniBtn").click();
+      // The card sits below the map; bring the replay into view.
+      $("starmapPanel").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
     });
   } else $("cassiniBtn").hidden = true;
 

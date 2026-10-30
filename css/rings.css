@@ -37,3 +37,51 @@ body[data-page="rings"]{margin:0;background:#060c15;color:#eee6d7;overflow:hidde
 
 .grain-probe{top:340px}@media(max-width:760px){.grain-probe{top:235px;right:65px}}@media(max-height:640px) and (max-width:760px){.grain-probe{top:180px;padding:8px;gap:3px;font-size:.57rem}.grain-probe b{font-size:.75rem}.grain-probe small{font-size:.49rem}}
 .density-key{line-height:1.4}.density-key>span{display:block;white-space:nowrap}@media(max-width:760px){.density-key>span{font-size:.42rem;letter-spacing:.08em}}
+
+/* Nocturne observatory: a quiet instrument HUD over a darker, colder sky. */
+body[data-page="rings"]{--ice:#8fdcff;--ice-dim:#8fdcff55;--gold:#e6cc95;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.ring-world{background:radial-gradient(ellipse at 12% 38%,#1a2333 0,transparent 55%),radial-gradient(ellipse at 85% 10%,#0e1a2c 0,transparent 50%),linear-gradient(160deg,#0a111d,#04070d 60%,#020409)}
+.ring-vignette{background:linear-gradient(180deg,rgba(2,5,10,.45),transparent 22%,transparent 55%,rgba(2,5,10,.8)),radial-gradient(ellipse at 60% 42%,transparent 35%,rgba(2,5,10,.4) 100%),repeating-linear-gradient(0deg,rgba(143,220,255,.018) 0 1px,transparent 1px 3px)}
+.ring-frame{position:absolute;inset:18px;pointer-events:none;z-index:1}.ring-frame i{position:absolute;width:26px;height:26px;border:1px solid var(--ice-dim)}
+.ring-frame i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}.ring-frame i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}.ring-frame i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}.ring-frame i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
+.ring-eyebrow{color:var(--ice);font-family:var(--mono);letter-spacing:.2em}.ring-eyebrow::before{content:"";display:inline-block;width:6px;height:6px;margin-right:10px;border-radius:50%;background:var(--ice);box-shadow:0 0 10px var(--ice);animation:ringPulse 2.4s ease-in-out infinite;vertical-align:1px}
+@keyframes ringPulse{50%{opacity:.25}}@media(prefers-reduced-motion:reduce){.ring-eyebrow::before{animation:none}}
+.ring-telemetry{padding:12px 14px;border-right:1px solid var(--ice-dim);background:linear-gradient(270deg,#08121e88,transparent)}.ring-telemetry span{font-family:var(--mono);color:#7fa6bd}.ring-telemetry b{font-family:var(--mono);font-size:.82rem;color:#e9f4fa;letter-spacing:.02em}
+.moonlet-label{transform:translate(-50%,-50%);width:74px;height:74px;justify-content:flex-start}.moonlet-label i{position:absolute;inset:0;width:auto;height:auto;transform:none;border:0;background:
+  linear-gradient(var(--ice),var(--ice)) 0 0/12px 1px,linear-gradient(var(--ice),var(--ice)) 0 0/1px 12px,
+  linear-gradient(var(--ice),var(--ice)) 100% 0/12px 1px,linear-gradient(var(--ice),var(--ice)) 100% 0/1px 12px,
+  linear-gradient(var(--ice),var(--ice)) 0 100%/12px 1px,linear-gradient(var(--ice),var(--ice)) 0 100%/1px 12px,
+  linear-gradient(var(--ice),var(--ice)) 100% 100%/12px 1px,linear-gradient(var(--ice),var(--ice)) 100% 100%/1px 12px;background-repeat:no-repeat;opacity:.75}
+.moonlet-label span{position:absolute;left:84px;top:4px;white-space:nowrap;font-family:var(--mono);font-size:.5rem;letter-spacing:.16em;color:#d9eef8}.moonlet-label b{font-weight:400;color:var(--ice)}
+.ring-radar{position:absolute;right:4vw;top:330px;margin:0;padding:8px;border:1px solid var(--ice-dim);border-radius:10px;background:#050c16b0;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none}
+.ring-radar canvas{display:block;width:66px;height:132px;image-rendering:auto}.ring-radar figcaption{margin-top:6px;font-family:var(--mono);font-size:.42rem;letter-spacing:.16em;color:#7fa6bd;text-align:center}
+.grain-probe{top:auto;bottom:calc(54vh + 20px);right:calc(4vw + 100px);border-color:var(--ice-dim);font-family:var(--mono)}.grain-probe b{color:#e9f4fa}
+.ring-controls{border-color:#8fdcff2a;background:linear-gradient(115deg,#0d1824ee,#060d17ee);border-radius:14px}
+.ring-controls::before{content:"";position:absolute;left:22px;right:22px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--ice),transparent);opacity:.6}
+.ring-live{background:var(--ice);box-shadow:0 0 12px var(--ice)}
+.dye-button{margin-left:12px;border:1px solid #8fdcff66;border-radius:20px;background:linear-gradient(90deg,#ffd58f1c,#8fdcff26);color:#e9f6fb;font:inherit;font-size:.62rem;letter-spacing:.04em;padding:6px 13px;min-height:30px;cursor:pointer;white-space:nowrap;box-shadow:0 0 18px #8fdcff1f}
+.dye-button:hover{box-shadow:0 0 22px #8fdcff44}.dye-button:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+.lens-switch button[aria-pressed="true"]{color:#e9f6fb;box-shadow:inset 0 -1px var(--ice)}.ring-slider input,.sun-control input{accent-color:#9fd9f0}.ring-slider output{font-family:var(--mono);color:var(--ice)}
+.ring-view-switch button[aria-pressed="true"]{color:#e9f6fb;background:#8fdcff1c;box-shadow:inset 0 0 0 1px #8fdcff40}
+.ring-status{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--ice);text-transform:uppercase}
+@media(max-width:760px){.ring-radar{top:auto;bottom:calc(49vh + 14px);right:16px;padding:6px}.ring-radar canvas{width:44px;height:88px}.ring-radar figcaption{display:none}
+  .dye-button{margin-left:auto;font-size:.56rem;padding:5px 10px}.ring-frame{inset:8px}.ring-frame i{width:16px;height:16px}.grain-probe{bottom:auto}}
+@media(max-height:640px){.ring-radar{display:none}}
+@media(min-width:761px){
+  .ring-telemetry{top:78px;right:4vw;display:flex;gap:26px;padding:8px 0 8px 18px;border-right:0;border-left:1px solid var(--ice-dim);background:none;text-align:left}
+  .ring-zoom{top:150px}.ring-radar{top:150px;right:calc(4vw + 58px)}
+}
+@media(min-width:761px) and (max-height:900px){.ring-slider small{display:none}.ring-control-body{padding-top:10px;padding-bottom:8px}.observatory-toolbar{padding-top:8px}.ring-sliders{gap:28px}}
+@media(min-width:761px){.ring-gesture{bottom:auto;top:calc(15vh + 205px);max-width:260px;line-height:1.6;font-family:var(--mono);font-size:.55rem;color:#7fa6bd}}
+@media(min-width:761px) and (max-height:700px){.ring-gesture{display:none}}
+@media(max-width:760px){.ring-telemetry{padding:0;border:0;background:none}.ring-radar{right:auto;left:16px}}
+.compare-real{border:1px solid #8fdcff44;border-radius:18px;background:none;color:#cfeefb;font:inherit;font-size:.58rem;padding:5px 11px;min-height:28px;cursor:pointer;white-space:nowrap}.compare-real[aria-expanded="true"]{background:#8fdcff1c}.compare-real:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+.propeller-card{position:absolute;z-index:6;left:50%;top:12vh;transform:translateX(-50%);width:min(760px,calc(100vw - 32px));padding:16px 18px 14px;border:1px solid #8fdcff3a;border-radius:14px;background:linear-gradient(140deg,#0c1724f2,#050b14f2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 30px 80px #000a;color:#b9c8d2;font-size:.68rem;line-height:1.7}
+.propeller-card[hidden]{display:none}.propeller-card header{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.52rem;letter-spacing:.2em;color:var(--ice)}
+.propeller-card header button{border:0;background:none;color:#cfe6f2;font-size:1.1rem;width:32px;height:32px;border-radius:50%;cursor:pointer}.propeller-card header button:focus-visible{outline:2px solid var(--ice)}
+.propeller-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 8px}.propeller-pair figure{margin:0}.propeller-pair canvas,.propeller-pair img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid #8fdcff22;background:#000}
+.propeller-pair figcaption{margin-top:6px;font-size:.58rem;color:#93a9b8;line-height:1.5}.propeller-pair b{color:#e9f4fa;font-weight:500}.propeller-pair a{color:var(--ice)}.propeller-card p{margin:4px 0 0}
+@media(max-width:760px){.propeller-card{top:64px;padding:12px}.propeller-pair{gap:8px}.propeller-card p{font-size:.6rem;max-height:22vh;overflow:auto}}
+/* Field station navigation between the ring pages. */
+.station-nav{display:flex;gap:18px}.station-nav a{font-size:.66rem;color:#bcd4e2;min-height:44px;display:flex;align-items:center;letter-spacing:.02em}.station-nav a:hover{color:var(--ice)}.station-nav a:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+.plume-page #plumeScene{display:block;width:100%;height:100%;touch-action:none;cursor:grab}

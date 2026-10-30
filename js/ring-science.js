@@ -17,7 +17,7 @@ export function createDensityAverage(){
 export function createScience(T,scene){
   const {streamline,density}=window.RingDynamics;
   const guide=new T.Group(),paths=new T.Group();scene.add(guide,paths);
-  const gold=0xe4c38b,blue=0x8cd5e9;
+  const gold=0xe4c38b,blue=0x8fdcff;
   function line(points,color,opacity=.6,parent=guide){
     const geometry=new T.BufferGeometry().setFromPoints(points);
     const object=new T.Line(geometry,new T.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false}));parent.add(object);return object;

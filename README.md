@@ -5,7 +5,8 @@ Chen Jia 的个人主页。纯静态网站：没有构建步骤，推送到 GitH
 | 页面 | 文件 | 内容 |
 | --- | --- | --- |
 | Home | `index.html` | 土星、Cassini 与山巅的旅人：向下滚动，Cassini 坠入土星大气层 |
-| Among the Rings | `rings.html` | 环带观测台：冰粒近景、真实积分轨迹、密度图、无卫星对照与逐粒追踪 |
+| Among the Rings | `rings.html` | 环带观测台：冰粒近景、真实积分轨迹、密度图、无卫星对照、逐粒追踪、示踪染料线、实时俯视雷达与 Cassini 螺旋桨图像对照 |
+| Enceladus Plumes | `enceladus.html` | 二号观测站：虎纹裂缝喷流、逃逸粒子汇入 E 环，可调喷速与命运着色 |
 | Papers | `papers.html` | 论文卡片、图片、PDF / Code / Project / Data 链接、BibTeX |
 | Gallery | `gallery.html` | 足迹时间线、照片墙、世界地图 |
 | Message | `message.html` | 漂流瓶：写信给我、捡起别人的瓶子 |

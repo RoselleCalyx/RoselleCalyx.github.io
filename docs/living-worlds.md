@@ -10,6 +10,26 @@
   Among the ice / From above changes the view, with mass and time-flow controls,
   pause, reset and a collapsible control panel. Natural light, Trajectories and
   Density reveal different aspects of the same simulation.
+  **Release dye line** (or key D) drops two lines of tracer grains upstream; they
+  obey the same Hill equations and show shear, the propeller streams and horseshoe
+  turnarounds. A live overhead radar plots the actual particles, Hill sphere and dye.
+
+  Backdrop: Saturn uses banded clouds with a soft terminator, a cold limb and the
+  rings' shadow traced along the sunbeam. The ring system follows the C, B and A
+  rings, Cassini Division, Encke and Keeler gaps and F ring in units of 886 km,
+  with Saturn's shadow and forward-scattered glow; ringlet texture is procedural.
+  The simulated window sits at 130,000 km. Grain tumbling, context ice and sunlit
+  dust run in shaders; per frame the CPU only writes each grain's position.
+  **Compare with Cassini** opens a card pairing a live, time-averaged density
+  snapshot of the model (turned to the same diagonal) with Cassini's PIA12790
+  image of the “Earhart” propeller beside the Encke Gap (NASA/JPL/SSI, loaded
+  from NASA). Shapes are comparable; sizes are not.
+- `/enceladus.html`: Field station 02. Ice grains leave vents along four tiger
+  stripes and follow the same local Hill equations in Enceladus's frame (Hill
+  radius about 950 km, escape speed about 239 m/s). Slow grains fall back; fast
+  grains leave the Hill sphere and are sheared into the E-ring stream. A haze and
+  the grains brighten by forward scattering when you look toward the Sun. Jet
+  speed, time flow, “Show fates” colouring and an E-ring view are available.
 
 ## The existing painting
 
