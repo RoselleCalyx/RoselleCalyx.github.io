@@ -406,7 +406,7 @@
     cvS.height = cvF.height = Math.round(vh * dpr);
     if (cvR) { cvR.width = cvS.width; cvR.height = cvS.height; }
     if(cvFall){cvFall.width=cvS.width;cvFall.height=cvS.height;}
-    F = window.HOME_FRAME(vw, vh);
+    F = window.HOME_FRAME(vw, vh); baseLeft = F.left; appliedPan = 0;
     if (land) {
       land.style.width = F.IW * F.S + "px";
       land.style.height = (F.IH-LAND_Y0)*F.S+'px';
@@ -424,11 +424,26 @@
       } else full();
     }
     moonCache.clear();
-    if (veil) {                                             // deep space wrapped around the planet and its rings
-      const R = SAT.R * F.S, w = R * 4.8, h = R * 2.8;
-      veil.style.width = w + "px"; veil.style.height = h + "px";
-      veil.style.transform = `translate(${F.left + SAT.x * F.S - w / 2}px, ${F.top + SAT.y * F.S - h / 2}px) rotate(${TILT}rad)`;
-    }
+    placeVeil();
+  }
+  function placeVeil() {
+    if (!veil) return;                                      // deep space wrapped around the planet and its rings
+    const R = SAT.R * F.S, w = R * 4.8, h = R * 2.8;
+    veil.style.width = w + "px"; veil.style.height = h + "px";
+    veil.style.transform = `translate(${F.left + SAT.x * F.S - w / 2}px, ${F.top + SAT.y * F.S - h / 2}px) rotate(${TILT}rad)`;
+  }
+  // Phones crop the painting around the traveller, which leaves the final plunge
+  // (left of Saturn) off-screen. During the final approach the whole scene pans
+  // right together (painting, Saturn, rings, craft and occlusion masks), never
+  // past the painting's own left edge; scrolling back reverses it exactly.
+  let baseLeft = 0, appliedPan = 0;
+  function panForFinale(progress) {
+    if (vw >= 760) return;
+    const pan = Math.round(Math.min(140, -baseLeft) * smooth(.64, .735, progress));
+    if (pan === appliedPan) return;
+    appliedPan = pan; F.left = baseLeft + pan;
+    if (land) land.style.left = F.left + "px";
+    living?.layout(); placeVeil();
   }
 
   // Titan (0) and Enceladus (1) follow their compressed orbits; nearer means
@@ -862,6 +877,7 @@
     const target=pinned>=0?0:fallTarget;
     fall+=(target-fall)*(calm?1:1-Math.exp(-real*4));
     if(target===0||Math.abs(target-fall)<.0005)fall=target;
+    panForFinale(p);
     camera=CassiniFlight.view(p,vw,vh,F);
     drawHandoff(calm);
     const glow=CassiniFlight.entryEffects(p);

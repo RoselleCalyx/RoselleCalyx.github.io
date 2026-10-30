@@ -7,10 +7,16 @@ Creator: NASA/Brian E. Kumanchik.
 Selected download: **Cassini-Huygens (A) (without Hyugens).glb** (NASA's spelling).
 Local file: `cassini-orbiter-nasa.glb`, downloaded 27 October 2026.
 
+`cassini-orbiter-web.glb` (239 KB) is what the site loads. It is the same file
+repacked without its unused PNG texture fallbacks (three.js already uses the
+embedded WebP via `EXT_texture_webp`, now marked required) and without the dish
+texture the renderer replaces. Geometry, Draco buffers and the foil WebP are
+byte-identical; renders match the original pixel for pixel.
+
 Direct NASA asset URL:
 https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/model/cassini-huygens-(a)/Cassini-Huygens%20(A)%20(without%20Hyugens).glb
 
-This is the orbiter-only configuration after Huygens separation. The GLB is unchanged on disk. The active renderer adapts it into a fictional
+This is the orbiter-only configuration after Huygens separation. The NASA GLB is unchanged on disk. The active renderer adapts it into a fictional
 future exploration craft. The original bulky outboard boom sleeve and collars
 are removed from the rendered geometry and replaced with a narrower, moderately
 shortened three-spar carbon truss, small champagne joints and a compact sensor.

@@ -122,7 +122,7 @@ peaks near p .52–.55. Titan's sprite samples NASA's Cassini ISS global map
 dune seas show faintly, with a thin blue upper-haze limb. The second decorative
 moon is Enceladus, sampled from the Cassini colour map PIA18435
 (NASA/JPL-Caltech/SSI/LPI) around a near-white albedo, with a faint plume below
-its south pole. Both maps are cropped to 1024 × 512 in `assets/planets/`.
+its south pole. Both maps are cropped to 512 × 256 in `assets/planets/` (still about 3× the detail the sprites can show).
 
 During the Grand Finale beat (p .27–.49) the 22 final orbits are drawn as
 precessing petals (`orbit(mean, peri, omega)` turns each ellipse in its plane).

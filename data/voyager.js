@@ -19,7 +19,7 @@ window.VOYAGER_STOPS = [
       63
     ],
     "scene": {
-      "art": "assets/voyager/scenes/lunar-shore-v1.png",
+      "art": "assets/voyager/scenes/lunar-shore-v1.webp",
       "target": "Earth",
       "label": "Departure",
       "vantage": "A lunar crater rim",
@@ -49,7 +49,7 @@ window.VOYAGER_STOPS = [
       42
     ],
     "scene": {
-      "art": "assets/voyager/scenes/inner-shore-v1.png",
+      "art": "assets/voyager/scenes/inner-shore-v1.webp",
       "target": "Venus",
       "label": "Venus I",
       "vantage": "An imagined volcanic moonlet",
@@ -79,7 +79,7 @@ window.VOYAGER_STOPS = [
       29
     ],
     "scene": {
-      "art": "assets/voyager/scenes/venus-return-v2.png",
+      "art": "assets/voyager/scenes/venus-return-v2.webp",
       "target": "Venus",
       "label": "Venus II",
       "vantage": "An imagined caldera rim",
@@ -109,7 +109,7 @@ window.VOYAGER_STOPS = [
       54
     ],
     "scene": {
-      "art": "assets/voyager/scenes/earth-return-v2.png",
+      "art": "assets/voyager/scenes/earth-return-v2.webp",
       "target": "Earth",
       "label": "Earth",
       "vantage": "A lunar highland ridge",
@@ -139,7 +139,7 @@ window.VOYAGER_STOPS = [
       72
     ],
     "scene": {
-      "art": "assets/voyager/scenes/europa-shore-v2.png",
+      "art": "assets/voyager/scenes/europa-shore-v2.webp",
       "target": "Jupiter",
       "label": "Jupiter",
       "vantage": "An imagined Europan ice plain",
@@ -169,7 +169,7 @@ window.VOYAGER_STOPS = [
       48
     ],
     "scene": {
-      "art": "assets/voyager/scenes/phoebe-encounter-v1.png",
+      "art": "assets/voyager/scenes/phoebe-encounter-v1.webp",
       "target": "Phoebe",
       "label": "Phoebe",
       "vantage": "An imagined outer-moon rubble field",
@@ -199,7 +199,7 @@ window.VOYAGER_STOPS = [
       30
     ],
     "scene": {
-      "art": "assets/voyager/scenes/saturn-shore-v1.png",
+      "art": "assets/voyager/scenes/saturn-shore-v1.webp",
       "target": "Saturn",
       "label": "Arrival",
       "vantage": "An imagined icy mountain shore",
@@ -230,7 +230,7 @@ window.VOYAGER_STOPS = [
     ],
     "source": "https://www.esa.int/Newsroom/Press_Releases/Huygens_begins_its_final_journey_into_the_unknown",
     "scene": {
-      "art": "assets/voyager/scenes/huygens-separation-v1.png",
+      "art": "assets/voyager/scenes/huygens-separation-v1.webp",
       "target": "Titan",
       "label": "Huygens",
       "vantage": "An imagined frost-covered moonlet",
@@ -260,7 +260,7 @@ window.VOYAGER_STOPS = [
       28
     ],
     "scene": {
-      "art": "assets/voyager/scenes/titan-encounter-v2.png",
+      "art": "assets/voyager/scenes/titan-encounter-v2.webp",
       "target": "Titan",
       "label": "Titan",
       "vantage": "An imagined frozen outer-moon terrace",
@@ -291,7 +291,7 @@ window.VOYAGER_STOPS = [
     ],
     "source": "https://science.nasa.gov/missions/cassini/enceladus-flyby-july-14-2005/",
     "scene": {
-      "art": "assets/voyager/scenes/enceladus-encounter-v1.png",
+      "art": "assets/voyager/scenes/enceladus-encounter-v1.webp",
       "target": "Enceladus",
       "label": "Enceladus",
       "vantage": "An imagined dark ice escarpment",
@@ -322,7 +322,7 @@ window.VOYAGER_STOPS = [
     ],
     "source": "https://science.nasa.gov/missions/cassini/cassini-significant-events-090507-091107/",
     "scene": {
-      "art": "assets/voyager/scenes/iapetus-encounter-v2.png",
+      "art": "assets/voyager/scenes/iapetus-encounter-v2.webp",
       "target": "Iapetus",
       "label": "Iapetus",
       "vantage": "An imagined frost-dusted ridge",
@@ -353,7 +353,7 @@ window.VOYAGER_STOPS = [
     ],
     "equinox": true,
     "scene": {
-      "art": "assets/voyager/scenes/equinox-shore-v1.png",
+      "art": "assets/voyager/scenes/equinox-shore-v1.webp",
       "target": "Saturn",
       "label": "Equinox",
       "vantage": "An imagined Tethyan crater rim",
@@ -383,7 +383,7 @@ window.VOYAGER_STOPS = [
       62
     ],
     "scene": {
-      "art": "assets/voyager/scenes/iapetus-shore-v1.png",
+      "art": "assets/voyager/scenes/iapetus-shore-v1.webp",
       "target": "Saturn",
       "label": "Solstice",
       "vantage": "An imagined Iapetan mountain ridge",
@@ -415,7 +415,7 @@ window.VOYAGER_STOPS = [
     "eclipse": true,
     "source": "https://science.nasa.gov/mission/cassini/",
     "scene": {
-      "art": "assets/voyager/scenes/blue-dot-eclipse-v2.png",
+      "art": "assets/voyager/scenes/blue-dot-eclipse-v2.webp",
       "target": "Saturn’s eclipse",
       "label": "Blue dot",
       "vantage": "An imagined shadowed moon shore",
@@ -446,7 +446,7 @@ window.VOYAGER_STOPS = [
     ],
     "plume": true,
     "scene": {
-      "art": "assets/voyager/scenes/plume-encounter-v1.png",
+      "art": "assets/voyager/scenes/plume-encounter-v1.webp",
       "target": "Enceladus",
       "label": "Ice plume",
       "vantage": "An imagined fractured ice terrace",
@@ -477,7 +477,7 @@ window.VOYAGER_STOPS = [
     ],
     "close": true,
     "scene": {
-      "art": "assets/voyager/scenes/ring-shore-v1.png",
+      "art": "assets/voyager/scenes/ring-shore-v1.webp",
       "target": "Saturn & the rings",
       "label": "Rings",
       "vantage": "An imagined ring-moonlet shore",
@@ -509,7 +509,7 @@ window.VOYAGER_STOPS = [
     "close": true,
     "source": "https://science.nasa.gov/mission/cassini/grand-finale/overview/",
     "scene": {
-      "art": "assets/voyager/scenes/finale-gap-v1.png",
+      "art": "assets/voyager/scenes/finale-gap-v1.webp",
       "target": "Saturn’s ring gap",
       "label": "Finale",
       "vantage": "An imagined inner-ring ice shelf",
@@ -541,7 +541,7 @@ window.VOYAGER_STOPS = [
     "farewell": true,
     "source": "https://science.nasa.gov/mission/cassini/grand-finale/overview/",
     "scene": {
-      "art": "assets/voyager/scenes/farewell-sky-v1.png",
+      "art": "assets/voyager/scenes/farewell-sky-v1.webp",
       "target": "Saturn",
       "label": "Farewell",
       "vantage": "An imagined last mountain outlook",
@@ -571,7 +571,7 @@ window.VOYAGER_STOPS = [
       14
     ],
     "scene": {
-      "art": "assets/voyager/scenes/beyond-nebula-v2.png",
+      "art": "assets/voyager/scenes/beyond-nebula-v2.webp",
       "target": "The deeper universe",
       "label": "Beyond",
       "vantage": "An unknown crystal world",

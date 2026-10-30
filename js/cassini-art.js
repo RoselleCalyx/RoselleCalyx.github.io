@@ -142,7 +142,9 @@
     const draco=new modules[2].DRACOLoader();
     draco.setDecoderPath(new URL('js/vendor/three/draco/',document.baseURI).href);
     const loader=new modules[1].GLTFLoader();loader.setDRACOLoader(draco);
-    const gltf=await loader.loadAsync(new URL('assets/models/cassini-orbiter-nasa.glb',document.baseURI).href);
+    // Web copy of the NASA model: identical geometry and WebP texture, without
+    // the unused PNG fallbacks (239 KB instead of 1.6 MB). See assets/models/README.md.
+    const gltf=await loader.loadAsync(new URL('assets/models/cassini-orbiter-web.glb',document.baseURI).href);
     rig=new THREE.Group();rig.add(gltf.scene);scene.add(rig);
     gltf.scene.updateMatrixWorld(true);
     // Pearl ceramic dish and thin-film anodized foil: their sheen shifts with

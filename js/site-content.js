@@ -22,6 +22,11 @@
     } catch (_) {}
     return "";
   };
+  // Paper images and Voyager scenes published as PNG now ship as near-lossless
+  // WebP (same pixels within 2/255, about 40% smaller). Only these known files
+  // are mapped; any other image path is left as published.
+  const WEBP = /^assets\/(?:paper[123]|voyager\/scenes\/[a-z0-9-]+-v\d)\.png$/;
+  const optimized = path => WEBP.test(path) ? path.replace(/\.png$/, ".webp") : path;
   const figure = value => record(value) ? { src: url(value.src), caption: string(value.caption), ...textFields(value, ["alt"]) } : null;
   const paper = value => {
     if (!record(value) || typeof value.title !== "string") return null;
@@ -29,7 +34,7 @@
       authors: strings(value.authors), topics: strings(value.topics),
       year: Number.isSafeInteger(value.year) ? value.year : 0,
       type: ["publication", "preprint", "project"].includes(value.type) ? value.type : "publication",
-      selected: value.selected === true, image: url(value.image), links: {} };
+      selected: value.selected === true, image: optimized(url(value.image)), links: {} };
     for (const key of ["pdf", "code", "project", "data"]) result.links[key] = url(value.links?.[key]);
     if (Array.isArray(value.figures)) result.figures = value.figures.map(figure).filter(item => item?.src);
     return result;
@@ -59,7 +64,7 @@
       ...Object.fromEntries(["equinox", "eclipse", "plume", "close", "farewell"].filter(key => typeof value[key] === "boolean").map(key => [key, value[key]])),
       date: string(value.date), source: url(value.source), title: value.title.slice(), map: value.map.slice(), chapter: value.chapter,
       scene: { ...textFields(value.scene, ["target", "label", "vantage", "terrain", "pose", "particles", "description"]),
-        art: url(value.scene.art), haze: Number.isFinite(value.scene.haze) ? Math.max(0, Math.min(1, value.scene.haze)) : 0 } };
+        art: optimized(url(value.scene.art)), haze: Number.isFinite(value.scene.haze) ? Math.max(0, Math.min(1, value.scene.haze)) : 0 } };
   };
   function normalize(content) {
     if (!record(content)) return {};

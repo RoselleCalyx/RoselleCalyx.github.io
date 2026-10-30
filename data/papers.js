@@ -19,7 +19,7 @@ window.PAPERS = [
       "Multi-view Learning",
       "Report Generation"
     ],
-    "image": "assets/paper1.png",
+    "image": "assets/paper1.webp",
     "selected": true,
     "abstract": "Multi-view reasoning in coronary X-ray angiography is inherently a cross-projection geometric problem, yet automated report generation in this setting remains largely unexplored. The 3D vascular topology leads to projection-dependent branch overlap and foreshortening, rendering single-view modeling fundamentally incomplete and unstable for lesion localization and stenosis grading. Although multi-view fusion appears promising, learning anatomically consistent fusion from real angiograms is impeded by a critical limitation: cross-view alignment is unobservable and cannot be explicitly supervised. Consequently, conventional fusion relies on implicit correlations rather than verified anatomical correspondence. We address this by reformulating multi-view stenosis reporting as an alignment-constrained aggregation problem. A controllable synthetic angiography generation strategy is introduced to expose geometry-derived patch-level correspondence supervision unavailable in real data. An anatomy-correspondence module learns cross-view correspondence matrices that explicitly align auxiliary features within the main-view coordinate space prior to fusion, thereby constraining evidence aggregation to anatomically consistent regions. Experiments on synthetic data and zero-shot transfer to real angiograms show that this alignment-constrained design improves correspondence consistency and structured stenosis reporting compared to single-view modeling and conventional multi-view fusion methods. The code will be publicly available upon publication.",
     "links": {
@@ -48,7 +48,7 @@ window.PAPERS = [
       "Report Generation",
       "Clinical AI"
     ],
-    "image": "assets/paper2.png",
+    "image": "assets/paper2.webp",
     "selected": true,
     "abstract": "Image-to-text radiology report generation aims to produce comprehensive diagnostic reports by leveraging both X-ray images and historical textual data. Existing retrieval-based methods focus on maximizing similarity scores, leading to redundant content and limited diversity in generated reports. Additionally, they lack sensitivity to medical domain-specific information, failing to emphasize critical anatomical structures and disease characteristics essential for accurate diagnosis. To address these limitations, we propose a novel retrieval-augmented framework that integrates exemplar radiology reports with X-ray images to enhance report generation. First, we introduce a diversity-controlled retrieval strategy to improve information diversity and reduce redundancy, ensuring broader clinical knowledge coverage. Second, we develop a comprehensive medical lexicon covering chest anatomy, diseases, radiological …",
     "links": {
@@ -75,7 +75,7 @@ window.PAPERS = [
       "NLP",
       "Summarization"
     ],
-    "image": "assets/paper3.png",
+    "image": "assets/paper3.webp",
     "selected": false,
     "abstract": "This paper addresses the task of legal summarization, which involves distilling complex legal documents into concise, coherent summaries. Current approaches often struggle with content theme deviation and inconsistent writing styles due to their reliance solely on source documents. We propose RELexED, a retrieval-augmented framework that utilizes exemplar summaries along with the source document to guide the model. RELexED employs a two-stage exemplar selection strategy, leveraging a determinantal point process to balance the trade-off between similarity of exemplars to the query and diversity among exemplars, with scores computed via influence functions. Experimental results on two legal summarization datasets demonstrate that RELexED significantly outperforms models that do not utilize exemplars and those that rely solely on similarity-based exemplar selection.",
     "links": {
