@@ -70,10 +70,19 @@
     q=multiply(q,[Math.sin(pitch/2),0,0,Math.cos(pitch/2)]);
     return multiply(q,[0,0,Math.sin(bank/2),Math.cos(bank/2)]);
   }
+  // Orbits flown before the final half orbit. The two extra laps fall in the
+  // Grand Finale beat: the orbital clock speeds up smoothly (a sin² bump on top
+  // of the base rate) and returns to the base rate before Titan, so apocentre
+  // still meets the 11 September flyby at p = .5 and entry timing is unchanged.
+  const LAPS=3,LAP_START=.19,LAP_SPAN=.3,LAP_GAIN=(LAPS-1)/(LAP_SPAN/2);
+  function lapClock(p){
+    const x=clamp(p-LAP_START,0,LAP_SPAN);
+    return p/.5+LAP_GAIN*(x/2-LAP_SPAN/(4*Math.PI)*Math.sin(2*Math.PI*x/LAP_SPAN));
+  }
   function sample(p,mobile=false) {
-    // One representative full orbit, then the final half orbit after Titan.
-    // Separate clocks keep position and velocity continuous at apocentre.
-    const clock=p<=.5?p/.5:1+(p-.5)/.5;
+    // Three orbits (see lapClock), then the final half orbit after Titan.
+    // The clocks meet at an apocentre with matching rate, so motion stays smooth.
+    const clock=p<=.5?lapClock(p):LAPS+(p-.5)/.5;
     const mean=Math.PI+TAU*clock;
     const peri=1.085-.15*ease(.50,.72,p);
     const point=p>=ENTRY?descent(p):orbit(mean,peri),reveal=ease(0,.19,p);
@@ -102,15 +111,22 @@
       fade:1-ease(.795,.865,p),embers:1-ease(.817,.891,p)};
   }
 
-  // Titan on a circular ring-plane orbit, compressed to 3.76 Saturn radii (the
-  // real orbit is 20.3) and timed to pass Cassini at the 11 September 2017
-  // flyby beat (p = .49). It then sets into the clouds. Artistic, not ephemeris.
-  function titan(p){
-    const theta=-1.366+2.2*p,rho=3.76,B=.33,tilt=.31;
-    const rx=rho*Math.cos(theta),w=rho*Math.sin(theta),ry=w*Math.sin(B);
+  // Moons on circular ring-plane orbits, seen like the rings (19-degree opening,
+  // 0.31 rad on-screen tilt). Both are tidally locked: `face` is the longitude
+  // turned toward the viewer, measured from the point that always faces Saturn.
+  function ringPlane(theta,rho){
+    const B=.33,tilt=.31,rx=rho*Math.cos(theta),w=rho*Math.sin(theta),ry=w*Math.sin(B);
     return {x:573+(rx*Math.cos(tilt)-ry*Math.sin(tilt))*R,y:318+(rx*Math.sin(tilt)+ry*Math.cos(tilt))*R,
-      z:w*Math.cos(B)*R,theta};
+      z:w*Math.cos(B)*R,theta,face:Math.atan2(-Math.cos(theta),-Math.sin(theta))};
   }
+  // Titan, compressed to 3.76 Saturn radii (the real orbit is 20.3), timed to
+  // pass Cassini at the 11 September 2017 flyby beat (p = .49), then setting
+  // into the clouds. Artistic, not ephemeris.
+  function titan(p){return ringPlane(-1.366+2.2*p,3.76);}
+  // Enceladus, compressed to 2.9 Saturn radii (real 3.95) so it stays inside
+  // Titan's compressed orbit and outside the A ring. It laps three times over
+  // the story (in reality about 11.6 times for each Titan orbit).
+  function enceladus(p){return ringPlane(-.5+6*Math.PI*p,2.9);}
   // The light that reaches the hull at a sampled point, in model space (+Y up,
   // +Z toward the viewer). The horizon sun sits far beyond the painted glow, so
   // the craft is mostly backlit; Saturn eclipses it softly on the far passage
@@ -132,5 +148,5 @@
       heat:e.sheath*e.fade,motion:[Math.cos(q.motionAngle||0),-Math.sin(q.motionAngle||0),0]};
   }
 
-  window.CassiniFlight={sample,orbit,view,attitude,entryEffects,illumination,titan,earthDirection:EARTH};
+  window.CassiniFlight={sample,orbit,view,attitude,entryEffects,illumination,titan,enceladus,lapClock,LAPS,earthDirection:EARTH};
 })();

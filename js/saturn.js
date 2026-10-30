@@ -46,7 +46,7 @@
   const SAT = { x: 573, y: 318, R: 262 };              // Saturn in painting pixels
   const TILT = 0.31;                                     // on-screen tilt of the ring plane
   const B = 0.33;                                        // ring opening angle (~19°)
-  const MOONS = [{ x: 1550, y: 222, r: 30 }, { x: 1455, y: 437, r: 9 }]; // Titan (placed by CassiniFlight.titan), Enceladus
+  const MOONS = [{ r: 30 }, { r: 15 }]; // Titan and Enceladus; CassiniFlight places both on their orbits
   const SUN = { x: 960, y: 602 };                        // the glow on the horizon
 
   const LOG = [
@@ -241,7 +241,7 @@
       const data = g.getImageData(0, 0, c.width, c.height).data;
       let mean = 0; for (let i = 0; i < data.length; i += 4) mean += data[i] + data[i + 1] + data[i + 2];
       MOON_MAPS[name] = { w: c.width, h: c.height, data, mean: mean / (data.length / 4 * 3 * 255) };
-      if (F) moons = makeMoons();
+      moonCache.clear();
     };
     img.src = `assets/planets/${name}.webp`;
   }
@@ -255,7 +255,7 @@
   const sunlit = (nx, ny, nz) => .08 + .92 * Math.pow(Math.max(0, nx * -.66 + ny * .35 + nz * .66), .7);
   // Titan: a thick orange haze over the mapped surface. The dark dune seas show
   // faintly, as in Cassini's near-infrared views; a blue haze layer rims it.
-  function titanSprite(r) {
+  function titanSprite(r, face) {
     const size = Math.ceil(r * 2.4 + 6), cv = document.createElement("canvas");
     cv.width = cv.height = size;
     const c = cv.getContext("2d"), im = c.createImageData(size, size), mid = size / 2, map = MOON_MAPS.titan;
@@ -263,7 +263,7 @@
       const nx = (x + .5 - mid) / r, ny = (y + .5 - mid) / r, dd = nx * nx + ny * ny, d = Math.sqrt(dd), k = (y * size + x) * 4;
       if (d < 1) {
         const nz = Math.sqrt(1 - dd), light = sunlit(nx, ny, nz);
-        const ground = map ? mapAt(map, nx, ny, nz, 1.2)[0] : .5;
+        const ground = map ? mapAt(map, nx, ny, nz, face)[0] : .5;
         // Surface contrast fades toward the limb, where the haze path is longest.
         const contrast = .42 * nz, tone = (1 + contrast * (ground - .55)) * (1 - .3 * Math.pow(d, 5));
         im.data[k] = clamp(238 * tone * light, 0, 255); im.data[k + 1] = clamp(158 * tone * light, 0, 255); im.data[k + 2] = clamp(70 * tone * light, 0, 255);
@@ -276,8 +276,8 @@
     c.putImageData(im, 0, 0); return cv;
   }
   // Enceladus: the brightest ice in the system, with its south-polar plume.
-  function enceladusSprite(r) {
-    const size = Math.ceil(r * 3.2 + 6), cv = document.createElement("canvas");
+  function enceladusSprite(r, face) {
+    const size = Math.ceil(r * 4.6 + 6), cv = document.createElement("canvas");
     cv.width = cv.height = size;
     const c = cv.getContext("2d"), im = c.createImageData(size, size), mid = size / 2, map = MOON_MAPS.enceladus;
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
@@ -285,28 +285,41 @@
       if (d < 1) {
         // Albedo near 1: lift the night side a little and keep the day side white.
         // The map supplies relative detail around its mean; the albedo stays near white.
-        const nz = Math.sqrt(1 - dd), light = .16 + .84 * sunlit(nx, ny, nz), ice = map ? mapAt(map, nx, ny, nz, 3.4) : [1, 1, 1];
+        const nz = Math.sqrt(1 - dd), light = .16 + .84 * sunlit(nx, ny, nz), ice = map ? mapAt(map, nx, ny, nz, face) : [1, 1, 1];
         const tone = v => .95 * Math.pow(v / (map ? map.mean : 1), .85);
         im.data[k] = clamp(250 * tone(ice[0]) * light, 0, 255); im.data[k + 1] = clamp(253 * tone(ice[1]) * light, 0, 255); im.data[k + 2] = clamp(258 * tone(ice[2]) * light, 0, 255);
         im.data[k + 3] = clamp((1 - d) * r, 0, 1) * 255;
-      } else if (ny > .6 && d < 1.6) {
-        // A faint fan of ice below the south pole.
-        const a = Math.max(0, 1 - Math.abs(nx) / (.25 + .55 * (ny - .6))) * (1 - (d - 1) / .6) ** 1.5;
-        im.data[k] = 190; im.data[k + 1] = 225; im.data[k + 2] = 255; im.data[k + 3] = a * 70;
+      } else if (ny > .55 && d < 2.25) {
+        // The plume: a fan of ice below the south pole, brightest at the vents.
+        const a = Math.max(0, 1 - Math.abs(nx) / (.22 + .5 * (ny - .55))) * Math.pow(1 - (d - 1) / 1.25, 1.6);
+        im.data[k] = 200; im.data[k + 1] = 232; im.data[k + 2] = 255; im.data[k + 3] = a * 165;
       }
     }
     c.putImageData(im, 0, 0); return cv;
   }
-  const makeMoons = () => MOONS.map((m, i) => (i === 0 ? titanSprite : enceladusSprite)(m.r * F.S * dpr));
+  // Tidally locked moons show a face that turns with their orbit. Sprites are
+  // re-rendered only when that face moves by 2 degrees or the layout changes.
+  const moonCache = new Map();
+  function moonSprite(i, face) {
+    const r = MOONS[i].r * F.S * dpr, step = Math.round(face / (Math.PI / 90)), key = i + "|" + step + "|" + r.toFixed(2);
+    let entry = moonCache.get(i);
+    if (!entry || entry.key !== key) {
+      entry = { key, cv: (i === 0 ? titanSprite : enceladusSprite)(r, step * Math.PI / 90) };
+      moonCache.set(i, entry);
+    }
+    return entry.cv;
+  }
 
-  // The painted clouds give way wherever they overlap Saturn's inner rings, or rise above them:
-  // everything above the lower edge of the inner rings' near arc fades out, softly, and less toward the ring tips.
+  // The painted clouds give way wherever they rise into Saturn's rings: everything
+  // above the near arc of the outer edge (the A ring, 2.27 Saturn radii) fades
+  // out. A 48 px strip just under the ring edge keeps a little cloud for a soft
+  // join; beyond the ring tips the clouds are untouched.
   function ringCut(px, py) {
-    const A = 1.951 * SAT.R, Bm = A * Math.sin(B), ct = Math.cos(TILT), st = Math.sin(TILT);
+    const A = 2.269 * SAT.R, Bm = A * Math.sin(B), ct = Math.cos(TILT), st = Math.sin(TILT);
     const dx = px - SAT.x, dy = py - SAT.y, u = dx * ct + dy * st, v = -dx * st + dy * ct;
     const q = Math.min(1, Math.abs(u) / A), edge = Bm * Math.sqrt(Math.max(0, 1 - q * q));
-    const keep = smooth(edge - 56, edge + 4, v);                 // 0 above the ring line, 1 below it
-    const reach = 1 - smooth(0.86 * A, 1.04 * A, Math.abs(u));   // no cut beyond the ring tips
+    const keep = smooth(edge - 40, edge + 8, v);                 // 0 inside the ring band, 1 below it
+    const reach = 1 - smooth(0.97 * A, 1.03 * A, Math.abs(u));   // no cut beyond the ring tips
     return 1 - (1 - keep) * reach;
   }
 
@@ -326,7 +339,9 @@
         const protection = 1 - smooth(.65, 1, subjectDistance);
         const edgeFade = smooth(0, 100, y - edge);
         const feather = edgeFade + protection * (1 - edgeFade);
-        d[k + 3] *= feather * ringCut(x, y + LAND_Y0);
+        // The traveller and cat stay whole even where their heads near the ring edge.
+        const cut = ringCut(x, y + LAND_Y0);
+        d[k + 3] *= feather * (cut + protection * (1 - cut));
       }
     }
     c.putImageData(im, 0, 0);
@@ -339,7 +354,7 @@
   addEventListener("skystyle", skyStyle); skyStyle();
 
   /* ---------- layout ---------- */
-  let vw = 0, vh = 0, dpr = 1, F = null, planet = null, planetAt = 0, Rpx = 0, moons = [];
+  let vw = 0, vh = 0, dpr = 1, F = null, planet = null, planetAt = 0, Rpx = 0;
   let layoutDirty = false;
   let camera = null;
   const P = (x, y) => {
@@ -378,7 +393,7 @@
         renderSaturn(Math.max(60, Math.round(want / 4)), (cv) => { planet = cv; Rpx = Math.max(60, Math.round(want / 4)); planetAt = performance.now(); full(); });
       } else full();
     }
-    moons = makeMoons();
+    moonCache.clear();
     if (veil) {                                             // deep space wrapped around the planet and its rings
       const R = SAT.R * F.S, w = R * 4.8, h = R * 2.8;
       veil.style.width = w + "px"; veil.style.height = h + "px";
@@ -386,12 +401,13 @@
     }
   }
 
-  // Titan follows its compressed orbit; nearer means slightly larger.
-  function drawTitan(c, t) {
-    if (!moons[0]) return;
-    const [x, y] = P(t.x, t.y), k = camera.zoom / (1 + Math.max(-.4, t.z / SAT.R) * .12);
-    const w = moons[0].width * k, h = moons[0].height * k;
-    c.drawImage(moons[0], x - w / 2, y - h / 2, w, h);
+  // Titan (0) and Enceladus (1) follow their compressed orbits; nearer means
+  // slightly larger. Far-side moons are drawn before Saturn, so it hides them.
+  function drawMoon(c, i, pose) {
+    const sprite = moonSprite(i, pose.face);
+    const [x, y] = P(pose.x, pose.y), k = camera.zoom / (1 + Math.max(-.4, pose.z / SAT.R) * .12);
+    const w = sprite.width * k, h = sprite.height * k;
+    c.drawImage(sprite, x - w / 2, y - h / 2, w, h);
   }
 
   /* ---------- Cassini, drawn as in the painting: boom forward, dish behind ---------- */
@@ -845,8 +861,8 @@
     cS.fillStyle = g; cS.fillRect(sx - 760 * S, sy - 760 * S, 1520 * S, 1520 * S);
     cS.restore();
     drawOrbit(cS,p,true);
-    const titanPose = CassiniFlight.titan(p);
-    if (titanPose.z < 0) drawTitan(cS, titanPose);
+    const moonPoses = [CassiniFlight.titan(p), CassiniFlight.enceladus(p)];
+    moonPoses.forEach((pose, i) => { if (pose.z < 0) drawMoon(cS, i, pose); });
     if (planet) {
       const [px, py] = P(SAT.x, SAT.y);
       const k = (SAT.R * S) / Rpx;
@@ -859,14 +875,7 @@
       cS.restore();
       cS.globalAlpha = 1;
     }
-    if (titanPose.z >= 0) drawTitan(cS, titanPose);
-    MOONS.forEach((m, i) => {
-      if (!moons[i] || i === 0) return;
-      const drift = calm ? 0 : Math.sin(time * .035 + i) * 4;
-      const [x, y] = P(m.x + drift, m.y + drift * .25);
-      const mw=moons[i].width*camera.zoom,mh=moons[i].height*camera.zoom;
-      cS.drawImage(moons[i], x-mw/2, y-mh/2,mw,mh);
-    });
+    moonPoses.forEach((pose, i) => { if (pose.z >= 0) drawMoon(cS, i, pose); });
 
 
     // Dust and the near orbit sit below the continuous outer band. All rings

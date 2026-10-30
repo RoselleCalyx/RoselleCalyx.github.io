@@ -52,3 +52,11 @@ up to 25 px below the sunlit rock rims, so the spacecraft occasionally drew over
 rock around story progress .15–.17 and .62–.67. The new edge includes the sunlit
 rims and the bush beside the cat, and keeps cloud gaps open; 17 regression probes
 in `tests/home-occlusion.test.cjs` cover it.
+
+
+Painted clouds above the traveller used to continue up through the outer ring
+band on the left, reading as a rubble belt under the rings. `ringCut` in
+`js/saturn.js` now follows the near arc of the outer ring edge (A ring, 2.27
+Saturn radii) instead of the inner rings, so clouds end just under the ring
+edge; a 48 px feather keeps a little overlap for a soft join, and the traveller
+and cat are protected from the cut.

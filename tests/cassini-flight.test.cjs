@@ -112,7 +112,12 @@ test('Entry brightness and visibility stay bounded and continuous when scrubbing
 });
 test('Scene light follows the craft: sunset rim, Saturn eclipse and entry heat',()=>{
   const at=p=>illumination(sample(p),p);
-  const opening=at(0),shadow=at(.27),entry=at(.775);
+  const opening=at(0),entry=at(.775);
+  // Every lap of the far passage crosses Saturn's shadow once.
+  const lit=[];for(let p=.19;p<=.5;p+=.005)lit.push(at(p).lit);
+  const passages=lit.filter((v,i)=>v<.3&&!(lit[i-1]<.3)).length;
+  assert.equal(passages,context.window.CassiniFlight.LAPS);
+  const shadow=at(.24);
   assert.equal(opening.lit,1);assert.equal(opening.heat,0);
   // The far passage crosses Saturn's shadow; the light dims but never vanishes.
   assert.ok(shadow.lit<.3&&shadow.lit>=.14);
@@ -138,4 +143,27 @@ test('Grand Finale petals keep the orbit size while precessing',()=>{
     assert.ok(Math.abs(Math.hypot(q.x-573,q.y-318,q.z)-q.r)<1e-8);
   }
   assert.notEqual(orbit(1,1.03,.1).x.toFixed(3),orbit(1,1.03,0).x.toFixed(3));
+});
+test('Extra laps speed up smoothly and still meet Titan at apocentre',()=>{
+  const {lapClock,LAPS}=context.window.CassiniFlight;
+  assert.ok(Math.abs(lapClock(.5)-LAPS)<1e-12,'apocentre at p = .5');
+  const rate=p=>(lapClock(p+1e-5)-lapClock(p))/1e-5;
+  assert.ok(Math.abs(rate(.18)-2)<1e-3&&Math.abs(rate(.499)-2)<1e-2,'base rate at both ends');
+  for(let p=0;p<.5;p+=.01)assert.ok(rate(p+.01)/rate(p)<1.6,'no sudden speed jumps');
+  const a=sample(.4999),b=sample(.5001);assert.ok(Math.hypot(a.x-b.x,a.y-b.y)<2);
+});
+test('Enceladus orbits between the rings and Titan, tidally locked to Saturn',()=>{
+  const {enceladus,titan}=context.window.CassiniFlight;
+  const radius=q=>Math.hypot(q.x-573,(q.y-318),q.z);
+  for(let p=0;p<1;p+=.05){
+    const e=enceladus(p),t=titan(p);
+    // The projected ellipse of Enceladus lies outside the A ring (2.27 R).
+    const u=(e.x-573)*Math.cos(.31)+(e.y-318)*Math.sin(.31),v=-(e.x-573)*Math.sin(.31)+(e.y-318)*Math.cos(.31);
+    assert.ok(Math.hypot(u/262,v/(262*Math.sin(.33)))>2.27);
+    assert.ok(radius(e)<radius(t));
+  }
+  // Locked rotation: the face toward the viewer turns once per orbit.
+  const a=enceladus(0),b=enceladus(1/3);
+  assert.ok(Math.abs(((b.face-a.face)%(2*Math.PI)+2*Math.PI)%(2*Math.PI))<1e-9);
+  const q=enceladus(1/12);assert.ok(Math.abs(Math.abs(q.face-a.face)-Math.PI/2)<1e-9||Math.abs(Math.abs(q.face-a.face)-1.5*Math.PI)<1e-9);
 });

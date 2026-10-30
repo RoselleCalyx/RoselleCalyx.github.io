@@ -137,3 +137,24 @@ entry heat. No per-frame image filtering runs.
 
 The homepage's full-screen canvases are capped at 1.5× pixel density (1.25× on
 low-power devices), about a third less fill than 2× on high-density screens.
+
+
+## Three laps before the end
+
+Cassini now flies three orbits before the final half orbit (`CassiniFlight.LAPS`).
+The two extra laps fall in the Grand Finale beat (p .19–.49): the orbital clock
+adds a sin² bump to its base rate, so the craft speeds up smoothly, passes
+through Saturn's shadow once per lap, and returns to the base rate exactly at
+apocentre for the Titan flyby (p = .5). The final half orbit, entry, breakup and
+ember timings are unchanged.
+
+## Orbiting, tidally locked moons
+
+Titan and Enceladus both follow circular ring-plane orbits and are tidally
+locked: each keeps one face toward Saturn, so the face seen from the overlook
+turns once per orbit (`face` in `CassiniFlight.titan/enceladus`). Enceladus is
+compressed to 2.9 Saturn radii (real 3.95) so it stays outside the A ring and
+inside Titan's compressed 3.76; it laps three times over the story. Moons on the
+far side are drawn before Saturn, which hides them, and they set below the
+painted horizon. Each sprite is re-rendered only when its visible face moves by
+2 degrees. Enceladus is drawn at 15 painting px with a visible south-polar plume.
