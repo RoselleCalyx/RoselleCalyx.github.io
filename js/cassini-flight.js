@@ -86,7 +86,7 @@
     const mean=Math.PI+TAU*clock;
     const peri=1.085-.15*ease(.50,.72,p);
     const point=p>=ENTRY?descent(p):orbit(mean,peri),reveal=ease(0,.19,p);
-    const opening={x:mobile?875:1000,y:mobile?440:370};
+    const opening={x:mobile?660:1000,y:mobile?400:370};
     const x=opening.x+(point.x-opening.x)*reveal;
     const y=opening.y+(point.y-opening.y)*reveal;
     const h=.00001,previous=orbit(mean-TAU*h/.5,peri),next=orbit(mean+TAU*h/.5,peri);
@@ -94,7 +94,7 @@
     const distanceScale=1/(1+Math.max(-.4,point.z/R)*.12);
     const orientation=attitude(p),angle=-Math.atan2(EARTH[0],EARTH[1]);
     return {...point,x,y,angle,motionAngle:Math.atan2(vy,vx),
-      orientation,scale:((mobile?1.5:1.7)*(1-reveal)+.24*reveal)*distanceScale,
+      orientation,scale:((mobile?1.8:1.7)*(1-reveal)+.24*reveal)*distanceScale,
       behind:p>.19&&p<.65&&point.z<0,entry:ease(.737,.762,p),u:reveal};
   }
   // Keep the original painting's composition throughout the flight. The viewer

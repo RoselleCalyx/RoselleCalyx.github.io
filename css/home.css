@@ -109,3 +109,34 @@ body[data-page="home"] .mission-log { top: max(84px, 12vh); bottom: auto; }
 /* Grand Finale orbit counter, shown only during the 22-orbit beat. */
 body[data-page="home"] .finale-count{position:absolute;left:50%;top:calc(max(84px,12vh) + 84px);transform:translateX(-50%);z-index:3;opacity:0;pointer-events:none;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.62rem;letter-spacing:.22em;color:#d9c08c;text-shadow:0 0 12px #000,0 0 3px #000;white-space:nowrap}
+/* A single row of links leaves the lower portrait scene to Cassini and the observers. */
+@media (max-width:760px){
+  body[data-page="home"] .social{flex-wrap:nowrap;gap:10px;max-width:370px}
+  body[data-page="home"] .social a{flex:1;min-width:0;font-size:.62rem;gap:8px;min-height:44px;white-space:nowrap}
+  body[data-page="home"] .social a svg{width:22px;height:22px}
+}
+@media (max-width:760px) and (max-height:700px){
+  body[data-page="home"] .hero-text{top:calc(var(--header-h) + 4px)}
+  body[data-page="home"] .hero-kicker{font-size:.6rem;letter-spacing:.26em;margin-bottom:8px}
+  body[data-page="home"] .hero-title{font-size:clamp(1.75rem,7.5vw,2.5rem);margin-bottom:10px}
+  body[data-page="home"] .hero-lede{font-size:.84rem;line-height:1.45;margin-bottom:10px}
+  body[data-page="home"] .hero-rule{margin-bottom:14px}
+  body[data-page="home"] .social{gap:8px}
+  body[data-page="home"] .social a{font-size:.58rem}
+  body[data-page="home"] .mission-log{top:82px;font-size:.94rem;line-height:1.5}
+}
+@media (max-width:1000px) and (max-height:500px) and (orientation:landscape){
+  body[data-page="home"] .mission-log{top:82px;left:auto;right:22px;width:45%;transform:none;text-align:right;font-size:.86rem;line-height:1.5}
+}
+/* The farewell uses the open sky instead of sitting over the retained entry light. */
+@media (max-width:760px) and (orientation:portrait){
+  body[data-page="home"] .finale{top:26vh;width:calc(100% - 40px)}
+  body[data-page="home"] .finale .kicker{font-size:.58rem;margin-bottom:10px}
+  body[data-page="home"] .finale h2{font-size:clamp(1.35rem,5.8vw,1.7rem);margin-bottom:12px}
+  body[data-page="home"] .finale p:last-child{font-size:.78rem;line-height:1.6}
+}
+@media (max-width:760px) and (max-height:700px) and (orientation:portrait){
+  body[data-page="home"] .finale{top:145px}
+  body[data-page="home"] .finale h2{font-size:1.35rem}
+  body[data-page="home"] .finale p:last-child{font-size:.7rem}
+}

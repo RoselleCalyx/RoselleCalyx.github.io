@@ -35,7 +35,7 @@
   <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/cassini-type.css?v=20261009-1" />
   <link rel="stylesheet" href="css/mobile.css?v=20261009-4" />
-  <link rel="stylesheet" href="css/home.css?v=20261030-moons1" />
+  <link rel="stylesheet" href="css/home.css?v=20261030-portrait3" />
   <link rel="preload" href="assets/home-galaxy-quiet-v2.webp" as="image" />
   <link rel="preload" href="assets/models/cassini-opening-nocturne.webp" as="image" />
   <link rel="preload" href="assets/home-landscape.webp" as="image" fetchpriority="high" />
@@ -194,12 +194,22 @@
   <footer id="site-footer"></footer>
 
   <script>
-    // The hero is laid out in the coordinates of the painting (1672 × 941, anchored to the bottom).
+    // One fixed composition for the entire flight. On narrow screens, fit the
+    // entry corridor and both observers together; the night sky fills above.
     window.HOME_FRAME = function (vw, vh) {
-      const IW = 1672, IH = 941, S = Math.max(vw / IW, vh / IH) * 1.02;
-      const focus = vw < 760 ? 640 : IW / 2;
+      const IW = 1672, IH = 941;
+      const portrait = vw < 760 || (vw < 1000 && vh > vw * 1.2);
+      const cover = Math.max(vw / IW, vh / IH) * 1.02;
+      // Protected source-space interval: x=245..795. This includes the incoming
+      // plasma wake, the traveller and the cat's tail, with 5.5% side margins.
+      const S = portrait ? Math.min(cover, vw * .89 / 550) : cover;
+      const focus = portrait ? 520 : IW / 2;
       const left = Math.min(0, Math.max(vw - IW * S, vw / 2 - focus * S));
-      return { S, left, top: vh - IH * S, IW, IH };
+      // A short landscape phone crops a little more of the flowers at the
+      // bottom, keeping the atmospheric passage below the fixed header.
+      const top = vw < 1000 && vh < 500 && vw > vh
+        ? Math.max(vh - IH * S, 100 - 250 * S) : vh - IH * S;
+      return { S, left, top, IW, IH };
     };
     (function () {
       const F = HOME_FRAME(innerWidth, innerHeight), m = Math.min(innerWidth, innerHeight);
@@ -215,10 +225,10 @@
   <script type="text/plain" data-site-src="js/sky.js?v=20261030-dpr1"></script>
   <script type="text/plain" data-site-src="js/common.js?v=20261011-fish-header"></script>
   <script type="text/plain" data-site-src="js/cassini-art.js?v=20261030-slim1"></script>
-  <script type="text/plain" data-site-src="js/cassini-flight.js?v=20261030-locked1"></script>
+  <script type="text/plain" data-site-src="js/cassini-flight.js?v=20261030-portrait3"></script>
   <script type="text/plain" data-site-src="js/home-occlusion.js?v=20261030-ridge1"></script>
   <script type="text/plain" data-site-src="js/home-life.js?v=20261028-living1"></script>
-  <script type="text/plain" data-site-src="js/saturn.js?v=20261030-mobilepan1"></script>
+  <script type="text/plain" data-site-src="js/saturn.js?v=20261030-portrait3"></script>
   <script src="js/site-content.js?v=20261031-webp1"></script>
 </body>
 </html>

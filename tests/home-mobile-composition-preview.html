@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>Home · mobile composition</title>
+<style>
+body{margin:0;background:#0a101b;color:#e7d5b1;font:12px system-ui}nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;padding:12px}a{color:inherit}select,button{background:#182130;color:inherit;border:1px solid #776b54;padding:5px}#wrap{position:relative;margin:auto}iframe{position:absolute;inset:0;border:1px solid #766e60;transform-origin:top left}output{display:block;text-align:center;padding:10px;color:#b2c4d6;font-size:11px}
+</style>
+<nav><label>Viewport <select id="size"><option>320×568</option><option>375×667</option><option selected>390×844</option><option>430×932</option><option>844×390</option><option>768×1024</option><option>1440×960</option></select></label><a href="../index.html?p=0" target="scene">Opening</a><a href="../index.html?p=.64" target="scene">Approach</a><a href="../index.html?p=.75" target="scene">Entry</a><a href="../index.html?p=.79" target="scene">Breakup</a><a href="../index.html?p=.86" target="scene">Ember</a><a href="../index.html" target="scene">Scroll freely</a><button id="play">Play finale</button></nav>
+<div id="wrap"><iframe name="scene" title="Phone homepage" src="../index.html?p=.79"></iframe></div><output id="check">Loading…</output>
+<script>
+const q=new URLSearchParams(location.search),frame=document.querySelector('iframe'),wrap=document.getElementById('wrap'),size=document.getElementById('size');
+const requested=(q.get('w')||390)+'×'+(q.get('h')||844);if([...size.options].some(option=>option.value===requested))size.value=requested;
+if(q.has('p'))frame.src='../index.html?p='+encodeURIComponent(q.get('p'));
+function layout(){const [w,h]=size.value.split('×').map(Number),scale=Math.min(1,(innerWidth-24)/w,(innerHeight-105)/h);frame.style.width=w+'px';frame.style.height=h+'px';frame.style.transform='scale('+scale+')';wrap.style.width=w*scale+'px';wrap.style.height=h*scale+'px';}
+size.onchange=layout;addEventListener('resize',layout);layout();
+let pending=false,playing=false,motion='';
+document.getElementById('play').onclick=()=>{pending=true;motion='Loading continuous scroll…';frame.src='../index.html';};
+function play(){
+  const w=frame.contentWindow,d=frame.contentDocument,story=d.querySelector('.story'),land=d.getElementById('heroLand'),art=d.getElementById('saturn');
+  const span=story.offsetHeight-art.getBoundingClientRect().height,start=performance.now(),positions=[];playing=true;
+  function tick(now){
+    const t=Math.min(1,(now-start)/6500);w.scrollTo({top:span*(.60+.29*t),behavior:'instant'});
+    positions.push([parseFloat(land.style.left),parseFloat(land.style.top)]);
+    const dx=Math.max(...positions.map(p=>p[0]))-Math.min(...positions.map(p=>p[0])),dy=Math.max(...positions.map(p=>p[1]))-Math.min(...positions.map(p=>p[1]));
+    motion=' · '+(t<1?'Playing':'Complete')+' · foreground movement '+dx.toFixed(2)+' / '+dy.toFixed(2)+' px';
+    if(t<1)requestAnimationFrame(tick);else playing=false;
+  }requestAnimationFrame(tick);
+}
+setInterval(()=>{const d=frame.contentDocument,land=d?.getElementById('heroLand');if(!land)return;
+  document.getElementById('check').textContent=size.value+' · foreground left '+land.style.left+' · foreground width '+land.style.width+motion;
+  const state=d.getElementById('cassiniModel')?.dataset.state;if(pending&&!playing&&land.style.width&&state&&state!=='loading'){pending=false;play();}
+},300);
+</script></html>
