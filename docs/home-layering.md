@@ -60,3 +60,13 @@ band on the left, reading as a rubble belt under the rings. `ringCut` in
 Saturn radii) instead of the inner rings, so clouds end just under the ring
 edge; a 48 px feather keeps a little overlap for a soft join, and the traveller
 and cat are protected from the cut.
+
+Above the traveller a single smooth arc, concentric with the rings (2.42 Saturn
+radii, just outside the A ring), passes just over her head and rises to the left
+with the ring band, trimming the cumulus tops along the same curve with a 42 px
+feather. Toward the bright horizon on the right it hands back to the ring-edge
+cut. Only the traveller, hair strands and cat are protected from the cuts: fully
+inside the traced `HomeOcclusion` contours (no fade on her head), plus hair-dark
+or skin-toned pixels within 6 px outside them so the real hair edge stays crisp.
+The earlier broad ellipse around her kept a dark cloud mass above her head.
+`tests/home-runtime.cjs` checks that no head or hair pixel is partly transparent.

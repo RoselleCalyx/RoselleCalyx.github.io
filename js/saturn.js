@@ -320,7 +320,13 @@
     const q = Math.min(1, Math.abs(u) / A), edge = Bm * Math.sqrt(Math.max(0, 1 - q * q));
     const keep = smooth(edge - 40, edge + 8, v);                 // 0 inside the ring band, 1 below it
     const reach = 1 - smooth(0.97 * A, 1.03 * A, Math.abs(u));   // no cut beyond the ring tips
-    return 1 - (1 - keep) * reach;
+    // Above the traveller, one smooth arc concentric with the rings (2.42 Saturn
+    // radii, just outside the A ring) passes just over her head and rises to the
+    // left with the ring band, trimming the cumulus tops along the same curve.
+    // It hands back to the ring-edge cut toward the bright horizon on the right.
+    const A2 = 2.42 * SAT.R, q2 = Math.min(1, Math.abs(u) / A2), arc = A2 * Math.sin(B) * Math.sqrt(Math.max(0, 1 - q2 * q2));
+    const arcKeep = 1 - (1 - smooth(arc - 30, arc + 12, v)) * (1 - smooth(760, 880, px));
+    return Math.min(1 - (1 - keep) * reach, arcKeep);
   }
 
   // Feather the original cutout in canvas while keeping the traveller and cat opaque.
@@ -329,14 +335,38 @@
     land.width = landscape.naturalWidth; land.height = landscape.naturalHeight;
     const c = land.getContext("2d"); c.drawImage(landscape, 0, 0);
     const im = c.getImageData(0, 0, land.width, land.height), d = im.data;
+    // Protect only the traveller, her hair and the cat, never a broad ellipse,
+    // so the clouds right above her head can be cut. Inside the traced contours
+    // protection is total (no fade on her head); within 6 px outside them,
+    // hair-dark or skin-toned pixels are protected too, so the real hair edge
+    // stays crisp even where the hand-traced line runs a pixel inside it.
+    const subjects = window.HomeOcclusion?.createMask(), sm = subjects && subjects.width === land.width
+      ? subjects.getContext("2d").getImageData(0, 0, land.width, land.height).data : null;
+    let shield = null;
+    if (sm) {
+      const W = land.width, H = land.height, solid = new Uint8Array(W * H), rows = new Uint8Array(W * H);
+      for (let i = 0; i < W * H; i++) solid[i] = sm[i * 4 + 3] > 16 ? 1 : 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {          // dilate by 6 px, rows then columns
+        let on = 0; for (let k = Math.max(0, x - 6); k <= Math.min(W - 1, x + 6) && !on; k++) on = solid[y * W + k];
+        rows[y * W + x] = on;
+      }
+      shield = new Uint8Array(W * H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        if (solid[i]) { shield[i] = 1; continue; }
+        let near = 0; for (let k = Math.max(0, y - 6); k <= Math.min(H - 1, y + 6) && !near; k++) near = rows[k * W + x];
+        if (!near) continue;
+        const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2], lum = .2126 * r + .7152 * g + .0722 * b;
+        shield[i] = lum < 22 || (lum < 130 && r - b > 55) ? 1 : 0;
+      }
+    }
     for (let x = 0; x < land.width; x++) {
       let edge = -1;
       for (let y = 0; y < land.height; y++) {
         const k = (y * land.width + x) * 4;
         if (edge < 0 && d[k + 3] > 48) edge = y;
         if (edge < 0) { d[k + 3] = 0; continue; }
-        const subjectDistance = Math.hypot((x - 580) / 220, (y + LAND_Y0 - 650) / 240);
-        const protection = 1 - smooth(.65, 1, subjectDistance);
+        const protection = shield ? shield[y * land.width + x] : 1 - smooth(.65, 1, Math.hypot((x - 580) / 220, (y + LAND_Y0 - 650) / 240));
         const edgeFade = smooth(0, 100, y - edge);
         const feather = edgeFade + protection * (1 - edgeFade);
         // The traveller and cat stay whole even where their heads near the ring edge.

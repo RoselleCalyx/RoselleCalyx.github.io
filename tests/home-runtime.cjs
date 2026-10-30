@@ -44,6 +44,14 @@ async function main() {
       assert.ok(surface>=0,'the near-side ring surface must be drawn before Cassini');
       assert.ok(await page.evaluate(()=>document.querySelector('#fx').compareDocumentPosition(document.querySelector('#rings'))&Node.DOCUMENT_POSITION_FOLLOWING),'#rings stacks above #fx');
     }
+    // The traveller's head and hair stay fully opaque where the sky is cut above her.
+    const head=await page.evaluate(()=>{
+      const d=document.getElementById('heroLand').getContext('2d').getImageData(0,0,1672,761).data;
+      const m=HomeOcclusion.createMask().getContext('2d').getImageData(0,0,1672,761).data;let partial=0;
+      for(let y=320;y<420;y++)for(let x=470;x<640;x++){const k=(y*1672+x)*4;if(m[k+3]>16&&d[k+3]<255)partial++;}
+      return partial;
+    });
+    assert.equal(head,0,'no fade inside the traveller\'s head and hair');
     await page.setViewportSize({width:390,height:844});
     await page.goto(base+'/index.html?p=0');await page.waitForTimeout(2800);
     await page.screenshot({path:`${out}/${baseline?'before':'after'}-mobile.png`});
