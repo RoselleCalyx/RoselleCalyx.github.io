@@ -117,12 +117,17 @@ Titan now moves on a circular ring-plane orbit compressed to 3.76 Saturn radii
 beat (p ≈ .49) just above the painted horizon, then sets into the clouds. It is
 drawn behind Saturn on the far side. `CassiniFlight.illumination` adds Titan's
 direction and a `titanshine` term; the hull receives a hazy orange light that
-peaks near p .52–.55. Titan's sprite is a hazed orange disc with a thin blue
-upper-haze limb, not a cratered moon.
+peaks near p .52–.55. Titan's sprite samples NASA's Cassini ISS global map
+(PIA19658, 938 nm, NASA/JPL-Caltech/SSI) under a thick orange haze, so the dark
+dune seas show faintly, with a thin blue upper-haze limb. The second decorative
+moon is Enceladus, sampled from the Cassini colour map PIA18435
+(NASA/JPL-Caltech/SSI/LPI) around a near-white albedo, with a faint plume below
+its south pole. Both maps are cropped to 1024 × 512 in `assets/planets/`.
 
 During the Grand Finale beat (p .27–.49) the 22 final orbits are drawn as
 precessing petals (`orbit(mean, peri, omega)` turns each ellipse in its plane).
-Flown orbits remain faint, the current one is ice-cyan, and a counter reads
+Flown orbits remain faint gold, the current one a slightly brighter gold (the
+same palette as the orbit trace, so nothing flashes in), and a counter reads
 “GRAND FINALE · ORBIT n / 22”. Precession and periapsis are illustrative.
 
 Bloom: after each WebGL render the renderer keeps a 72-pixel copy and adds it
